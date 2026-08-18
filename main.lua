@@ -188,18 +188,72 @@ local function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
 end
 
+if not game:IsLoaded() then
+	game.Loaded:Wait()
+end
+
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local function waitForPath(root, path, timeout)
+	local current = root
+	for _, childName in ipairs(path) do
+		if typeof(current) ~= "Instance" then
+			return nil
+		end
+		current = current:WaitForChild(childName, timeout or 15)
+		if not current then
+			return nil
+		end
+	end
+	return current
+end
+
+local function bootstrapFail(message)
+	warn("[torti] bootstrap failed: " .. tostring(message))
+	pcall(function()
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = "Torti Hub",
+			Text = tostring(message),
+			Duration = 8,
+		})
+	end)
+	error(message, 0)
+end
+
 pcall(function() setthreadidentity(2) end)
-local ProfileData = require(game.ReplicatedStorage.Modules.ProfileData)
-local InventoryModule = require(game.ReplicatedStorage.Modules.InventoryModule)
-local ItemModule = require(game.ReplicatedStorage.Modules.ItemModule)
-local Sync = require(game.ReplicatedStorage.Database.Sync)
-local ItemPopupService = require(game.ReplicatedStorage.ClientServices.ItemPopupService)
+local ModulesFolder = waitForPath(ReplicatedStorage, {"Modules"}, 20)
+local DatabaseFolder = waitForPath(ReplicatedStorage, {"Database"}, 20)
+local ClientServicesFolder = waitForPath(ReplicatedStorage, {"ClientServices"}, 20)
+if not ModulesFolder or not DatabaseFolder or not ClientServicesFolder then
+	bootstrapFail("Required MM2 folders were not found. Inject after the game fully loads.")
+end
+
+local ProfileDataModule = ModulesFolder:FindFirstChild("ProfileData")
+local InventoryModuleScript = ModulesFolder:FindFirstChild("InventoryModule")
+local ItemModuleScript = ModulesFolder:FindFirstChild("ItemModule")
+local SyncModule = DatabaseFolder:FindFirstChild("Sync")
+local ItemPopupServiceModule = ClientServicesFolder:FindFirstChild("ItemPopupService")
+if not ProfileDataModule or not InventoryModuleScript or not ItemModuleScript or not SyncModule or not ItemPopupServiceModule then
+	bootstrapFail("Required MM2 modules are missing. Check the game and inject later.")
+end
+
+local ProfileData = require(ProfileDataModule)
+local InventoryModule = require(InventoryModuleScript)
+local ItemModule = require(ItemModuleScript)
+local Sync = require(SyncModule)
+local ItemPopupService = require(ItemPopupServiceModule)
 pcall(function() setthreadidentity(8) end)
 
-local TradeRemotes = game.ReplicatedStorage.Trade
-local TradeGUI = game.Players.LocalPlayer.PlayerGui.TradeGUI
-local TheirOffer = TradeGUI.Container.Trade.TheirOffer
-local YourOffer = TradeGUI.Container.Trade.YourOffer
+local TradeRemotes = waitForPath(ReplicatedStorage, {"Trade"}, 20)
+local TradeGUI = waitForPath(PlayerGui, {"TradeGUI"}, 20)
+local TradeContainer = TradeGUI and waitForPath(TradeGUI, {"Container", "Trade"}, 20)
+local TheirOffer = TradeContainer and TradeContainer:FindFirstChild("TheirOffer")
+local YourOffer = TradeContainer and TradeContainer:FindFirstChild("YourOffer")
+if not TradeRemotes or not TradeGUI or not TradeContainer or not TheirOffer or not YourOffer then
+	bootstrapFail("Trade UI is not ready yet. Rejoin MM2 and inject after the inventory loads.")
+end
 
 local SearchTextSignal
 local TradeInventory
@@ -2679,7 +2733,7 @@ local function normalizeWeaponName(s)
 	s = string.gsub(s, "^c%.%s*", "chroma ")
 	s = string.gsub(s, "(%s)c%.%s*", "%1chroma ")
 
-	s = string.gsub(s, "['\u{2019}\"]", "")
+	s = string.gsub(s, "[\"']", "")
 
 	s = string.gsub(s, "%s+", " ")
 	s = string.gsub(s, "^%s+", "")
