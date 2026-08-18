@@ -2540,7 +2540,7 @@ spawnerStatusLabel.Text = "Open Catalog opens a separate item window with previe
 spawnerStatusLabel.Font = Enum.Font.Gotham
 spawnerStatusLabel.TextSize = 13
 spawnerStatusLabel.TextWrapped = true
-spawnerStatusLabel.TextColor3 = Color3.fromRGB(191, 211, 255)
+spawnerStatusLabel.TextColor3 = Color3.fromRGB(163, 168, 178)
 spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 spawnerStatusLabel.Parent = spawnerFrame
 
@@ -4747,7 +4747,7 @@ SpawnerCatalog = (function()
 
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.new(1, -70, 0, 28)
+	titleLabel.Size = UDim2.new(1, -100, 0, 28)
 	titleLabel.Text = "Spawn Catalog"
 	titleLabel.Font = Enum.Font.GothamBold
 	titleLabel.TextSize = 24
@@ -4759,23 +4759,23 @@ SpawnerCatalog = (function()
 	local subtitleLabel = Instance.new("TextLabel")
 	subtitleLabel.BackgroundTransparency = 1
 	subtitleLabel.Position = UDim2.new(0, 0, 0, 28)
-	subtitleLabel.Size = UDim2.new(1, -70, 0, 24)
+	subtitleLabel.Size = UDim2.new(1, -100, 0, 24)
 	subtitleLabel.Text = "New window with item cards: image, name, value and Spawn."
 	subtitleLabel.Font = Enum.Font.Gotham
 	subtitleLabel.TextSize = 12
-	subtitleLabel.TextColor3 = Color3.fromRGB(158, 168, 188)
+	subtitleLabel.TextColor3 = Color3.fromRGB(150, 154, 163)
 	subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	subtitleLabel.ZIndex = 42
 	subtitleLabel.Parent = header
 
 	local closeButton = Instance.new("TextButton")
-	closeButton.Size = UDim2.new(0, 42, 0, 42)
-	closeButton.Position = UDim2.new(1, -42, 0, 0)
+	closeButton.Size = UDim2.new(0, 72, 0, 42)
+	closeButton.Position = UDim2.new(1, -72, 0, 0)
 	closeButton.AutoButtonColor = false
 	closeButton.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
-	closeButton.Text = "X"
+	closeButton.Text = "Close"
 	closeButton.Font = Enum.Font.GothamBold
-	closeButton.TextSize = 17
+	closeButton.TextSize = 13
 	closeButton.TextColor3 = Color3.fromRGB(226, 232, 244)
 	closeButton.ZIndex = 43
 	closeButton.Parent = header
@@ -4803,7 +4803,7 @@ SpawnerCatalog = (function()
 	searchLabel.Text = "Search"
 	searchLabel.Font = Enum.Font.Gotham
 	searchLabel.TextSize = 14
-	searchLabel.TextColor3 = Color3.fromRGB(184, 194, 214)
+	searchLabel.TextColor3 = Color3.fromRGB(156, 160, 169)
 	searchLabel.TextXAlignment = Enum.TextXAlignment.Left
 	searchLabel.ZIndex = 42
 	searchLabel.Parent = toolbar
@@ -4849,7 +4849,7 @@ SpawnerCatalog = (function()
 	hintLabel.Text = "Loading cards..."
 	hintLabel.Font = Enum.Font.Gotham
 	hintLabel.TextSize = 12
-	hintLabel.TextColor3 = Color3.fromRGB(88, 198, 255)
+	hintLabel.TextColor3 = Color3.fromRGB(133, 138, 147)
 	hintLabel.TextXAlignment = Enum.TextXAlignment.Left
 	hintLabel.ZIndex = 42
 	hintLabel.Parent = toolbar
@@ -5143,8 +5143,8 @@ SpawnerCatalog = (function()
 		valueLabel.Position = UDim2.new(0, 11, 0, 188)
 		valueLabel.Size = UDim2.new(1, -22, 0, 20)
 		valueLabel.Font = Enum.Font.GothamMedium
-		valueLabel.Text = "Value"
-		valueLabel.TextColor3 = Color3.fromRGB(144, 255, 196)
+		valueLabel.Text = "Currency"
+		valueLabel.TextColor3 = Color3.fromRGB(166, 171, 180)
 		valueLabel.TextSize = 14
 		valueLabel.TextXAlignment = Enum.TextXAlignment.Center
 		valueLabel.ZIndex = 43
@@ -5194,7 +5194,7 @@ SpawnerCatalog = (function()
 			local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
 			SpawnItem(entry.key, amt, "Weapons")
 			spawnerStatusLabel.Text = ("Spawned %s x%s"):format(BuildSpawnerButtonLabel(entry, false), tostring(amt))
-			spawnerStatusLabel.TextColor3 = Color3.fromRGB(110, 226, 170)
+			spawnerStatusLabel.TextColor3 = Color3.fromRGB(192, 197, 205)
 		end)
 
 		local info = {
@@ -5217,7 +5217,7 @@ SpawnerCatalog = (function()
 			info.valueText = GetSpawnerValueText(info.entry)
 			info.sortValue = GetSpawnerValueNumber(info.entry)
 			info.nameLabel.Text = BuildSpawnerButtonLabel(info.entry, false)
-			info.valueLabel.Text = "Value: " .. tostring(info.valueText or "?")
+			info.valueLabel.Text = "Currency: " .. tostring(info.valueText or "?")
 			table.insert(ordered, info)
 		end
 
@@ -5265,7 +5265,7 @@ SpawnerCatalog = (function()
 
 		hintLabel.Text = ("%d of %d items shown"):format(visibleOrder, #ordered)
 		spawnerStatusLabel.Text = ("%d items ready. Catalog window updated."):format(visibleOrder)
-		spawnerStatusLabel.TextColor3 = Color3.fromRGB(184, 218, 255)
+		spawnerStatusLabel.TextColor3 = Color3.fromRGB(163, 168, 178)
 	end
 
 	dismissButton.MouseButton1Click:Connect(function()
