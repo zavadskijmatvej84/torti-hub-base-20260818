@@ -2354,6 +2354,7 @@ PlayerAutoRefreshToggleButton = nil
 PlayerAutoRefreshSecondsBox = nil
 PlayerAutoRefreshStatusLabel = nil
 playerValueRows = {}
+local weaponScrollFrame = nil
 
 local AutoBlockState = {
 	enabled = false,
@@ -2451,155 +2452,158 @@ local function updatePlayerAutoRefreshButtonText()
 end
 
 -- ===== FILL CONTROL TAB =====
-local controlFrame = tabFrames["Control"]
-PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
-PartnerUserBox.FocusLost:Connect(function()
-    TradeTable.Player2.Player = PartnerUserBox.Text
-    PartnerUserBox.Text = TradeTable.Player2.Player
-end)
+do
+	local controlFrame = tabFrames["Control"]
+	PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
+	PartnerUserBox.FocusLost:Connect(function()
+	    TradeTable.Player2.Player = PartnerUserBox.Text
+	    PartnerUserBox.Text = TradeTable.Player2.Player
+	end)
 
-createButton(controlFrame, "Recent trade", function()
-    if LastTradePartner and LastTradePartner ~= "" then
-        TradeTable.Player2.Player = LastTradePartner
-        PartnerUserBox.Text = LastTradePartner
-    end
-end)
+	createButton(controlFrame, "Recent trade", function()
+	    if LastTradePartner and LastTradePartner ~= "" then
+	        TradeTable.Player2.Player = LastTradePartner
+	        PartnerUserBox.Text = LastTradePartner
+	    end
+	end)
 
-createButton(controlFrame, "Random player", function()
-    local FakeTradePartners = {
-        "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
-        "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
-        "SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
-        "VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
-        "MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
-        "NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
-        "AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
-        "OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
-        "PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
-        "DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
-        "CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
-        "StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
-        "SolarFlareKid", "TwilightWisp",
-    }
-    local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
-    TradeTable.Player2.Player = chosen
-    PartnerUserBox.Text = chosen
-    pcall(function()
-        TheirOffer.Username.Text = "(" .. chosen .. ")"
-    end)
-    print("[mm2run/random] picked fake partner: " .. chosen)
-end)
+	createButton(controlFrame, "Random player", function()
+	    local FakeTradePartners = {
+	        "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
+	        "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
+	        "SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
+	        "VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
+	        "MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
+	        "NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
+	        "AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
+	        "OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
+	        "PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
+	        "DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
+	        "CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
+	        "StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
+	        "SolarFlareKid", "TwilightWisp",
+	    }
+	    local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
+	    TradeTable.Player2.Player = chosen
+	    PartnerUserBox.Text = chosen
+	    pcall(function()
+	        TheirOffer.Username.Text = "(" .. chosen .. ")"
+	    end)
+	    print("[mm2run/random] picked fake partner: " .. chosen)
+	end)
 
-createButton(controlFrame, "Start trade", function()
-    StartTrade()
-end)
+	createButton(controlFrame, "Start trade", function()
+	    StartTrade()
+	end)
 
-createButton(controlFrame, "Random items", function()
-    if #weaponButtons == 0 then
-        print("[mm2run/random] item list not built yet")
-        return
-    end
-    local info = weaponButtons[math.random(1, #weaponButtons)]
-    local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
-    if ok then
-        print("[mm2run/random] added random item: " .. info.entry.name)
-    else
-        print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
-    end
-end)
+	createButton(controlFrame, "Random items", function()
+	    if #weaponButtons == 0 then
+	        print("[mm2run/random] item list not built yet")
+	        return
+	    end
+	    local info = weaponButtons[math.random(1, #weaponButtons)]
+	    local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
+	    if ok then
+	        print("[mm2run/random] added random item: " .. info.entry.name)
+	    else
+	        print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
+	    end
+	end)
 
-createButton(controlFrame, "Accept their offer", function()
-    if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
-        return
-    end
-    if v84 then
-        return
-    end
-    TheirOffer.Accepted.Visible = true
-    TradeTable.Player2.Accepted = true
-    AcceptTrade()
-end)
+	createButton(controlFrame, "Accept their offer", function()
+	    if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
+	        return
+	    end
+	    if v84 then
+	        return
+	    end
+	    TheirOffer.Accepted.Visible = true
+	    TradeTable.Player2.Accepted = true
+	    AcceptTrade()
+	end)
 
-createButton(controlFrame, "Block player", function()
-    pcall(function()
-        local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-        if Selected then
-            SilentBlockPlayer(Selected)
-        end
-    end)
-end)
+	createButton(controlFrame, "Block player", function()
+	    pcall(function()
+	        local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
+	        if Selected then
+	            SilentBlockPlayer(Selected)
+	        end
+	    end)
+	end)
+end
 
 -- ===== FILL PLAYERS TAB =====
-local playersFrame = tabFrames["Players"]
 
 -- ===== FILL ITEMS TAB =====
-local itemsFrame = tabFrames["Items"]
-ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
-createButton(itemsFrame, "Add Item To Their Offer", function()
-    local itemToAdd = ItemToAddPartnerBox.Text
-    if itemToAdd and itemToAdd ~= "" then
-        OfferItemAnotherPlayer(itemToAdd, "Weapons")
-    end
-end)
-createButton(itemsFrame, "Remove last Item in Their Offer", function()
-    RemoveItemAnotherPlayer()
-end)
-
-local weaponListLabel = Instance.new("TextLabel")
-weaponListLabel.Size = UDim2.new(1, 0, 0, 15)
-weaponListLabel.BackgroundTransparency = 1
-weaponListLabel.Text = "Click weapon to ADD directly:"
-weaponListLabel.Font = Enum.Font.SourceSansSemibold
-weaponListLabel.TextSize = 12
-weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
-weaponListLabel.Parent = itemsFrame
-
-local weaponScrollFrame = Instance.new("ScrollingFrame")
-weaponScrollFrame.Size = UDim2.new(1, 0, 0, 120)
-weaponScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-weaponScrollFrame.BackgroundTransparency = 0.3
-weaponScrollFrame.BorderSizePixel = 0
-weaponScrollFrame.ScrollBarThickness = 6
-weaponScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
-weaponScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-weaponScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-weaponScrollFrame.Parent = itemsFrame
-
-local function _updateWeaponScrollHeight()
-    local offsetY = weaponScrollFrame.AbsolutePosition.Y - itemsFrame.AbsolutePosition.Y
-    local available = itemsFrame.AbsoluteSize.Y - offsetY - 4
-    weaponScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
-end
-itemsFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateWeaponScrollHeight)
-task.defer(_updateWeaponScrollHeight)
-
 do
-    local weaponScrollCorner = Instance.new("UICorner")
-    weaponScrollCorner.CornerRadius = UDim.new(0, 5)
-    weaponScrollCorner.Parent = weaponScrollFrame
-end
-do
-    local weaponScrollStroke = Instance.new("UIStroke")
-    weaponScrollStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    weaponScrollStroke.Color = Color3.fromRGB(80, 80, 120)
-    weaponScrollStroke.Thickness = 1
-    weaponScrollStroke.Parent = weaponScrollFrame
-end
-do
-    local weaponListLayout = Instance.new("UIListLayout")
-    weaponListLayout.FillDirection = Enum.FillDirection.Vertical
-    weaponListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    weaponListLayout.Padding = UDim.new(0, 2)
-    weaponListLayout.Parent = weaponScrollFrame
-end
-do
-    local weaponListPadding = Instance.new("UIPadding")
-    weaponListPadding.PaddingTop = UDim.new(0, 3)
-    weaponListPadding.PaddingBottom = UDim.new(0, 3)
-    weaponListPadding.PaddingLeft = UDim.new(0, 3)
-    weaponListPadding.PaddingRight = UDim.new(0, 3)
-    weaponListPadding.Parent = weaponScrollFrame
+	local itemsFrame = tabFrames["Items"]
+	ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
+	createButton(itemsFrame, "Add Item To Their Offer", function()
+	    local itemToAdd = ItemToAddPartnerBox.Text
+	    if itemToAdd and itemToAdd ~= "" then
+	        OfferItemAnotherPlayer(itemToAdd, "Weapons")
+	    end
+	end)
+	createButton(itemsFrame, "Remove last Item in Their Offer", function()
+	    RemoveItemAnotherPlayer()
+	end)
+
+	local weaponListLabel = Instance.new("TextLabel")
+	weaponListLabel.Size = UDim2.new(1, 0, 0, 15)
+	weaponListLabel.BackgroundTransparency = 1
+	weaponListLabel.Text = "Click weapon to ADD directly:"
+	weaponListLabel.Font = Enum.Font.SourceSansSemibold
+	weaponListLabel.TextSize = 12
+	weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+	weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
+	weaponListLabel.Parent = itemsFrame
+
+	weaponScrollFrame = Instance.new("ScrollingFrame")
+	weaponScrollFrame.Size = UDim2.new(1, 0, 0, 120)
+	weaponScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+	weaponScrollFrame.BackgroundTransparency = 0.3
+	weaponScrollFrame.BorderSizePixel = 0
+	weaponScrollFrame.ScrollBarThickness = 6
+	weaponScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+	weaponScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	weaponScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	weaponScrollFrame.Parent = itemsFrame
+
+	local function _updateWeaponScrollHeight()
+	    local offsetY = weaponScrollFrame.AbsolutePosition.Y - itemsFrame.AbsolutePosition.Y
+	    local available = itemsFrame.AbsoluteSize.Y - offsetY - 4
+	    weaponScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
+	end
+	itemsFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateWeaponScrollHeight)
+	task.defer(_updateWeaponScrollHeight)
+
+	do
+	    local weaponScrollCorner = Instance.new("UICorner")
+	    weaponScrollCorner.CornerRadius = UDim.new(0, 5)
+	    weaponScrollCorner.Parent = weaponScrollFrame
+	end
+	do
+	    local weaponScrollStroke = Instance.new("UIStroke")
+	    weaponScrollStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	    weaponScrollStroke.Color = Color3.fromRGB(80, 80, 120)
+	    weaponScrollStroke.Thickness = 1
+	    weaponScrollStroke.Parent = weaponScrollFrame
+	end
+	do
+	    local weaponListLayout = Instance.new("UIListLayout")
+	    weaponListLayout.FillDirection = Enum.FillDirection.Vertical
+	    weaponListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	    weaponListLayout.Padding = UDim.new(0, 2)
+	    weaponListLayout.Parent = weaponScrollFrame
+	end
+	do
+	    local weaponListPadding = Instance.new("UIPadding")
+	    weaponListPadding.PaddingTop = UDim.new(0, 3)
+	    weaponListPadding.PaddingBottom = UDim.new(0, 3)
+	    weaponListPadding.PaddingLeft = UDim.new(0, 3)
+	    weaponListPadding.PaddingRight = UDim.new(0, 3)
+	    weaponListPadding.Parent = weaponScrollFrame
+	end
 end
 
 -- ===== FILL SPAWNER TAB =====
@@ -4110,6 +4114,7 @@ local function FetchAllValues(onProgress)
     return all, true
 end
 
+do
 local valuesFrame = tabFrames["Values"]
 local function RebuildValuesIndex()
 	Values.byName = {}
@@ -4315,8 +4320,10 @@ valueSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 task.spawn(function() LoadFullCatalog(false) end)
+end
 
 -- ===== CONFIG TAB =====
+do
 local configFrame = tabFrames["Config"]
 
 local configNameBox = createInput(configFrame, "Config name:", "")
@@ -4491,8 +4498,10 @@ local function RefreshConfigsList()
 end
 
 RefreshConfigsList()
+end
 
 -- ===== OTHER TAB =====
+do
 local otherFrame = tabFrames["Other"]
 
 local otherIntro = Instance.new("TextLabel")
@@ -4552,6 +4561,7 @@ AutoBlockStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
 AutoBlockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 AutoBlockStatusLabel.Parent = otherFrame
+end
 
 updateAutoBlockButtonText()
 
@@ -5441,6 +5451,7 @@ if RefreshSpawnerButtons then
 end
 
 -- === PLAYERS TAB VALUES ===
+local playersFrame = tabFrames["Players"]
 local playersStatusLabel = Instance.new("TextLabel")
 playersStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 playersStatusLabel.BackgroundTransparency = 1
