@@ -195,6 +195,104 @@ end
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local CoreGui = game:GetService("CoreGui")
+
+local function resolveGuiParent()
+	local candidates = {
+		type(gethui) == "function" and gethui or nil,
+		type(get_hidden_gui) == "function" and get_hidden_gui or nil,
+	}
+	for _, getter in ipairs(candidates) do
+		if getter then
+			local ok, result = pcall(getter)
+			if ok and typeof(result) == "Instance" then
+				return result
+			end
+		end
+	end
+	return CoreGui
+end
+
+local GuiParent = resolveGuiParent()
+
+local function destroyNamedGui(name)
+	local visited = {}
+	for _, parent in ipairs({GuiParent, CoreGui}) do
+		if typeof(parent) == "Instance" and not visited[parent] then
+			visited[parent] = true
+			local existing = parent:FindFirstChild(name)
+			if existing then
+				existing:Destroy()
+			end
+		end
+	end
+end
+
+destroyNamedGui("TortiHubBootstrapGui")
+
+local bootstrapGui = Instance.new("ScreenGui")
+bootstrapGui.Name = "TortiHubBootstrapGui"
+bootstrapGui.ResetOnSpawn = false
+bootstrapGui.IgnoreGuiInset = true
+bootstrapGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pcall(function()
+	bootstrapGui.Parent = GuiParent
+end)
+if not bootstrapGui.Parent then
+	bootstrapGui.Parent = CoreGui
+end
+
+local bootstrapFrame = Instance.new("Frame")
+bootstrapFrame.Size = UDim2.new(0, 320, 0, 104)
+bootstrapFrame.Position = UDim2.new(0.5, -160, 0.5, -52)
+bootstrapFrame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
+bootstrapFrame.BackgroundTransparency = 0.08
+bootstrapFrame.BorderSizePixel = 0
+bootstrapFrame.Parent = bootstrapGui
+
+local bootstrapCorner = Instance.new("UICorner")
+bootstrapCorner.CornerRadius = UDim.new(0, 20)
+bootstrapCorner.Parent = bootstrapFrame
+
+local bootstrapStroke = Instance.new("UIStroke")
+bootstrapStroke.Color = Color3.fromRGB(255, 255, 255)
+bootstrapStroke.Thickness = 1
+bootstrapStroke.Transparency = 0.86
+bootstrapStroke.Parent = bootstrapFrame
+
+local bootstrapTitle = Instance.new("TextLabel")
+bootstrapTitle.Size = UDim2.new(1, -24, 0, 28)
+bootstrapTitle.Position = UDim2.new(0, 12, 0, 14)
+bootstrapTitle.BackgroundTransparency = 1
+bootstrapTitle.Text = "Torti hub"
+bootstrapTitle.Font = Enum.Font.GothamBold
+bootstrapTitle.TextSize = 22
+bootstrapTitle.TextColor3 = Color3.fromRGB(242, 244, 248)
+bootstrapTitle.TextXAlignment = Enum.TextXAlignment.Left
+bootstrapTitle.Parent = bootstrapFrame
+
+local bootstrapStatusLabel = Instance.new("TextLabel")
+bootstrapStatusLabel.Size = UDim2.new(1, -24, 0, 40)
+bootstrapStatusLabel.Position = UDim2.new(0, 12, 0, 48)
+bootstrapStatusLabel.BackgroundTransparency = 1
+bootstrapStatusLabel.Text = "Loading..."
+bootstrapStatusLabel.Font = Enum.Font.Gotham
+bootstrapStatusLabel.TextSize = 14
+bootstrapStatusLabel.TextWrapped = true
+bootstrapStatusLabel.TextColor3 = Color3.fromRGB(186, 190, 198)
+bootstrapStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+bootstrapStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+bootstrapStatusLabel.Parent = bootstrapFrame
+
+local function setBootstrapStatus(text, color)
+	bootstrapStatusLabel.Text = tostring(text)
+	if color then
+		bootstrapStatusLabel.TextColor3 = color
+	end
+	print("[torti/bootstrap] " .. tostring(text))
+end
+
+setBootstrapStatus("Waiting for MM2 services...", Color3.fromRGB(186, 190, 198))
 
 local function waitForPath(root, path, timeout)
 	local current = root
@@ -212,6 +310,7 @@ end
 
 local function bootstrapFail(message)
 	warn("[torti] bootstrap failed: " .. tostring(message))
+	setBootstrapStatus(tostring(message), Color3.fromRGB(255, 140, 140))
 	pcall(function()
 		game:GetService("StarterGui"):SetCore("SendNotification", {
 			Title = "Torti Hub",
@@ -223,6 +322,7 @@ local function bootstrapFail(message)
 end
 
 pcall(function() setthreadidentity(2) end)
+setBootstrapStatus("Waiting for MM2 folders...", Color3.fromRGB(186, 190, 198))
 local ModulesFolder = waitForPath(ReplicatedStorage, {"Modules"}, 20)
 local DatabaseFolder = waitForPath(ReplicatedStorage, {"Database"}, 20)
 local ClientServicesFolder = waitForPath(ReplicatedStorage, {"ClientServices"}, 20)
@@ -239,6 +339,7 @@ if not ProfileDataModule or not InventoryModuleScript or not ItemModuleScript or
 	bootstrapFail("Required MM2 modules are missing. Check the game and inject later.")
 end
 
+setBootstrapStatus("Loading MM2 modules...", Color3.fromRGB(186, 190, 198))
 local ProfileData = require(ProfileDataModule)
 local InventoryModule = require(InventoryModuleScript)
 local ItemModule = require(ItemModuleScript)
@@ -246,6 +347,7 @@ local Sync = require(SyncModule)
 local ItemPopupService = require(ItemPopupServiceModule)
 pcall(function() setthreadidentity(8) end)
 
+setBootstrapStatus("Waiting for trade UI...", Color3.fromRGB(186, 190, 198))
 local TradeRemotes = waitForPath(ReplicatedStorage, {"Trade"}, 20)
 local TradeGUI = waitForPath(PlayerGui, {"TradeGUI"}, 20)
 local TradeContainer = TradeGUI and waitForPath(TradeGUI, {"Container", "Trade"}, 20)
@@ -1885,17 +1987,27 @@ end
 -- GUI
 -- ============================================================
 
-local oldGui = game:GetService("CoreGui"):FindFirstChild("TortiHubGui")
-if oldGui then
-    oldGui:Destroy()
-end
+setBootstrapStatus("Building interface...", Color3.fromRGB(180, 220, 255))
+destroyNamedGui("TortiHubGui")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "TortiHubGui"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = game:GetService("CoreGui")
+pcall(function()
+	if type(syn) == "table" and type(syn.protect_gui) == "function" then
+		syn.protect_gui(gui)
+	elseif type(protectgui) == "function" then
+		protectgui(gui)
+	end
+end)
+pcall(function()
+	gui.Parent = GuiParent
+end)
+if not gui.Parent then
+	gui.Parent = CoreGui
+end
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 400, 0, 520)
@@ -1905,6 +2017,7 @@ frame.BackgroundTransparency = 0.08
 frame.BorderSizePixel = 0
 frame.ClipsDescendants = true
 frame.Parent = gui
+destroyNamedGui("TortiHubBootstrapGui")
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 22)
