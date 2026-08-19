@@ -89,6 +89,12 @@ local function createInput(parent, label, default)
     return box
 end
 
+local function createBindableButton(parent, text, actionId, callback, bindLabel)
+    local btn = createButton(parent, text, callback)
+    registerBindableAction(actionId, bindLabel or text, btn, callback)
+    return btn
+end
+
 -- Global GUI elements
 PartnerUserBox = nil
 ItemToAddPartnerBox = nil
@@ -209,14 +215,14 @@ PartnerUserBox.FocusLost:Connect(function()
     PartnerUserBox.Text = TradeTable.Player2.Player
 end)
 
-createButton(controlFrame, "Recent trade", function()
+createBindableButton(controlFrame, "Recent trade", "control_recent_trade", function()
     if LastTradePartner and LastTradePartner ~= "" then
         TradeTable.Player2.Player = LastTradePartner
         PartnerUserBox.Text = LastTradePartner
     end
 end)
 
-createButton(controlFrame, "Random player", function()
+createBindableButton(controlFrame, "Random player", "control_random_player", function()
     local FakeTradePartners = {
         "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
         "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
@@ -241,11 +247,11 @@ createButton(controlFrame, "Random player", function()
     print("[mm2run/random] picked fake partner: " .. chosen)
 end)
 
-createButton(controlFrame, "Start trade", function()
+createBindableButton(controlFrame, "Start trade", "control_start_trade", function()
     StartTrade()
 end)
 
-createButton(controlFrame, "Random items", function()
+createBindableButton(controlFrame, "Random items", "control_random_items", function()
     if #weaponButtons == 0 then
         print("[mm2run/random] item list not built yet")
         return
@@ -259,7 +265,7 @@ createButton(controlFrame, "Random items", function()
     end
 end)
 
-createButton(controlFrame, "Accept their offer", function()
+createBindableButton(controlFrame, "Accept their offer", "control_accept_offer", function()
     if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
         return
     end
@@ -271,7 +277,7 @@ createButton(controlFrame, "Accept their offer", function()
     AcceptTrade()
 end)
 
-createButton(controlFrame, "Block player", function()
+createBindableButton(controlFrame, "Block player", "control_block_player", function()
     pcall(function()
         local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
         if Selected then
@@ -286,13 +292,13 @@ local playersFrame = tabFrames["Players"]
 -- ===== FILL ITEMS TAB =====
 local itemsFrame = tabFrames["Items"]
 ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
-createButton(itemsFrame, "Add Item To Their Offer", function()
+createBindableButton(itemsFrame, "Add Item To Their Offer", "items_add_to_offer", function()
     local itemToAdd = ItemToAddPartnerBox.Text
     if itemToAdd and itemToAdd ~= "" then
         OfferItemAnotherPlayer(itemToAdd, "Weapons")
     end
 end)
-createButton(itemsFrame, "Remove last Item in Their Offer", function()
+createBindableButton(itemsFrame, "Remove last Item in Their Offer", "items_remove_last_offer", function()
     RemoveItemAnotherPlayer()
 end)
 
@@ -370,7 +376,7 @@ local function GetSpawnerSortButtonText()
 	return "Sort: Normal"
 end
 
-SpawnerSortButton = createButton(spawnerFrame, GetSpawnerSortButtonText(), function()
+SpawnerSortButton = createBindableButton(spawnerFrame, GetSpawnerSortButtonText(), "spawner_sort_mode", function()
 	if SpawnerSortMode == "default" then
 		SpawnerSortMode = "value_desc"
 	elseif SpawnerSortMode == "value_desc" then

@@ -1033,7 +1033,7 @@ local function LoadFullCatalog(force)
 	end)
 end
 
-createButton(valuesFrame, "Refresh catalog", function()
+createBindableButton(valuesFrame, "Refresh catalog", "values_refresh_catalog", function()
 	LoadFullCatalog(true)
 end)
 

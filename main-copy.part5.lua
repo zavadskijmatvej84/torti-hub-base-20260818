@@ -10,7 +10,7 @@ local configFrame = tabFrames["Config"]
 
 local configNameBox = createInput(configFrame, "Config name:", "")
 
-createButton(configFrame, "Save Config", function()
+createBindableButton(configFrame, "Save Config", "config_save", function()
     local name = configNameBox.Text
     if name == "" then
         print("[mm2run/config] empty name")
@@ -32,7 +32,7 @@ createButton(configFrame, "Save Config", function()
     end)
 end)
 
-local clearBtn = createButton(configFrame, "Clear Inventory", function()
+local clearBtn = createBindableButton(configFrame, "Clear Inventory", "config_clear_inventory", function()
     pcall(function()
         InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", {}, false)
         InventoryOverlay.SetVisibleOwnedSnapshot("Pets", {}, false)
@@ -196,7 +196,7 @@ otherIntro.TextXAlignment = Enum.TextXAlignment.Left
 otherIntro.TextYAlignment = Enum.TextYAlignment.Top
 otherIntro.Parent = otherFrame
 
-AutoBlockToggleButton = createButton(otherFrame, "Auto block: OFF", function()
+AutoBlockToggleButton = createBindableButton(otherFrame, "Auto block: OFF", "other_auto_block_toggle", function()
 	syncAutoBlockSettingsFromInputs()
 	AutoBlockState.enabled = not AutoBlockState.enabled
 	AutoBlockState.progressByName = {}
@@ -324,9 +324,12 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
-closeBtn.MouseButton1Click:Connect(function()
+local function closeHub()
     gui:Destroy()
-end)
+end
+
+closeBtn.MouseButton1Click:Connect(closeHub)
+registerBindableAction("hub_close", "Close hub", closeBtn, closeHub)
 
 -- ===== POPULATE WEAPONS, PLAYERS & VALUES =====
 
@@ -814,11 +817,11 @@ RefreshPlayerValues = function()
 	end
 end
 
-createButton(playersFrame, "Refresh values", function()
+createBindableButton(playersFrame, "Refresh values", "players_refresh_values", function()
 	RefreshPlayerValues()
 end)
 
-PlayerAutoRefreshToggleButton = createButton(playersFrame, "Auto refresh: OFF", function()
+PlayerAutoRefreshToggleButton = createBindableButton(playersFrame, "Auto refresh: OFF", "players_auto_refresh_toggle", function()
 	syncPlayerAutoRefreshSettingsFromInputs()
 	PlayerValuesAutoRefreshState.enabled = not PlayerValuesAutoRefreshState.enabled
 	PlayerValuesAutoRefreshState.lastRefreshAt = tick()
@@ -850,6 +853,149 @@ PlayerAutoRefreshStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 PlayerAutoRefreshStatusLabel.Parent = playersFrame
 
 updatePlayerAutoRefreshButtonText()
+
+local keybindsLabel = Instance.new("TextLabel")
+keybindsLabel.Size = UDim2.new(1, 0, 0, 18)
+keybindsLabel.BackgroundTransparency = 1
+keybindsLabel.Text = "Keybinds"
+keybindsLabel.Font = Enum.Font.GothamMedium
+keybindsLabel.TextSize = 14
+keybindsLabel.TextColor3 = Color3.fromRGB(212, 220, 233)
+keybindsLabel.TextXAlignment = Enum.TextXAlignment.Left
+keybindsLabel.Parent = playersFrame
+
+KeybindStatusLabel = Instance.new("TextLabel")
+KeybindStatusLabel.Size = UDim2.new(1, 0, 0, 36)
+KeybindStatusLabel.BackgroundTransparency = 1
+KeybindStatusLabel.Text = "Choose an action, press Bind, then press your key."
+KeybindStatusLabel.Font = Enum.Font.Gotham
+KeybindStatusLabel.TextSize = 12
+KeybindStatusLabel.TextWrapped = true
+KeybindStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
+KeybindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+KeybindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+KeybindStatusLabel.Parent = playersFrame
+
+KeybindListFrame = Instance.new("ScrollingFrame")
+KeybindListFrame.Size = UDim2.new(1, 0, 0, 220)
+KeybindListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+KeybindListFrame.BackgroundTransparency = 0.3
+KeybindListFrame.BorderSizePixel = 0
+KeybindListFrame.ScrollBarThickness = 6
+KeybindListFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+KeybindListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+KeybindListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+KeybindListFrame.Parent = playersFrame
+
+do
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 5)
+	c.Parent = KeybindListFrame
+
+	local lay = Instance.new("UIListLayout")
+	lay.FillDirection = Enum.FillDirection.Vertical
+	lay.SortOrder = Enum.SortOrder.LayoutOrder
+	lay.Padding = UDim.new(0, 4)
+	lay.Parent = KeybindListFrame
+
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 4)
+	pad.PaddingBottom = UDim.new(0, 4)
+	pad.PaddingLeft = UDim.new(0, 4)
+	pad.PaddingRight = UDim.new(0, 4)
+	pad.Parent = KeybindListFrame
+end
+
+RefreshKeybindRows = function()
+	if not KeybindListFrame then
+		return
+	end
+
+	for _, child in pairs(KeybindListFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for _, actionId in ipairs(KeybindActionOrder) do
+		local action = KeybindActions[actionId]
+		if action then
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, -6, 0, 48)
+			row.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+			row.BackgroundTransparency = 0.3
+			row.Parent = KeybindListFrame
+
+			local rc = Instance.new("UICorner")
+			rc.CornerRadius = UDim.new(0, 6)
+			rc.Parent = row
+
+			local nameLbl = Instance.new("TextLabel")
+			nameLbl.Size = UDim2.new(0.52, -8, 1, 0)
+			nameLbl.Position = UDim2.new(0, 8, 0, 0)
+			nameLbl.BackgroundTransparency = 1
+			nameLbl.Text = action.label
+			nameLbl.Font = Enum.Font.GothamSemibold
+			nameLbl.TextSize = 12
+			nameLbl.TextColor3 = Color3.fromRGB(240, 240, 250)
+			nameLbl.TextWrapped = true
+			nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+			nameLbl.TextYAlignment = Enum.TextYAlignment.Center
+			nameLbl.Parent = row
+
+			local keyLbl = Instance.new("TextLabel")
+			keyLbl.Size = UDim2.new(0.16, 0, 1, 0)
+			keyLbl.Position = UDim2.new(0.52, 0, 0, 0)
+			keyLbl.BackgroundTransparency = 1
+			keyLbl.Text = keybindDisplayName(KeybindAssignments[actionId])
+			keyLbl.Font = Enum.Font.GothamBold
+			keyLbl.TextSize = 12
+			keyLbl.TextColor3 = Color3.fromRGB(180, 220, 255)
+			keyLbl.TextXAlignment = Enum.TextXAlignment.Center
+			keyLbl.Parent = row
+
+			local bindBtn = Instance.new("TextButton")
+			bindBtn.Size = UDim2.new(0, 62, 0, 26)
+			bindBtn.Position = UDim2.new(1, -132, 0.5, -13)
+			bindBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 220)
+			bindBtn.BorderSizePixel = 0
+			bindBtn.Text = KeybindWaitingActionId == actionId and "Press..." or "Bind"
+			bindBtn.Font = Enum.Font.Gotham
+			bindBtn.TextSize = 11
+			bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			bindBtn.Parent = row
+
+			local bindCorner = Instance.new("UICorner")
+			bindCorner.CornerRadius = UDim.new(0, 4)
+			bindCorner.Parent = bindBtn
+
+			local clearBtn = Instance.new("TextButton")
+			clearBtn.Size = UDim2.new(0, 54, 0, 26)
+			clearBtn.Position = UDim2.new(1, -64, 0.5, -13)
+			clearBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+			clearBtn.BorderSizePixel = 0
+			clearBtn.Text = "Clear"
+			clearBtn.Font = Enum.Font.Gotham
+			clearBtn.TextSize = 11
+			clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			clearBtn.Parent = row
+
+			local clearCorner = Instance.new("UICorner")
+			clearCorner.CornerRadius = UDim.new(0, 4)
+			clearCorner.Parent = clearBtn
+
+			bindBtn.MouseButton1Click:Connect(function()
+				beginKeybindCapture(actionId)
+			end)
+
+			clearBtn.MouseButton1Click:Connect(function()
+				clearKeybindAssignment(actionId)
+			end)
+		end
+	end
+end
+
+RefreshKeybindRows()
 
 task.defer(function()
 	RefreshPlayerValues()
@@ -1035,5 +1181,4 @@ task.spawn(function()
 end)
 
 print("[mm2run] System merged and running successfully!")
-
 

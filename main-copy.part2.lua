@@ -941,6 +941,194 @@ local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Conf
 local tabButtons = {}
 local tabFrames = {}
 local activeTab = "Control"
+local KeybindStoragePath = "mm2run_keybinds.json"
+local KeybindActions = {}
+local KeybindActionOrder = {}
+local KeybindAssignments = {}
+local KeybindListFrame = nil
+local KeybindStatusLabel = nil
+local KeybindWaitingActionId = nil
+local RefreshKeybindRows = function() end
+
+local function keybindDisplayName(keyName)
+    if type(keyName) ~= "string" or keyName == "" then
+        return "None"
+    end
+    return keyName
+end
+
+local function setKeybindStatus(text, color)
+    if not KeybindStatusLabel then
+        return
+    end
+    KeybindStatusLabel.Text = tostring(text or "")
+    if color then
+        KeybindStatusLabel.TextColor3 = color
+    end
+end
+
+local function saveKeybindAssignments()
+    if type(writefile) ~= "function" then
+        return
+    end
+    local okEncode, encoded = pcall(function()
+        return game:GetService("HttpService"):JSONEncode(KeybindAssignments)
+    end)
+    if okEncode and type(encoded) == "string" then
+        pcall(writefile, KeybindStoragePath, encoded)
+    end
+end
+
+local function loadKeybindAssignments()
+    if type(readfile) ~= "function" then
+        return
+    end
+    local okRead, body = pcall(readfile, KeybindStoragePath)
+    if not okRead or type(body) ~= "string" or body == "" then
+        return
+    end
+    local okDecode, decoded = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(body)
+    end)
+    if not okDecode or type(decoded) ~= "table" then
+        return
+    end
+    for actionId, keyName in pairs(decoded) do
+        if type(actionId) == "string" and type(keyName) == "string" and keyName ~= "" then
+            KeybindAssignments[actionId] = keyName
+        end
+    end
+end
+
+local function pulseBoundButton(button)
+    if not button or not button.Parent then
+        return
+    end
+    local originalTransparency = button.BackgroundTransparency
+    TweenService:Create(button, TweenInfo.new(0.08), {BackgroundTransparency = math.max(0.6, originalTransparency - 0.16)}):Play()
+    task.delay(0.12, function()
+        if button.Parent then
+            TweenService:Create(button, TweenInfo.new(0.12), {BackgroundTransparency = originalTransparency}):Play()
+        end
+    end)
+end
+
+local function activateKeybindAction(actionId)
+    local action = KeybindActions[actionId]
+    if not action or type(action.callback) ~= "function" then
+        return
+    end
+    pulseBoundButton(action.button)
+    task.spawn(function()
+        local okRun, runErr = pcall(action.callback)
+        if not okRun then
+            warn("[mm2run/keybind] failed action " .. tostring(actionId) .. ": " .. tostring(runErr))
+        end
+    end)
+end
+
+local function clearKeybindAssignment(actionId, silent)
+    KeybindAssignments[actionId] = nil
+    saveKeybindAssignments()
+    if not silent then
+        local action = KeybindActions[actionId]
+        setKeybindStatus(("Cleared keybind for %s"):format(action and action.label or actionId), Color3.fromRGB(180, 183, 192))
+    end
+    RefreshKeybindRows()
+end
+
+local function assignKeybind(actionId, keyName)
+    if type(keyName) ~= "string" or keyName == "" then
+        clearKeybindAssignment(actionId)
+        return
+    end
+    for otherActionId, otherKeyName in pairs(KeybindAssignments) do
+        if otherActionId ~= actionId and otherKeyName == keyName then
+            KeybindAssignments[otherActionId] = nil
+        end
+    end
+    KeybindAssignments[actionId] = keyName
+    saveKeybindAssignments()
+    local action = KeybindActions[actionId]
+    setKeybindStatus(("%s -> %s"):format(action and action.label or actionId, keybindDisplayName(keyName)), Color3.fromRGB(150, 220, 150))
+    RefreshKeybindRows()
+end
+
+local function beginKeybindCapture(actionId)
+    local action = KeybindActions[actionId]
+    if not action then
+        return
+    end
+    KeybindWaitingActionId = actionId
+    setKeybindStatus(('Press a key for "%s". Esc cancels, Backspace clears.'):format(action.label), Color3.fromRGB(255, 220, 100))
+    RefreshKeybindRows()
+end
+
+local function registerBindableAction(actionId, label, button, callback)
+    if type(actionId) ~= "string" or actionId == "" or type(callback) ~= "function" then
+        return button
+    end
+    if not KeybindActions[actionId] then
+        table.insert(KeybindActionOrder, actionId)
+    end
+    KeybindActions[actionId] = {
+        id = actionId,
+        label = label or actionId,
+        button = button,
+        callback = callback,
+    }
+    RefreshKeybindRows()
+    return button
+end
+
+loadKeybindAssignments()
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.UserInputType ~= Enum.UserInputType.Keyboard then
+        return
+    end
+
+    if KeybindWaitingActionId then
+        local waitingActionId = KeybindWaitingActionId
+        KeybindWaitingActionId = nil
+
+        if input.KeyCode == Enum.KeyCode.Escape then
+            setKeybindStatus("Keybind capture cancelled.", Color3.fromRGB(180, 183, 192))
+            RefreshKeybindRows()
+            return
+        end
+
+        if input.KeyCode == Enum.KeyCode.Backspace then
+            clearKeybindAssignment(waitingActionId)
+            return
+        end
+
+        if input.KeyCode == Enum.KeyCode.Unknown then
+            setKeybindStatus("Unknown key. Try another one.", Color3.fromRGB(255, 140, 140))
+            RefreshKeybindRows()
+            return
+        end
+
+        assignKeybind(waitingActionId, input.KeyCode.Name)
+        return
+    end
+
+    if gameProcessedEvent or UserInputService:GetFocusedTextBox() then
+        return
+    end
+
+    local pressedKeyName = input.KeyCode and input.KeyCode.Name
+    if type(pressedKeyName) ~= "string" or pressedKeyName == "" or input.KeyCode == Enum.KeyCode.Unknown then
+        return
+    end
+
+    for _, actionId in ipairs(KeybindActionOrder) do
+        if KeybindAssignments[actionId] == pressedKeyName then
+            activateKeybindAction(actionId)
+            break
+        end
+    end
+end)
 
 local function setActiveTab(name)
     for _, f in pairs(tabFrames) do
@@ -1024,6 +1212,10 @@ for i, name in ipairs(tabs) do
     end)
 
     btn.MouseButton1Click:Connect(function()
+        setActiveTab(name)
+    end)
+
+    registerBindableAction("tab_" .. string.lower(name), "Open " .. name .. " tab", btn, function()
         setActiveTab(name)
     end)
 end
