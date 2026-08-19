@@ -1,6 +1,7 @@
 local StarterGui = game:GetService("StarterGui")
 
 local BASE_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818/main/"
+local BUILD_VERSION = "5012d9d"
 local PART_FILES = {
 	"main-copy.part1.lua",
 	"main-copy.part2.lua",
@@ -23,7 +24,7 @@ local chunks = table.create(#PART_FILES)
 
 for index, fileName in ipairs(PART_FILES) do
 	local ok, response = pcall(function()
-		return game:HttpGet(BASE_URL .. fileName)
+		return game:HttpGet(BASE_URL .. fileName .. "?v=" .. BUILD_VERSION)
 	end)
 	if not ok or type(response) ~= "string" or response == "" then
 		notify(("Failed to load part %d"):format(index))
@@ -34,7 +35,7 @@ end
 
 local compiled, loadErr = loadstring(table.concat(chunks, "\n"))
 if not compiled then
-	notify("Split script compile failed")
+	notify("Split compile failed: " .. tostring(loadErr))
 	error(loadErr)
 end
 
