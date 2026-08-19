@@ -200,32 +200,32 @@ local function v34(v23, v24)
 		local ItemType = v26[3] or v26.ItemType
 
 		local v33 = v23.Container["NewItem" .. v25]
-		if not v33 then continue end
-
-		local success = pcall(function()
-			if Sync[ItemType] and Sync[ItemType][ItemID] then
-				local v30 = {}
-				for v31, v32 in pairs(Sync[ItemType][ItemID]) do
-					v30[v31] = v32
+		if v33 then
+			local success = pcall(function()
+				if Sync[ItemType] and Sync[ItemType][ItemID] then
+					local v30 = {}
+					for v31, v32 in pairs(Sync[ItemType][ItemID]) do
+						v30[v31] = v32
+					end
+					v30.DataType = ItemType
+					v30.Amount = Amount
+					ItemModule.DisplayItem(v33, v30)
 				end
-				v30.DataType = ItemType
-				v30.Amount = Amount
-				ItemModule.DisplayItem(v33, v30)
-			end
-		end)
+			end)
 
-		pcall(function()
-			if v18[v33] then
-				v18[v33]:Disconnect()
-			end
-			if v33.Container and v33.Container:FindFirstChild("ActionButton") then
-				v18[v33] = v33.Container.ActionButton.MouseButton1Click:Connect(function()
-					RemoveItemLocalPlayer(ItemID, ItemType)
-				end)
-			end
-		end)
+			pcall(function()
+				if v18[v33] then
+					v18[v33]:Disconnect()
+				end
+				if v33.Container and v33.Container:FindFirstChild("ActionButton") then
+					v18[v33] = v33.Container.ActionButton.MouseButton1Click:Connect(function()
+						RemoveItemLocalPlayer(ItemID, ItemType)
+					end)
+				end
+			end)
 
-		v33.Visible = true
+			v33.Visible = true
+		end
 	end
 end
 
