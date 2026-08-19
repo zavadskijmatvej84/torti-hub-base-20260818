@@ -188,174 +188,18 @@ local function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
 end
 
-if not game:IsLoaded() then
-	game.Loaded:Wait()
-end
-
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local CoreGui = game:GetService("CoreGui")
-
-local function resolveGuiParent()
-	local candidates = {
-		type(gethui) == "function" and gethui or nil,
-		type(get_hidden_gui) == "function" and get_hidden_gui or nil,
-	}
-	for _, getter in ipairs(candidates) do
-		if getter then
-			local ok, result = pcall(getter)
-			if ok and typeof(result) == "Instance" then
-				return result
-			end
-		end
-	end
-	return CoreGui
-end
-
-local GuiParent = resolveGuiParent()
-
-local function destroyNamedGui(name)
-	local visited = {}
-	for _, parent in ipairs({GuiParent, CoreGui}) do
-		if typeof(parent) == "Instance" and not visited[parent] then
-			visited[parent] = true
-			local existing = parent:FindFirstChild(name)
-			if existing then
-				existing:Destroy()
-			end
-		end
-	end
-end
-
-destroyNamedGui("TortiHubBootstrapGui")
-
-local bootstrapGui = Instance.new("ScreenGui")
-bootstrapGui.Name = "TortiHubBootstrapGui"
-bootstrapGui.ResetOnSpawn = false
-bootstrapGui.IgnoreGuiInset = true
-bootstrapGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-pcall(function()
-	bootstrapGui.Parent = GuiParent
-end)
-if not bootstrapGui.Parent then
-	bootstrapGui.Parent = CoreGui
-end
-
-local bootstrapFrame = Instance.new("Frame")
-bootstrapFrame.Size = UDim2.new(0, 320, 0, 104)
-bootstrapFrame.Position = UDim2.new(0.5, -160, 0.5, -52)
-bootstrapFrame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
-bootstrapFrame.BackgroundTransparency = 0.08
-bootstrapFrame.BorderSizePixel = 0
-bootstrapFrame.Parent = bootstrapGui
-
-local bootstrapCorner = Instance.new("UICorner")
-bootstrapCorner.CornerRadius = UDim.new(0, 20)
-bootstrapCorner.Parent = bootstrapFrame
-
-local bootstrapStroke = Instance.new("UIStroke")
-bootstrapStroke.Color = Color3.fromRGB(255, 255, 255)
-bootstrapStroke.Thickness = 1
-bootstrapStroke.Transparency = 0.86
-bootstrapStroke.Parent = bootstrapFrame
-
-local bootstrapTitle = Instance.new("TextLabel")
-bootstrapTitle.Size = UDim2.new(1, -24, 0, 28)
-bootstrapTitle.Position = UDim2.new(0, 12, 0, 14)
-bootstrapTitle.BackgroundTransparency = 1
-bootstrapTitle.Text = "Torti hub"
-bootstrapTitle.Font = Enum.Font.GothamBold
-bootstrapTitle.TextSize = 22
-bootstrapTitle.TextColor3 = Color3.fromRGB(242, 244, 248)
-bootstrapTitle.TextXAlignment = Enum.TextXAlignment.Left
-bootstrapTitle.Parent = bootstrapFrame
-
-local bootstrapStatusLabel = Instance.new("TextLabel")
-bootstrapStatusLabel.Size = UDim2.new(1, -24, 0, 40)
-bootstrapStatusLabel.Position = UDim2.new(0, 12, 0, 48)
-bootstrapStatusLabel.BackgroundTransparency = 1
-bootstrapStatusLabel.Text = "Loading..."
-bootstrapStatusLabel.Font = Enum.Font.Gotham
-bootstrapStatusLabel.TextSize = 14
-bootstrapStatusLabel.TextWrapped = true
-bootstrapStatusLabel.TextColor3 = Color3.fromRGB(186, 190, 198)
-bootstrapStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-bootstrapStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
-bootstrapStatusLabel.Parent = bootstrapFrame
-
-local function setBootstrapStatus(text, color)
-	bootstrapStatusLabel.Text = tostring(text)
-	if color then
-		bootstrapStatusLabel.TextColor3 = color
-	end
-	print("[torti/bootstrap] " .. tostring(text))
-end
-
-setBootstrapStatus("Waiting for MM2 services...", Color3.fromRGB(186, 190, 198))
-
-local function waitForPath(root, path, timeout)
-	local current = root
-	for _, childName in ipairs(path) do
-		if typeof(current) ~= "Instance" then
-			return nil
-		end
-		current = current:WaitForChild(childName, timeout or 15)
-		if not current then
-			return nil
-		end
-	end
-	return current
-end
-
-local function bootstrapFail(message)
-	warn("[torti] bootstrap failed: " .. tostring(message))
-	setBootstrapStatus(tostring(message), Color3.fromRGB(255, 140, 140))
-	pcall(function()
-		game:GetService("StarterGui"):SetCore("SendNotification", {
-			Title = "Torti Hub",
-			Text = tostring(message),
-			Duration = 8,
-		})
-	end)
-	error(message, 0)
-end
-
 pcall(function() setthreadidentity(2) end)
-setBootstrapStatus("Waiting for MM2 folders...", Color3.fromRGB(186, 190, 198))
-local ModulesFolder = waitForPath(ReplicatedStorage, {"Modules"}, 20)
-local DatabaseFolder = waitForPath(ReplicatedStorage, {"Database"}, 20)
-local ClientServicesFolder = waitForPath(ReplicatedStorage, {"ClientServices"}, 20)
-if not ModulesFolder or not DatabaseFolder or not ClientServicesFolder then
-	bootstrapFail("Required MM2 folders were not found. Inject after the game fully loads.")
-end
-
-local ProfileDataModule = ModulesFolder:FindFirstChild("ProfileData")
-local InventoryModuleScript = ModulesFolder:FindFirstChild("InventoryModule")
-local ItemModuleScript = ModulesFolder:FindFirstChild("ItemModule")
-local SyncModule = DatabaseFolder:FindFirstChild("Sync")
-local ItemPopupServiceModule = ClientServicesFolder:FindFirstChild("ItemPopupService")
-if not ProfileDataModule or not InventoryModuleScript or not ItemModuleScript or not SyncModule or not ItemPopupServiceModule then
-	bootstrapFail("Required MM2 modules are missing. Check the game and inject later.")
-end
-
-setBootstrapStatus("Loading MM2 modules...", Color3.fromRGB(186, 190, 198))
-local ProfileData = require(ProfileDataModule)
-local InventoryModule = require(InventoryModuleScript)
-local ItemModule = require(ItemModuleScript)
-local Sync = require(SyncModule)
-local ItemPopupService = require(ItemPopupServiceModule)
+local ProfileData = require(game.ReplicatedStorage.Modules.ProfileData)
+local InventoryModule = require(game.ReplicatedStorage.Modules.InventoryModule)
+local ItemModule = require(game.ReplicatedStorage.Modules.ItemModule)
+local Sync = require(game.ReplicatedStorage.Database.Sync)
+local ItemPopupService = require(game.ReplicatedStorage.ClientServices.ItemPopupService)
 pcall(function() setthreadidentity(8) end)
 
-setBootstrapStatus("Waiting for trade UI...", Color3.fromRGB(186, 190, 198))
-local TradeRemotes = waitForPath(ReplicatedStorage, {"Trade"}, 20)
-local TradeGUI = waitForPath(PlayerGui, {"TradeGUI"}, 20)
-local TradeContainer = TradeGUI and waitForPath(TradeGUI, {"Container", "Trade"}, 20)
-local TheirOffer = TradeContainer and TradeContainer:FindFirstChild("TheirOffer")
-local YourOffer = TradeContainer and TradeContainer:FindFirstChild("YourOffer")
-if not TradeRemotes or not TradeGUI or not TradeContainer or not TheirOffer or not YourOffer then
-	bootstrapFail("Trade UI is not ready yet. Rejoin MM2 and inject after the inventory loads.")
-end
+local TradeRemotes = game.ReplicatedStorage.Trade
+local TradeGUI = game.Players.LocalPlayer.PlayerGui.TradeGUI
+local TheirOffer = TradeGUI.Container.Trade.TheirOffer
+local YourOffer = TradeGUI.Container.Trade.YourOffer
 
 local SearchTextSignal
 local TradeInventory
@@ -1987,27 +1831,17 @@ end
 -- GUI
 -- ============================================================
 
-setBootstrapStatus("Building interface...", Color3.fromRGB(180, 220, 255))
-destroyNamedGui("TortiHubGui")
+local oldGui = game:GetService("CoreGui"):FindFirstChild("TortiHubGui")
+if oldGui then
+    oldGui:Destroy()
+end
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "TortiHubGui"
 gui.ResetOnSpawn = false
 gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-pcall(function()
-	if type(syn) == "table" and type(syn.protect_gui) == "function" then
-		syn.protect_gui(gui)
-	elseif type(protectgui) == "function" then
-		protectgui(gui)
-	end
-end)
-pcall(function()
-	gui.Parent = GuiParent
-end)
-if not gui.Parent then
-	gui.Parent = CoreGui
-end
+gui.Parent = game:GetService("CoreGui")
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 400, 0, 520)
@@ -2017,7 +1851,6 @@ frame.BackgroundTransparency = 0.08
 frame.BorderSizePixel = 0
 frame.ClipsDescendants = true
 frame.Parent = gui
-destroyNamedGui("TortiHubBootstrapGui")
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 22)
@@ -2354,7 +2187,6 @@ PlayerAutoRefreshToggleButton = nil
 PlayerAutoRefreshSecondsBox = nil
 PlayerAutoRefreshStatusLabel = nil
 playerValueRows = {}
-local weaponScrollFrame = nil
 
 local AutoBlockState = {
 	enabled = false,
@@ -2452,158 +2284,155 @@ local function updatePlayerAutoRefreshButtonText()
 end
 
 -- ===== FILL CONTROL TAB =====
-do
-	local controlFrame = tabFrames["Control"]
-	PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
-	PartnerUserBox.FocusLost:Connect(function()
-	    TradeTable.Player2.Player = PartnerUserBox.Text
-	    PartnerUserBox.Text = TradeTable.Player2.Player
-	end)
+local controlFrame = tabFrames["Control"]
+PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
+PartnerUserBox.FocusLost:Connect(function()
+    TradeTable.Player2.Player = PartnerUserBox.Text
+    PartnerUserBox.Text = TradeTable.Player2.Player
+end)
 
-	createButton(controlFrame, "Recent trade", function()
-	    if LastTradePartner and LastTradePartner ~= "" then
-	        TradeTable.Player2.Player = LastTradePartner
-	        PartnerUserBox.Text = LastTradePartner
-	    end
-	end)
+createButton(controlFrame, "Recent trade", function()
+    if LastTradePartner and LastTradePartner ~= "" then
+        TradeTable.Player2.Player = LastTradePartner
+        PartnerUserBox.Text = LastTradePartner
+    end
+end)
 
-	createButton(controlFrame, "Random player", function()
-	    local FakeTradePartners = {
-	        "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
-	        "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
-	        "SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
-	        "VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
-	        "MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
-	        "NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
-	        "AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
-	        "OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
-	        "PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
-	        "DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
-	        "CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
-	        "StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
-	        "SolarFlareKid", "TwilightWisp",
-	    }
-	    local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
-	    TradeTable.Player2.Player = chosen
-	    PartnerUserBox.Text = chosen
-	    pcall(function()
-	        TheirOffer.Username.Text = "(" .. chosen .. ")"
-	    end)
-	    print("[mm2run/random] picked fake partner: " .. chosen)
-	end)
+createButton(controlFrame, "Random player", function()
+    local FakeTradePartners = {
+        "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
+        "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
+        "SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
+        "VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
+        "MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
+        "NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
+        "AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
+        "OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
+        "PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
+        "DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
+        "CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
+        "StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
+        "SolarFlareKid", "TwilightWisp",
+    }
+    local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
+    TradeTable.Player2.Player = chosen
+    PartnerUserBox.Text = chosen
+    pcall(function()
+        TheirOffer.Username.Text = "(" .. chosen .. ")"
+    end)
+    print("[mm2run/random] picked fake partner: " .. chosen)
+end)
 
-	createButton(controlFrame, "Start trade", function()
-	    StartTrade()
-	end)
+createButton(controlFrame, "Start trade", function()
+    StartTrade()
+end)
 
-	createButton(controlFrame, "Random items", function()
-	    if #weaponButtons == 0 then
-	        print("[mm2run/random] item list not built yet")
-	        return
-	    end
-	    local info = weaponButtons[math.random(1, #weaponButtons)]
-	    local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
-	    if ok then
-	        print("[mm2run/random] added random item: " .. info.entry.name)
-	    else
-	        print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
-	    end
-	end)
+createButton(controlFrame, "Random items", function()
+    if #weaponButtons == 0 then
+        print("[mm2run/random] item list not built yet")
+        return
+    end
+    local info = weaponButtons[math.random(1, #weaponButtons)]
+    local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
+    if ok then
+        print("[mm2run/random] added random item: " .. info.entry.name)
+    else
+        print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
+    end
+end)
 
-	createButton(controlFrame, "Accept their offer", function()
-	    if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
-	        return
-	    end
-	    if v84 then
-	        return
-	    end
-	    TheirOffer.Accepted.Visible = true
-	    TradeTable.Player2.Accepted = true
-	    AcceptTrade()
-	end)
+createButton(controlFrame, "Accept their offer", function()
+    if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
+        return
+    end
+    if v84 then
+        return
+    end
+    TheirOffer.Accepted.Visible = true
+    TradeTable.Player2.Accepted = true
+    AcceptTrade()
+end)
 
-	createButton(controlFrame, "Block player", function()
-	    pcall(function()
-	        local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-	        if Selected then
-	            SilentBlockPlayer(Selected)
-	        end
-	    end)
-	end)
-end
+createButton(controlFrame, "Block player", function()
+    pcall(function()
+        local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
+        if Selected then
+            SilentBlockPlayer(Selected)
+        end
+    end)
+end)
 
 -- ===== FILL PLAYERS TAB =====
+local playersFrame = tabFrames["Players"]
 
 -- ===== FILL ITEMS TAB =====
+local itemsFrame = tabFrames["Items"]
+ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
+createButton(itemsFrame, "Add Item To Their Offer", function()
+    local itemToAdd = ItemToAddPartnerBox.Text
+    if itemToAdd and itemToAdd ~= "" then
+        OfferItemAnotherPlayer(itemToAdd, "Weapons")
+    end
+end)
+createButton(itemsFrame, "Remove last Item in Their Offer", function()
+    RemoveItemAnotherPlayer()
+end)
+
+local weaponListLabel = Instance.new("TextLabel")
+weaponListLabel.Size = UDim2.new(1, 0, 0, 15)
+weaponListLabel.BackgroundTransparency = 1
+weaponListLabel.Text = "Click weapon to ADD directly:"
+weaponListLabel.Font = Enum.Font.SourceSansSemibold
+weaponListLabel.TextSize = 12
+weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
+weaponListLabel.Parent = itemsFrame
+
+local weaponScrollFrame = Instance.new("ScrollingFrame")
+weaponScrollFrame.Size = UDim2.new(1, 0, 0, 120)
+weaponScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+weaponScrollFrame.BackgroundTransparency = 0.3
+weaponScrollFrame.BorderSizePixel = 0
+weaponScrollFrame.ScrollBarThickness = 6
+weaponScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+weaponScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+weaponScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+weaponScrollFrame.Parent = itemsFrame
+
+local function _updateWeaponScrollHeight()
+    local offsetY = weaponScrollFrame.AbsolutePosition.Y - itemsFrame.AbsolutePosition.Y
+    local available = itemsFrame.AbsoluteSize.Y - offsetY - 4
+    weaponScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
+end
+itemsFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateWeaponScrollHeight)
+task.defer(_updateWeaponScrollHeight)
+
 do
-	local itemsFrame = tabFrames["Items"]
-	ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
-	createButton(itemsFrame, "Add Item To Their Offer", function()
-	    local itemToAdd = ItemToAddPartnerBox.Text
-	    if itemToAdd and itemToAdd ~= "" then
-	        OfferItemAnotherPlayer(itemToAdd, "Weapons")
-	    end
-	end)
-	createButton(itemsFrame, "Remove last Item in Their Offer", function()
-	    RemoveItemAnotherPlayer()
-	end)
-
-	local weaponListLabel = Instance.new("TextLabel")
-	weaponListLabel.Size = UDim2.new(1, 0, 0, 15)
-	weaponListLabel.BackgroundTransparency = 1
-	weaponListLabel.Text = "Click weapon to ADD directly:"
-	weaponListLabel.Font = Enum.Font.SourceSansSemibold
-	weaponListLabel.TextSize = 12
-	weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-	weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
-	weaponListLabel.Parent = itemsFrame
-
-	weaponScrollFrame = Instance.new("ScrollingFrame")
-	weaponScrollFrame.Size = UDim2.new(1, 0, 0, 120)
-	weaponScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-	weaponScrollFrame.BackgroundTransparency = 0.3
-	weaponScrollFrame.BorderSizePixel = 0
-	weaponScrollFrame.ScrollBarThickness = 6
-	weaponScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
-	weaponScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	weaponScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	weaponScrollFrame.Parent = itemsFrame
-
-	local function _updateWeaponScrollHeight()
-	    local offsetY = weaponScrollFrame.AbsolutePosition.Y - itemsFrame.AbsolutePosition.Y
-	    local available = itemsFrame.AbsoluteSize.Y - offsetY - 4
-	    weaponScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
-	end
-	itemsFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateWeaponScrollHeight)
-	task.defer(_updateWeaponScrollHeight)
-
-	do
-	    local weaponScrollCorner = Instance.new("UICorner")
-	    weaponScrollCorner.CornerRadius = UDim.new(0, 5)
-	    weaponScrollCorner.Parent = weaponScrollFrame
-	end
-	do
-	    local weaponScrollStroke = Instance.new("UIStroke")
-	    weaponScrollStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	    weaponScrollStroke.Color = Color3.fromRGB(80, 80, 120)
-	    weaponScrollStroke.Thickness = 1
-	    weaponScrollStroke.Parent = weaponScrollFrame
-	end
-	do
-	    local weaponListLayout = Instance.new("UIListLayout")
-	    weaponListLayout.FillDirection = Enum.FillDirection.Vertical
-	    weaponListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	    weaponListLayout.Padding = UDim.new(0, 2)
-	    weaponListLayout.Parent = weaponScrollFrame
-	end
-	do
-	    local weaponListPadding = Instance.new("UIPadding")
-	    weaponListPadding.PaddingTop = UDim.new(0, 3)
-	    weaponListPadding.PaddingBottom = UDim.new(0, 3)
-	    weaponListPadding.PaddingLeft = UDim.new(0, 3)
-	    weaponListPadding.PaddingRight = UDim.new(0, 3)
-	    weaponListPadding.Parent = weaponScrollFrame
-	end
+    local weaponScrollCorner = Instance.new("UICorner")
+    weaponScrollCorner.CornerRadius = UDim.new(0, 5)
+    weaponScrollCorner.Parent = weaponScrollFrame
+end
+do
+    local weaponScrollStroke = Instance.new("UIStroke")
+    weaponScrollStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    weaponScrollStroke.Color = Color3.fromRGB(80, 80, 120)
+    weaponScrollStroke.Thickness = 1
+    weaponScrollStroke.Parent = weaponScrollFrame
+end
+do
+    local weaponListLayout = Instance.new("UIListLayout")
+    weaponListLayout.FillDirection = Enum.FillDirection.Vertical
+    weaponListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    weaponListLayout.Padding = UDim.new(0, 2)
+    weaponListLayout.Parent = weaponScrollFrame
+end
+do
+    local weaponListPadding = Instance.new("UIPadding")
+    weaponListPadding.PaddingTop = UDim.new(0, 3)
+    weaponListPadding.PaddingBottom = UDim.new(0, 3)
+    weaponListPadding.PaddingLeft = UDim.new(0, 3)
+    weaponListPadding.PaddingRight = UDim.new(0, 3)
+    weaponListPadding.Parent = weaponScrollFrame
 end
 
 -- ===== FILL SPAWNER TAB =====
@@ -2613,7 +2442,6 @@ SpawnerSearchBox = createInput(spawnerFrame, "Search weapon:", "")
 local SpawnerSortMode = "default"
 local SpawnerSortButton = nil
 local RefreshSpawnerButtons = nil
-local SpawnerCatalog = nil
 
 local function GetSpawnerSortButtonText()
 	if SpawnerSortMode == "value_desc" then
@@ -2640,24 +2468,13 @@ end)
 SpawnerSortButton.TextSize = 14
 SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
 
-local SpawnerOpenCatalogButton = createButton(spawnerFrame, "Open Catalog", function()
-	if SpawnerCatalog then
-		SpawnerCatalog.Open()
-	end
-end)
-SpawnerOpenCatalogButton.TextSize = 16
-SpawnerOpenCatalogButton.Size = UDim2.new(1, 0, 0, 42)
-SpawnerOpenCatalogButton.BackgroundColor3 = Color3.fromRGB(36, 92, 255)
-SpawnerOpenCatalogButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
 local spawnerStatusLabel = Instance.new("TextLabel")
-spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 30)
+spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 15)
 spawnerStatusLabel.BackgroundTransparency = 1
-spawnerStatusLabel.Text = "Open Catalog opens a separate item window with preview cards and Spawn buttons."
-spawnerStatusLabel.Font = Enum.Font.Gotham
-spawnerStatusLabel.TextSize = 13
-spawnerStatusLabel.TextWrapped = true
-spawnerStatusLabel.TextColor3 = Color3.fromRGB(163, 168, 178)
+spawnerStatusLabel.Text = "Click weapon to spawn:"
+spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
+spawnerStatusLabel.TextSize = 12
+spawnerStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
 spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 spawnerStatusLabel.Parent = spawnerFrame
 
@@ -2738,14 +2555,45 @@ local function _randomAmount(rarity, evo)
 end
 
 local spawnerScrollFrame = Instance.new("ScrollingFrame")
-spawnerScrollFrame.Size = UDim2.new(1, 0, 0, 1)
-spawnerScrollFrame.BackgroundTransparency = 1
+spawnerScrollFrame.Size = UDim2.new(1, 0, 0, 120)
+spawnerScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+spawnerScrollFrame.BackgroundTransparency = 0.3
 spawnerScrollFrame.BorderSizePixel = 0
-spawnerScrollFrame.ScrollBarThickness = 0
+spawnerScrollFrame.ScrollBarThickness = 6
+spawnerScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
 spawnerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-spawnerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.None
-spawnerScrollFrame.Visible = false
+spawnerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 spawnerScrollFrame.Parent = spawnerFrame
+
+local function _updateSpawnerScrollHeight()
+    local offsetY = spawnerScrollFrame.AbsolutePosition.Y - spawnerFrame.AbsolutePosition.Y
+    local available = spawnerFrame.AbsoluteSize.Y - offsetY - 4
+    spawnerScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
+end
+spawnerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateSpawnerScrollHeight)
+task.defer(_updateSpawnerScrollHeight)
+
+do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 5)
+    c.Parent = spawnerScrollFrame
+    local s = Instance.new("UIStroke")
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Color = Color3.fromRGB(80, 80, 120)
+    s.Thickness = 1
+    s.Parent = spawnerScrollFrame
+    local lay = Instance.new("UIListLayout")
+    lay.FillDirection = Enum.FillDirection.Vertical
+    lay.SortOrder = Enum.SortOrder.LayoutOrder
+    lay.Padding = UDim.new(0, 2)
+    lay.Parent = spawnerScrollFrame
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 3)
+    pad.PaddingBottom = UDim.new(0, 3)
+    pad.PaddingLeft = UDim.new(0, 3)
+    pad.PaddingRight = UDim.new(0, 3)
+    pad.Parent = spawnerScrollFrame
+end
 
 -- ===== FILL VALUES TAB =====
 local RefreshPlayerValues = function() end
@@ -2850,7 +2698,7 @@ local function normalizeWeaponName(s)
 	s = string.gsub(s, "^c%.%s*", "chroma ")
 	s = string.gsub(s, "(%s)c%.%s*", "%1chroma ")
 
-	s = string.gsub(s, "[\"']", "")
+	s = string.gsub(s, "['\u{2019}\"]", "")
 
 	s = string.gsub(s, "%s+", " ")
 	s = string.gsub(s, "^%s+", "")
@@ -4114,7 +3962,6 @@ local function FetchAllValues(onProgress)
     return all, true
 end
 
-do
 local valuesFrame = tabFrames["Values"]
 local function RebuildValuesIndex()
 	Values.byName = {}
@@ -4320,10 +4167,8 @@ valueSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 task.spawn(function() LoadFullCatalog(false) end)
-end
 
 -- ===== CONFIG TAB =====
-do
 local configFrame = tabFrames["Config"]
 
 local configNameBox = createInput(configFrame, "Config name:", "")
@@ -4498,10 +4343,8 @@ local function RefreshConfigsList()
 end
 
 RefreshConfigsList()
-end
 
 -- ===== OTHER TAB =====
-do
 local otherFrame = tabFrames["Other"]
 
 local otherIntro = Instance.new("TextLabel")
@@ -4561,7 +4404,6 @@ AutoBlockStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
 AutoBlockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 AutoBlockStatusLabel.Parent = otherFrame
-end
 
 updateAutoBlockButtonText()
 
@@ -4798,649 +4640,108 @@ local function GetSpawnerValueNumber(entry)
 end
 
 local function BuildSpawnerButtonLabel(entry, valueText)
-	local displayName = entry.chroma and ("Chroma " .. entry.name) or entry.name
-	if valueText == false then
-		return displayName
-	end
-	return displayName .. "   (" .. entry.rarity .. " " .. entry.type .. " | " .. tostring(valueText or GetSpawnerValueText(entry)) .. ")"
+	return entry.name .. (entry.chroma and " [Chroma]" or "")
+		.. "   (" .. entry.rarity .. " " .. entry.type .. " | " .. tostring(valueText or GetSpawnerValueText(entry)) .. ")"
 end
-
-SpawnerCatalog = (function()
-	local module = {}
-	local syncSearch = false
-	local imageManifestLoaded = false
-	local imageIndexByName = {}
-	local imageAssetByKey = {}
-	local imageRequestQueued = {}
-
-	local overlay = Instance.new("Frame")
-	overlay.Name = "SpawnerCatalogOverlay"
-	overlay.Visible = false
-	overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	overlay.BackgroundTransparency = 0.28
-	overlay.BorderSizePixel = 0
-	overlay.Size = UDim2.new(1, 0, 1, 0)
-	overlay.ZIndex = 40
-	overlay.Parent = gui
-
-	local dismissButton = Instance.new("TextButton")
-	dismissButton.AutoButtonColor = false
-	dismissButton.Text = ""
-	dismissButton.BackgroundTransparency = 1
-	dismissButton.BorderSizePixel = 0
-	dismissButton.Size = UDim2.new(1, 0, 1, 0)
-	dismissButton.ZIndex = 40
-	dismissButton.Parent = overlay
-
-	local panel = Instance.new("Frame")
-	panel.Name = "SpawnerCatalogWindow"
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	panel.Active = true
-	panel.ClipsDescendants = true
-	panel.BackgroundColor3 = Color3.fromRGB(6, 7, 10)
-	panel.BorderSizePixel = 0
-	panel.ZIndex = 41
-	panel.Parent = overlay
-
-	local panelCorner = Instance.new("UICorner")
-	panelCorner.CornerRadius = UDim.new(0, 24)
-	panelCorner.Parent = panel
-
-	local panelStroke = Instance.new("UIStroke")
-	panelStroke.Color = Color3.fromRGB(76, 92, 134)
-	panelStroke.Thickness = 1
-	panelStroke.Transparency = 0.2
-	panelStroke.Parent = panel
-
-	local panelGradient = Instance.new("UIGradient")
-	panelGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 18, 25)),
-		ColorSequenceKeypoint.new(0.45, Color3.fromRGB(10, 11, 16)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(4, 5, 8)),
-	})
-	panelGradient.Rotation = 90
-	panelGradient.Parent = panel
-
-	local header = Instance.new("Frame")
-	header.BackgroundTransparency = 1
-	header.Size = UDim2.new(1, -40, 0, 64)
-	header.Position = UDim2.new(0, 20, 0, 18)
-	header.ZIndex = 42
-	header.Parent = panel
-
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.new(1, -100, 0, 28)
-	titleLabel.Text = "Spawn Catalog"
-	titleLabel.Font = Enum.Font.GothamBold
-	titleLabel.TextSize = 24
-	titleLabel.TextColor3 = Color3.fromRGB(245, 248, 255)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.ZIndex = 42
-	titleLabel.Parent = header
-
-	local subtitleLabel = Instance.new("TextLabel")
-	subtitleLabel.BackgroundTransparency = 1
-	subtitleLabel.Position = UDim2.new(0, 0, 0, 28)
-	subtitleLabel.Size = UDim2.new(1, -100, 0, 24)
-	subtitleLabel.Text = "New window with item cards: image, name, value and Spawn."
-	subtitleLabel.Font = Enum.Font.Gotham
-	subtitleLabel.TextSize = 12
-	subtitleLabel.TextColor3 = Color3.fromRGB(150, 154, 163)
-	subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	subtitleLabel.ZIndex = 42
-	subtitleLabel.Parent = header
-
-	local closeButton = Instance.new("TextButton")
-	closeButton.Size = UDim2.new(0, 72, 0, 42)
-	closeButton.Position = UDim2.new(1, -72, 0, 0)
-	closeButton.AutoButtonColor = false
-	closeButton.BackgroundColor3 = Color3.fromRGB(18, 20, 30)
-	closeButton.Text = "Close"
-	closeButton.Font = Enum.Font.GothamBold
-	closeButton.TextSize = 13
-	closeButton.TextColor3 = Color3.fromRGB(226, 232, 244)
-	closeButton.ZIndex = 43
-	closeButton.Parent = header
-
-	local closeCorner = Instance.new("UICorner")
-	closeCorner.CornerRadius = UDim.new(0, 14)
-	closeCorner.Parent = closeButton
-
-	local closeStroke = Instance.new("UIStroke")
-	closeStroke.Color = Color3.fromRGB(255, 255, 255)
-	closeStroke.Thickness = 1
-	closeStroke.Transparency = 0.88
-	closeStroke.Parent = closeButton
-
-	local toolbar = Instance.new("Frame")
-	toolbar.BackgroundTransparency = 1
-	toolbar.Size = UDim2.new(1, -40, 0, 86)
-	toolbar.Position = UDim2.new(0, 20, 0, 90)
-	toolbar.ZIndex = 42
-	toolbar.Parent = panel
-
-	local searchLabel = Instance.new("TextLabel")
-	searchLabel.BackgroundTransparency = 1
-	searchLabel.Size = UDim2.new(1, 0, 0, 18)
-	searchLabel.Text = "Search"
-	searchLabel.Font = Enum.Font.Gotham
-	searchLabel.TextSize = 14
-	searchLabel.TextColor3 = Color3.fromRGB(156, 160, 169)
-	searchLabel.TextXAlignment = Enum.TextXAlignment.Left
-	searchLabel.ZIndex = 42
-	searchLabel.Parent = toolbar
-
-	local searchHolder = Instance.new("Frame")
-	searchHolder.Size = UDim2.new(1, 0, 0, 42)
-	searchHolder.Position = UDim2.new(0, 0, 0, 24)
-	searchHolder.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
-	searchHolder.BackgroundTransparency = 0.12
-	searchHolder.BorderSizePixel = 0
-	searchHolder.ZIndex = 42
-	searchHolder.Parent = toolbar
-
-	local searchCorner = Instance.new("UICorner")
-	searchCorner.CornerRadius = UDim.new(0, 14)
-	searchCorner.Parent = searchHolder
-
-	local searchStroke = Instance.new("UIStroke")
-	searchStroke.Color = Color3.fromRGB(73, 91, 138)
-	searchStroke.Thickness = 1
-	searchStroke.Transparency = 0.22
-	searchStroke.Parent = searchHolder
-
-	local searchBox = Instance.new("TextBox")
-	searchBox.Size = UDim2.new(1, -20, 1, 0)
-	searchBox.Position = UDim2.new(0, 10, 0, 0)
-	searchBox.BackgroundTransparency = 1
-	searchBox.ClearTextOnFocus = false
-	searchBox.Font = Enum.Font.GothamMedium
-	searchBox.PlaceholderText = "Search item or value"
-	searchBox.PlaceholderColor3 = Color3.fromRGB(104, 109, 120)
-	searchBox.Text = ""
-	searchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-	searchBox.TextSize = 16
-	searchBox.TextXAlignment = Enum.TextXAlignment.Left
-	searchBox.ZIndex = 43
-	searchBox.Parent = searchHolder
-
-	local hintLabel = Instance.new("TextLabel")
-	hintLabel.BackgroundTransparency = 1
-	hintLabel.Position = UDim2.new(0, 0, 0, 68)
-	hintLabel.Size = UDim2.new(1, 0, 0, 16)
-	hintLabel.Text = "Loading cards..."
-	hintLabel.Font = Enum.Font.Gotham
-	hintLabel.TextSize = 12
-	hintLabel.TextColor3 = Color3.fromRGB(133, 138, 147)
-	hintLabel.TextXAlignment = Enum.TextXAlignment.Left
-	hintLabel.ZIndex = 42
-	hintLabel.Parent = toolbar
-
-	local gridScroll = Instance.new("ScrollingFrame")
-	gridScroll.BackgroundColor3 = Color3.fromRGB(3, 4, 7)
-	gridScroll.BackgroundTransparency = 0.02
-	gridScroll.BorderSizePixel = 0
-	gridScroll.ScrollBarThickness = 5
-	gridScroll.ScrollBarImageColor3 = Color3.fromRGB(98, 113, 153)
-	gridScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	gridScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	gridScroll.ZIndex = 42
-	gridScroll.Parent = panel
-
-	local gridCorner = Instance.new("UICorner")
-	gridCorner.CornerRadius = UDim.new(0, 18)
-	gridCorner.Parent = gridScroll
-
-	local gridStroke = Instance.new("UIStroke")
-	gridStroke.Color = Color3.fromRGB(50, 60, 86)
-	gridStroke.Thickness = 1
-	gridStroke.Transparency = 0.28
-	gridStroke.Parent = gridScroll
-
-	local gridLayout = Instance.new("UIGridLayout")
-	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	gridLayout.CellPadding = UDim2.fromOffset(14, 14)
-	gridLayout.CellSize = UDim2.fromOffset(158, 248)
-	gridLayout.Parent = gridScroll
-
-	local gridPadding = Instance.new("UIPadding")
-	gridPadding.PaddingTop = UDim.new(0, 16)
-	gridPadding.PaddingBottom = UDim.new(0, 16)
-	gridPadding.PaddingLeft = UDim.new(0, 16)
-	gridPadding.PaddingRight = UDim.new(0, 16)
-	gridPadding.Parent = gridScroll
-
-	local function updateWindowLayout()
-		local camera = workspace.CurrentCamera
-		local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
-		local width = math.clamp(math.floor(viewport.X * 0.84), 360, 980)
-		local height = math.clamp(math.floor(viewport.Y * 0.82), 320, 680)
-		panel.Size = UDim2.fromOffset(width, height)
-		panel.Position = UDim2.fromOffset(math.floor(viewport.X * 0.5), math.floor(viewport.Y * 0.5))
-		gridScroll.Position = UDim2.new(0, 20, 0, 188)
-		gridScroll.Size = UDim2.new(1, -40, 1, -208)
-
-		local availableWidth = math.max(220, width - 72)
-		local columns = 2
-		if availableWidth >= 880 then
-			columns = 5
-		elseif availableWidth >= 690 then
-			columns = 4
-		elseif availableWidth >= 500 then
-			columns = 3
-		end
-		local cellWidth = math.floor((availableWidth - ((columns - 1) * 14) - 32) / columns)
-		gridLayout.CellSize = UDim2.fromOffset(math.max(132, cellWidth), 248)
-	end
-
-	local function getRequestFunction()
-		if type(syn) == "table" and type(syn.request) == "function" then
-			return syn.request
-		end
-		if type(http) == "table" and type(http.request) == "function" then
-			return http.request
-		end
-		if type(http_request) == "function" then
-			return http_request
-		end
-		if type(request) == "function" then
-			return request
-		end
-		return nil
-	end
-
-	local function getAssetFromPath(path)
-		local ok, asset = pcall(function()
-			if type(getsynasset) == "function" then
-				return getsynasset(path)
-			end
-			if type(getcustomasset) == "function" then
-				return getcustomasset(path)
-			end
-			return nil
-		end)
-		return ok and asset or nil
-	end
-
-	local function ensureImageIndex()
-		if imageManifestLoaded then
-			return
-		end
-		imageManifestLoaded = true
-		local candidates = {
-			"catalog_full.json",
-			"torti_spawn_catalog_repo/catalog_full.json",
-			"torti_github_repo/catalog_full.json",
-		}
-		for _, path in ipairs(candidates) do
-			local ok, body = pcall(readfile, path)
-			if ok and type(body) == "string" and body ~= "" then
-				local parsedOk, parsed = pcall(function()
-					return game:GetService("HttpService"):JSONDecode(body)
-				end)
-				if parsedOk and type(parsed) == "table" then
-					for _, row in ipairs(parsed) do
-						if type(row) == "table" and type(row.name) == "string" and type(row.image) == "string" and row.image ~= "" then
-							local key = NormalizeItemName(row.name)
-							if imageIndexByName[key] == nil then
-								imageIndexByName[key] = {
-									url = row.image,
-									itemId = row.itemId and tostring(row.itemId) or "",
-								}
-							end
-						end
-					end
-					break
-				end
-			end
-		end
-	end
-
-	local function getImageMeta(entry)
-		ensureImageIndex()
-		local displayName = BuildSpawnerButtonLabel(entry, false)
-		local names = { displayName, entry.name }
-		for _, candidate in ipairs(names) do
-			local meta = imageIndexByName[NormalizeItemName(candidate)]
-			if meta then
-				return meta
-			end
-		end
-		return nil
-	end
-
-	local function queueCardImage(record)
-		local entry = record.entry
-		local meta = getImageMeta(entry)
-		if not meta then
-			return
-		end
-		if imageAssetByKey[entry.key] then
-			record.imageLabel.Image = imageAssetByKey[entry.key]
-			return
-		end
-		if meta.itemId ~= "" then
-			record.imageLabel.Image = ("rbxthumb://type=Asset&id=%s&w=420&h=420"):format(meta.itemId)
-		end
-		if imageRequestQueued[entry.key] or string.find(string.lower(meta.url), "placeholder", 1, true) then
-			return
-		end
-		local requestFn = getRequestFunction()
-		local assetFn = getAssetFromPath
-		if type(writefile) ~= "function" or type(makefolder) ~= "function" or requestFn == nil or assetFn == nil then
-			return
-		end
-		imageRequestQueued[entry.key] = true
-		task.spawn(function()
-			pcall(makefolder, "torti_catalog_images")
-			local fileName = string.gsub(NormalizeItemName(BuildSpawnerButtonLabel(entry, false)), "[^%w]+", "_")
-			local filePath = ("torti_catalog_images/%s.png"):format(fileName ~= "" and fileName or tostring(entry.key))
-			local existingAsset = getAssetFromPath(filePath)
-			if existingAsset then
-				imageAssetByKey[entry.key] = existingAsset
-				if record.imageLabel.Parent then
-					record.imageLabel.Image = existingAsset
-				end
-				return
-			end
-			local ok, response = pcall(function()
-				return requestFn({
-					Url = meta.url,
-					Method = "GET",
-				})
-			end)
-			if not ok or type(response) ~= "table" or not response.Body or (response.StatusCode and response.StatusCode >= 400) then
-				return
-			end
-			local wrote = pcall(writefile, filePath, response.Body)
-			if not wrote then
-				return
-			end
-			local downloadedAsset = getAssetFromPath(filePath)
-			if downloadedAsset then
-				imageAssetByKey[entry.key] = downloadedAsset
-				if record.imageLabel.Parent then
-					record.imageLabel.Image = downloadedAsset
-				end
-			end
-		end)
-	end
-
-	function module.Open()
-		overlay.Visible = true
-		module.SyncSearch(SpawnerSearchBox and SpawnerSearchBox.Text or "")
-		if RefreshSpawnerButtons then
-			RefreshSpawnerButtons()
-		end
-	end
-
-	function module.Close()
-		overlay.Visible = false
-	end
-
-	function module.SyncSearch(text)
-		if syncSearch or searchBox.Text == text then
-			return
-		end
-		syncSearch = true
-		searchBox.Text = text
-		syncSearch = false
-	end
-
-	function module.CreateCard(entry, tradable, defaultOrder)
-		local baseColor = RarityTint[entry.rarity] or RarityTint.Common
-		local card = Instance.new("Frame")
-		card.Name = "CatalogCard_" .. tostring(entry.key)
-		card.BackgroundColor3 = Color3.fromRGB(9, 10, 14)
-		card.BackgroundTransparency = tradable and 0 or 0.08
-		card.BorderSizePixel = 0
-		card.ZIndex = 43
-		card.Parent = gridScroll
-
-		local cardCorner = Instance.new("UICorner")
-		cardCorner.CornerRadius = UDim.new(0, 14)
-		cardCorner.Parent = card
-
-		local cardStroke = Instance.new("UIStroke")
-		cardStroke.Color = Color3.fromRGB(57, 66, 92)
-		cardStroke.Thickness = 1
-		cardStroke.Transparency = tradable and 0.42 or 0.2
-		cardStroke.Parent = card
-
-		local imageShell = Instance.new("Frame")
-		imageShell.Size = UDim2.new(1, -18, 0, 126)
-		imageShell.Position = UDim2.new(0, 9, 0, 10)
-		imageShell.BackgroundColor3 = Color3.fromRGB(13, 15, 22)
-		imageShell.BorderSizePixel = 0
-		imageShell.ZIndex = 43
-		imageShell.Parent = card
-
-		local imageCorner = Instance.new("UICorner")
-		imageCorner.CornerRadius = UDim.new(0, 12)
-		imageCorner.Parent = imageShell
-
-		local imageGlow = Instance.new("UIGradient")
-		imageGlow.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 24, 36)),
-			ColorSequenceKeypoint.new(0.6, Color3.fromRGB(10, 12, 18)),
-			ColorSequenceKeypoint.new(1, baseColor:Lerp(Color3.fromRGB(14, 16, 24), 0.18)),
-		})
-		imageGlow.Rotation = 90
-		imageGlow.Parent = imageShell
-
-		local fallbackLabel = Instance.new("TextLabel")
-		fallbackLabel.Size = UDim2.new(1, 0, 1, 0)
-		fallbackLabel.BackgroundTransparency = 1
-		fallbackLabel.Text = string.upper(string.sub(BuildSpawnerButtonLabel(entry, false), 1, 1))
-		fallbackLabel.Font = Enum.Font.GothamBlack
-		fallbackLabel.TextSize = 44
-		fallbackLabel.TextColor3 = baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.16)
-		fallbackLabel.ZIndex = 43
-		fallbackLabel.Parent = imageShell
-
-		local imageLabel = Instance.new("ImageLabel")
-		imageLabel.Size = UDim2.new(1, -12, 1, -12)
-		imageLabel.Position = UDim2.new(0, 6, 0, 6)
-		imageLabel.BackgroundTransparency = 1
-		imageLabel.ScaleType = Enum.ScaleType.Fit
-		imageLabel.ZIndex = 44
-		imageLabel.Parent = imageShell
-
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Position = UDim2.new(0, 11, 0, 144)
-		nameLabel.Size = UDim2.new(1, -22, 0, 40)
-		nameLabel.Font = Enum.Font.GothamBold
-		nameLabel.Text = BuildSpawnerButtonLabel(entry, false)
-		nameLabel.TextColor3 = Color3.fromRGB(246, 248, 252)
-		nameLabel.TextSize = 18
-		nameLabel.TextWrapped = true
-		nameLabel.TextXAlignment = Enum.TextXAlignment.Center
-		nameLabel.TextYAlignment = Enum.TextYAlignment.Center
-		nameLabel.ZIndex = 43
-		nameLabel.Parent = card
-
-		local valueLabel = Instance.new("TextLabel")
-		valueLabel.BackgroundTransparency = 1
-		valueLabel.Position = UDim2.new(0, 11, 0, 188)
-		valueLabel.Size = UDim2.new(1, -22, 0, 20)
-		valueLabel.Font = Enum.Font.GothamMedium
-		valueLabel.Text = "Currency"
-		valueLabel.TextColor3 = Color3.fromRGB(166, 171, 180)
-		valueLabel.TextSize = 14
-		valueLabel.TextXAlignment = Enum.TextXAlignment.Center
-		valueLabel.ZIndex = 43
-		valueLabel.Parent = card
-
-		local spawnButton = Instance.new("TextButton")
-		spawnButton.Size = UDim2.new(1, -22, 0, 34)
-		spawnButton.Position = UDim2.new(0, 11, 1, -45)
-		spawnButton.AutoButtonColor = false
-		spawnButton.BackgroundColor3 = Color3.fromRGB(38, 96, 255)
-		spawnButton.BorderSizePixel = 0
-		spawnButton.Font = Enum.Font.GothamBold
-		spawnButton.Text = "Spawn"
-		spawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-		spawnButton.TextSize = 15
-		spawnButton.ZIndex = 44
-		spawnButton.Parent = card
-
-		local spawnCorner = Instance.new("UICorner")
-		spawnCorner.CornerRadius = UDim.new(0, 12)
-		spawnCorner.Parent = spawnButton
-
-		local spawnGradient = Instance.new("UIGradient")
-		spawnGradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, baseColor:Lerp(Color3.fromRGB(78, 131, 255), 0.65)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 71, 216)),
-		})
-		spawnGradient.Rotation = 90
-		spawnGradient.Parent = spawnButton
-
-		local actionStroke = Instance.new("UIStroke")
-		actionStroke.Color = Color3.fromRGB(130, 171, 255)
-		actionStroke.Thickness = 1
-		actionStroke.Transparency = 0.38
-		actionStroke.Parent = spawnButton
-
-		spawnButton.MouseEnter:Connect(function()
-			TweenService:Create(spawnButton, TweenInfo.new(0.12), {BackgroundTransparency = 0.05}):Play()
-		end)
-
-		spawnButton.MouseLeave:Connect(function()
-			TweenService:Create(spawnButton, TweenInfo.new(0.12), {BackgroundTransparency = 0}):Play()
-		end)
-
-		spawnButton.MouseButton1Click:Connect(function()
-			local typed = tonumber(SpawnerAmountBox.Text)
-			local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
-			SpawnItem(entry.key, amt, "Weapons")
-			spawnerStatusLabel.Text = ("Spawned %s x%s"):format(BuildSpawnerButtonLabel(entry, false), tostring(amt))
-			spawnerStatusLabel.TextColor3 = Color3.fromRGB(192, 197, 205)
-		end)
-
-		local info = {
-			card = card,
-			entry = entry,
-			defaultOrder = defaultOrder,
-			imageLabel = imageLabel,
-			nameLabel = nameLabel,
-			valueLabel = valueLabel,
-			tradable = tradable,
-		}
-
-		queueCardImage(info)
-		return info
-	end
-
-	function module.Refresh(records, query, sortMode)
-		local ordered = {}
-		for _, info in ipairs(records) do
-			info.valueText = GetSpawnerValueText(info.entry)
-			info.sortValue = GetSpawnerValueNumber(info.entry)
-			info.nameLabel.Text = BuildSpawnerButtonLabel(info.entry, false)
-			info.valueLabel.Text = "Currency: " .. tostring(info.valueText or "?")
-			table.insert(ordered, info)
-		end
-
-		table.sort(ordered, function(a, b)
-			if sortMode == "value_desc" then
-				if a.sortValue ~= b.sortValue then
-					return a.sortValue > b.sortValue
-				end
-			elseif sortMode == "value_asc" then
-				local av = a.sortValue
-				local bv = b.sortValue
-				local aMissing = av < 0
-				local bMissing = bv < 0
-				if aMissing ~= bMissing then
-					return not aMissing
-				end
-				if av ~= bv then
-					return av < bv
-				end
-			else
-				if a.defaultOrder ~= b.defaultOrder then
-					return a.defaultOrder < b.defaultOrder
-				end
-			end
-			return a.entry.name < b.entry.name
-		end)
-
-		local visibleOrder = 0
-		for index, info in ipairs(ordered) do
-			local haystack = normalizeWeaponName(("%s %s %s %s"):format(
-				tostring(BuildSpawnerButtonLabel(info.entry, false)),
-				tostring(info.entry.rarity or ""),
-				tostring(info.entry.type or ""),
-				tostring(info.valueText or "")
-			))
-			local visible = query == "" or string.find(haystack, query, 1, true) ~= nil
-			info.card.Visible = visible
-			if visible then
-				visibleOrder = visibleOrder + 1
-				info.card.LayoutOrder = visibleOrder
-			else
-				info.card.LayoutOrder = #ordered + index
-			end
-		end
-
-		hintLabel.Text = ("%d of %d items shown"):format(visibleOrder, #ordered)
-		spawnerStatusLabel.Text = ("%d items ready. Catalog window updated."):format(visibleOrder)
-		spawnerStatusLabel.TextColor3 = Color3.fromRGB(163, 168, 178)
-	end
-
-	dismissButton.MouseButton1Click:Connect(function()
-		module.Close()
-	end)
-
-	closeButton.MouseButton1Click:Connect(function()
-		module.Close()
-	end)
-
-	searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-		if syncSearch then
-			return
-		end
-		syncSearch = true
-		if SpawnerSearchBox and SpawnerSearchBox.Text ~= searchBox.Text then
-			SpawnerSearchBox.Text = searchBox.Text
-		end
-		syncSearch = false
-		if RefreshSpawnerButtons then
-			RefreshSpawnerButtons()
-		end
-	end)
-
-	gridScroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateWindowLayout)
-	if workspace.CurrentCamera then
-		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateWindowLayout)
-	end
-	task.defer(updateWindowLayout)
-
-	return module
-end)()
 
 RefreshSpawnerButtons = function()
 	local query = normalizeWeaponName(SpawnerSearchBox and SpawnerSearchBox.Text or "")
-	if SpawnerCatalog then
-		SpawnerCatalog.Refresh(spawnerButtons, query, SpawnerSortMode)
+	local ordered = {}
+	for _, info in ipairs(spawnerButtons) do
+		info.valueText = GetSpawnerValueText(info.entry)
+		info.sortValue = GetSpawnerValueNumber(info.entry)
+		table.insert(ordered, info)
+	end
+
+	table.sort(ordered, function(a, b)
+		if SpawnerSortMode == "value_desc" then
+			if a.sortValue ~= b.sortValue then
+				return a.sortValue > b.sortValue
+			end
+		elseif SpawnerSortMode == "value_asc" then
+			local av = a.sortValue
+			local bv = b.sortValue
+			local aMissing = av < 0
+			local bMissing = bv < 0
+			if aMissing ~= bMissing then
+				return not aMissing
+			end
+			if av ~= bv then
+				return av < bv
+			end
+		else
+			if a.defaultOrder ~= b.defaultOrder then
+				return a.defaultOrder < b.defaultOrder
+			end
+		end
+		return a.entry.name < b.entry.name
+	end)
+
+	local visibleOrder = 0
+	for index, info in ipairs(ordered) do
+		local btn = info.button
+		btn.Text = BuildSpawnerButtonLabel(info.entry, info.valueText)
+		local haystack = normalizeWeaponName(("%s %s %s %s"):format(
+			tostring(info.entry.name or ""),
+			tostring(info.entry.rarity or ""),
+			tostring(info.entry.type or ""),
+			tostring(info.valueText or "")
+		))
+		local visible = query == "" or string.find(haystack, query, 1, true) ~= nil
+		btn.Visible = visible
+		if visible then
+			visibleOrder = visibleOrder + 1
+			btn.LayoutOrder = visibleOrder
+		else
+			btn.LayoutOrder = #ordered + index
+		end
 	end
 end
 
 for _, entry in ipairs(WeaponCatalog) do
-	local wKey = entry.key
-	local wData = (Sync.Weapons and Sync.Weapons[wKey]) or (Sync.Item and Sync.Item[wKey])
-	if not _isSpawnerAllowed(entry.name) then continue end
-	local tradable = _isTradable(wData)
-	spawnerButtons[#spawnerButtons + 1] = SpawnerCatalog.CreateCard(entry, tradable, #spawnerButtons + 1)
+    local wKey = entry.key
+    local wData = Sync.Weapons[wKey]
+    if not _isSpawnerAllowed(entry.name) then continue end
+    local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+    local tradable = _isTradable(wData)
+    local label = BuildSpawnerButtonLabel(entry)
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -6, 0, 22)
+    btn.BackgroundColor3 = baseColor
+    btn.BackgroundTransparency = tradable and 0.2 or 0.6
+    btn.Text = label
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 12
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.TextTruncate = Enum.TextTruncate.AtEnd
+    btn.Parent = spawnerScrollFrame
+
+    local btnPad = Instance.new("UIPadding")
+    btnPad.PaddingLeft = UDim.new(0, 6)
+    btnPad.PaddingRight = UDim.new(0, 6)
+    btnPad.Parent = btn
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        local typed = tonumber(SpawnerAmountBox.Text)
+        local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
+        SpawnItem(wKey, amt, "Weapons")
+    end)
+
+    spawnerButtons[#spawnerButtons + 1] = {
+		button = btn,
+		entry = entry,
+		tradable = tradable,
+		defaultOrder = #spawnerButtons + 1,
+	}
 end
 
 SpawnerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	if SpawnerCatalog then
-		SpawnerCatalog.SyncSearch(SpawnerSearchBox.Text)
-	end
 	if RefreshSpawnerButtons then
 		RefreshSpawnerButtons()
 	end
@@ -5451,7 +4752,6 @@ if RefreshSpawnerButtons then
 end
 
 -- === PLAYERS TAB VALUES ===
-local playersFrame = tabFrames["Players"]
 local playersStatusLabel = Instance.new("TextLabel")
 playersStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 playersStatusLabel.BackgroundTransparency = 1
@@ -5898,7 +5198,6 @@ task.spawn(function()
 end)
 
 print("[mm2run] System merged and running successfully!")
-
 
 
 
