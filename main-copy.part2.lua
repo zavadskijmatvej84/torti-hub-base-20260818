@@ -941,7 +941,6 @@ local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Conf
 local tabButtons = {}
 local tabFrames = {}
 local activeTab = "Control"
-local KeybindStoragePath = "mm2run_keybinds.json"
 local KeybindActions = {}
 local KeybindActionOrder = {}
 local KeybindAssignments = {}
@@ -967,58 +966,11 @@ local function setKeybindStatus(text, color)
     end
 end
 
-local function saveKeybindAssignments()
-    if type(writefile) ~= "function" then
-        return
-    end
-    local okEncode, encoded = pcall(function()
-        return game:GetService("HttpService"):JSONEncode(KeybindAssignments)
-    end)
-    if okEncode and type(encoded) == "string" then
-        pcall(writefile, KeybindStoragePath, encoded)
-    end
-end
-
-local function loadKeybindAssignments()
-    if type(readfile) ~= "function" then
-        return
-    end
-    local okRead, body = pcall(readfile, KeybindStoragePath)
-    if not okRead or type(body) ~= "string" or body == "" then
-        return
-    end
-    local okDecode, decoded = pcall(function()
-        return game:GetService("HttpService"):JSONDecode(body)
-    end)
-    if not okDecode or type(decoded) ~= "table" then
-        return
-    end
-    for actionId, keyName in pairs(decoded) do
-        if type(actionId) == "string" and type(keyName) == "string" and keyName ~= "" then
-            KeybindAssignments[actionId] = keyName
-        end
-    end
-end
-
-local function pulseBoundButton(button)
-    if not button or not button.Parent then
-        return
-    end
-    local originalTransparency = button.BackgroundTransparency
-    TweenService:Create(button, TweenInfo.new(0.08), {BackgroundTransparency = math.max(0.6, originalTransparency - 0.16)}):Play()
-    task.delay(0.12, function()
-        if button.Parent then
-            TweenService:Create(button, TweenInfo.new(0.12), {BackgroundTransparency = originalTransparency}):Play()
-        end
-    end)
-end
-
 local function activateKeybindAction(actionId)
     local action = KeybindActions[actionId]
     if not action or type(action.callback) ~= "function" then
         return
     end
-    pulseBoundButton(action.button)
     task.spawn(function()
         local okRun, runErr = pcall(action.callback)
         if not okRun then
@@ -1029,7 +981,6 @@ end
 
 local function clearKeybindAssignment(actionId, silent)
     KeybindAssignments[actionId] = nil
-    saveKeybindAssignments()
     if not silent then
         local action = KeybindActions[actionId]
         setKeybindStatus(("Cleared keybind for %s"):format(action and action.label or actionId), Color3.fromRGB(180, 183, 192))
@@ -1048,7 +999,6 @@ local function assignKeybind(actionId, keyName)
         end
     end
     KeybindAssignments[actionId] = keyName
-    saveKeybindAssignments()
     local action = KeybindActions[actionId]
     setKeybindStatus(("%s -> %s"):format(action and action.label or actionId, keybindDisplayName(keyName)), Color3.fromRGB(150, 220, 150))
     RefreshKeybindRows()
@@ -1081,8 +1031,6 @@ local function registerBindableAction(actionId, label, button, callback)
     return button
 end
 
-loadKeybindAssignments()
-
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if input.UserInputType ~= Enum.UserInputType.Keyboard then
         return
@@ -1113,7 +1061,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         return
     end
 
-    if gameProcessedEvent or UserInputService:GetFocusedTextBox() then
+    if gameProcessedEvent then
         return
     end
 
