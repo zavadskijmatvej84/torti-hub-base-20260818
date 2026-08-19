@@ -2384,7 +2384,7 @@ weaponListLabel.BackgroundTransparency = 1
 weaponListLabel.Text = "Click weapon to ADD directly:"
 weaponListLabel.Font = Enum.Font.SourceSansSemibold
 weaponListLabel.TextSize = 12
-weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+weaponListLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
 weaponListLabel.TextXAlignment = Enum.TextXAlignment.Left
 weaponListLabel.Parent = itemsFrame
 
@@ -2474,7 +2474,7 @@ spawnerStatusLabel.BackgroundTransparency = 1
 spawnerStatusLabel.Text = "Click weapon to spawn:"
 spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
 spawnerStatusLabel.TextSize = 12
-spawnerStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+spawnerStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
 spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 spawnerStatusLabel.Parent = spawnerFrame
 
@@ -4217,7 +4217,7 @@ configsStatus.BackgroundTransparency = 1
 configsStatus.Text = "Saved configs:"
 configsStatus.Font = Enum.Font.SourceSansSemibold
 configsStatus.TextSize = 12
-configsStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
+configsStatus.TextColor3 = Color3.fromRGB(180, 183, 192)
 configsStatus.TextXAlignment = Enum.TextXAlignment.Left
 configsStatus.Parent = configFrame
 
