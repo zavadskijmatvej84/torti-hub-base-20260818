@@ -70,6 +70,7 @@ function NormalizeItemName(value)
 end
 
 local RubleValueRowsText = [=[
+weapon,price_rub
 Passion,217729.38
 Evergun,189891.63
 Bauble,84603.57
@@ -171,26 +172,26 @@ Pearlshine,218.75
 Pearl,208.75
 Silent Night,201.86
 Elderwood Scythe,194.56
-Darkbringer,193.75
-Lightbringer,187.49
+C.Darkbringer,193.75
+C.Lightbringer,187.49
 Pop Art,183.33
-Luger,176.25
+C.Luger,176.25
 Elf,175
 Batwing,171.25
 Cats,156.25
 Aurora,150
-Laser,147.49
+C.Laser,147.49
 Iceblaster,139.99
 Vampire,137.5
 Branches,137.4
-Candleflame,131.24
+C.Candleflame,131.24
 Cotton Candy,127.5
 Alex,125
 Traveler,124.9
-Gemstone,120
-Shark,116.24
+C.Gemstone,120
+C.Shark,116.24
 Sugar,115
-Elderwood Revolver,113.1
+C.Elderwood Revolver,113.1
 Spectre,112.49
 Amerilaser,111.25
 Sparkle9,111.25
@@ -345,6 +346,8 @@ Sparkle2,21.24
 Green Elite,20
 Cowboy,20
 Green Elite,20
+C.Fire Bat,20
+C.Fire Cat,20
 Void,20
 Gingerbread,19.97
 Darkgun,18.75
@@ -356,7 +359,9 @@ Wrap,18.25
 Magma,17.5
 Zombie,17.49
 Xeno,16.92
+C.Fire Bear,16.92
 Ginger,16.25
+C.Fire Bunny,16.25
 Predator,16.24
 Cavern,16.11
 TNL,15.87
@@ -364,6 +369,7 @@ Valentine,15.87
 Ghost,14.97
 Chromatic,15
 Nightstar,15
+Tankie,15
 Ghostfire,14.9
 Sketch,14.9
 Frostfade,13.75
@@ -378,20 +384,25 @@ Ollie,12.5
 Skulls,12.5
 Icecracker,12.5
 Energized,12.5
+C.Fire Dog,12.5
 Moonlight,12.5
 Checker,12.5
 Blossom,12.49
 Brains,12.43
+C.Fire Fox,12.38
 Hazard,11.24
 Gothic,11.25
 Toxic,11.25
 Webs,11.25
+Snowbear,11.25
 Wrap,11.24
 Orange Marble,11.24
+C.Fire Pig,11.15
 Ginger,10.59
 Zombie,10.38
 Corl,10
 Magma,10
+Vampire Bat,10
 Cookie,10
 Scratch,10
 Cavern,10
@@ -402,6 +413,7 @@ Black,10
 Cookie,10
 Cavern,10
 Scratch,10
+Elitey,10
 Green Fire,10
 Santa's Spirit,9.88
 Frostflame,9.56
@@ -540,7 +552,7 @@ end
 
 for line in string.gmatch(RubleValueRowsText, "[^\r\n]+") do
 	local name, amountText = string.match(line, "^(.-),%s*([%d%.]+)%s*$")
-	if name and amountText then
+	if name and amountText and NormalizeItemName(name) ~= "weapon" then
 		PushRubleValue(name, amountText)
 	end
 end
@@ -555,15 +567,12 @@ local SpecialChromaRubleAliases = {
 	["travelers gun"] = "Passion",
 }
 
-local function GetRubleValueForCatalogItem(item)
-	if type(item) ~= "table" then
-		return nil
-	end
-	local displayName = tostring(item.name or "")
+local function GetRubleValueForName(displayName, category)
+	displayName = tostring(displayName or "")
+	local normalizedDisplay = NormalizeItemName(displayName)
+	local wantChroma = tostring(category or "") == "Chroma" or string.find(normalizedDisplay, "^chroma ") ~= nil
 	local baseName = string.gsub(displayName, "^Chroma%s+", "")
 	local normalizedBase = NormalizeItemName(baseName)
-	local category = tostring(item.category or "")
-
 	local candidateKeys = {}
 	local seen = {}
 	local function addCandidateKey(name)
@@ -577,11 +586,13 @@ local function GetRubleValueForCatalogItem(item)
 
 	addCandidateKey(displayName)
 
-	if category == "Chroma" then
+	if wantChroma then
 		local alias = SpecialChromaRubleAliases[normalizedBase]
 		if alias then
 			addCandidateKey(alias)
 		end
+		addCandidateKey("Chroma " .. baseName)
+		addCandidateKey("C. " .. baseName)
 	end
 
 	addCandidateKey(baseName)
@@ -589,7 +600,7 @@ local function GetRubleValueForCatalogItem(item)
 	for _, key in ipairs(candidateKeys) do
 		local bucket = RubleValuesByKey[key]
 		if bucket and #bucket > 0 then
-			if category == "Chroma" then
+			if wantChroma then
 				return bucket[1]
 			end
 			if ChromaCatalogBaseNames[normalizedBase] and #bucket >= 2 then
@@ -600,6 +611,13 @@ local function GetRubleValueForCatalogItem(item)
 	end
 
 	return nil
+end
+
+local function GetRubleValueForCatalogItem(item)
+	if type(item) ~= "table" then
+		return nil
+	end
+	return GetRubleValueForName(item.name, item.category)
 end
 
 local function FormatCatalogDisplayValue(item)
@@ -1533,9 +1551,320 @@ local function GetComparableSupremeValue(value)
 end
 
 local DEFAULT_PARTNER_NAME = "To_rti"
+local TradeTable
+local TradeMonitorUI = nil
+local TradeMonitorState = {
+	remotePartnerName = nil,
+	remoteEventName = nil,
+	remoteEventAt = 0,
+	remoteMarkerId = 0,
+	consumedRemoteMarkerId = 0,
+	sessionCounter = 0,
+	current = nil,
+	history = {},
+	totalProfitMM2 = 0,
+	totalProfitRub = 0,
+	realTradesCompleted = 0,
+}
+
+local function GetTradePartnerName(rawPartner)
+	if typeof(rawPartner) == "Instance" and rawPartner:IsA("Player") then
+		return rawPartner.Name
+	end
+	local text = tostring(rawPartner or "")
+	if text == "" then
+		return DEFAULT_PARTNER_NAME
+	end
+	return text
+end
+
+local function GetTradeSessionPartner()
+	if TradeTable and TradeTable.Player2 then
+		return GetTradePartnerName(TradeTable.Player2.Player)
+	end
+	return DEFAULT_PARTNER_NAME
+end
+
+local function FormatSignedValue(v)
+	local numeric = tonumber(v) or 0
+	local prefix = numeric > 0 and "+" or ""
+	return prefix .. FormatValue(numeric)
+end
+
+local function FormatSignedRubleValue(v)
+	local numeric = tonumber(v) or 0
+	local prefix = numeric > 0 and "+" or ""
+	return prefix .. (FormatRubleValue(numeric) or "0.00₽")
+end
+
+local function GetTradeOfferTotals(offer)
+	local totals = {
+		mm2 = 0,
+		rub = 0,
+		items = 0,
+		slots = 0,
+	}
+	for _, item in ipairs(offer or {}) do
+		local itemName = tostring(item[1] or item.ItemID or "")
+		local amount = tonumber(item[2] or item.Amount) or 1
+		if itemName ~= "" and amount > 0 then
+			totals.slots = totals.slots + 1
+			totals.items = totals.items + amount
+			local supremeRow = GetSupremeValue(itemName)
+			local mm2Value = supremeRow and tonumber(supremeRow.value) or 0
+			local rubValue = GetRubleValueForName(itemName) or 0
+			totals.mm2 = totals.mm2 + mm2Value * amount
+			totals.rub = totals.rub + rubValue * amount
+		end
+	end
+	return totals
+end
+
+local function ClassifyTradeSession(session)
+	if not session then
+		return "fake"
+	end
+	if session.remoteEventAt and session.remoteEventAt > 0 then
+		return "real"
+	end
+	return "fake"
+end
+
+local function RenderTradeMonitorHistory()
+	if not TradeMonitorUI or not TradeMonitorUI.historyScroll then
+		return
+	end
+	for _, child in ipairs(TradeMonitorUI.historyScroll:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for index, entry in ipairs(TradeMonitorState.history) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, -6, 0, 56)
+		row.BackgroundColor3 = WINDOW_THEME.chipColor
+		row.BackgroundTransparency = 0.2
+		row.BorderSizePixel = 0
+		row.LayoutOrder = index
+		row.Parent = TradeMonitorUI.historyScroll
+
+		local rowCorner = Instance.new("UICorner")
+		rowCorner.CornerRadius = UDim.new(0, 12)
+		rowCorner.Parent = row
+
+		local rowStroke = Instance.new("UIStroke")
+		rowStroke.Color = WINDOW_THEME.panelEdge
+		rowStroke.Thickness = 1
+		rowStroke.Transparency = 0.78
+		rowStroke.Parent = row
+
+		local title = Instance.new("TextLabel")
+		title.Size = UDim2.new(1, -16, 0, 18)
+		title.Position = UDim2.new(0, 8, 0, 7)
+		title.BackgroundTransparency = 1
+		title.Text = ("%s | %s | %s"):format(
+			tostring(entry.timeLabel or "--:--:--"),
+			string.upper(tostring(entry.classification or "fake")),
+			tostring(entry.partner or DEFAULT_PARTNER_NAME)
+		)
+		title.Font = Enum.Font.GothamBold
+		title.TextSize = 12
+		title.TextColor3 = (entry.classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.Parent = row
+
+		local details = Instance.new("TextLabel")
+		details.Size = UDim2.new(1, -16, 0, 28)
+		details.Position = UDim2.new(0, 8, 0, 24)
+		details.BackgroundTransparency = 1
+		details.Text = ("%s | Give %s / %s | Get %s / %s | Net %s / %s"):format(
+			tostring(entry.statusText or "Closed"),
+			FormatValue(entry.localMM2 or 0),
+			FormatRubleValue(entry.localRub or 0) or "0.00₽",
+			FormatValue(entry.remoteMM2 or 0),
+			FormatRubleValue(entry.remoteRub or 0) or "0.00₽",
+			FormatSignedValue(entry.netMM2 or 0),
+			FormatSignedRubleValue(entry.netRub or 0)
+		)
+		details.Font = Enum.Font.Gotham
+		details.TextSize = 11
+		details.TextWrapped = true
+		details.TextColor3 = WINDOW_THEME.mutedText
+		details.TextXAlignment = Enum.TextXAlignment.Left
+		details.TextYAlignment = Enum.TextYAlignment.Top
+		details.Parent = row
+	end
+end
+
+local function RefreshTradeMonitorUI()
+	if not TradeMonitorUI then
+		return
+	end
+
+	local session = TradeMonitorState.current
+	local active = session and session.active == true
+	local classification = ClassifyTradeSession(session)
+	local partner = session and session.partner or DEFAULT_PARTNER_NAME
+	local remoteName = session and session.remoteEventName or TradeMonitorState.remoteEventName or "manual"
+
+	if TradeMonitorUI.statusLabel then
+		TradeMonitorUI.statusLabel.Text = ("Active now: %s\nTrade type: %s\nPartner: %s\nSource: %s"):format(
+			active and "YES" or "NO",
+			active and string.upper(classification) or "NONE",
+			partner,
+			remoteName
+		)
+		TradeMonitorUI.statusLabel.TextColor3 = active and ((classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)) or WINDOW_THEME.mutedText
+	end
+
+	if TradeMonitorUI.currentLabel then
+		if active and session then
+			TradeMonitorUI.currentLabel.Text = ("You give: %s | %s\nYou get: %s | %s\nNet: %s | %s\nAccepted: you %s | them %s"):format(
+				FormatValue(session.localMM2 or 0),
+				FormatRubleValue(session.localRub or 0) or "0.00₽",
+				FormatValue(session.remoteMM2 or 0),
+				FormatRubleValue(session.remoteRub or 0) or "0.00₽",
+				FormatSignedValue(session.netMM2 or 0),
+				FormatSignedRubleValue(session.netRub or 0),
+				session.youAccepted and "YES" or "NO",
+				session.themAccepted and "YES" or "NO"
+			)
+			TradeMonitorUI.currentLabel.TextColor3 = WINDOW_THEME.panelText
+		else
+			TradeMonitorUI.currentLabel.Text = "Current trade scan is idle.\nOpen or receive a trade to see live MM2 value, rubles, and real/fake status."
+			TradeMonitorUI.currentLabel.TextColor3 = WINDOW_THEME.mutedText
+		end
+	end
+
+	if TradeMonitorUI.totalsLabel then
+		TradeMonitorUI.totalsLabel.Text = ("Real trades completed: %d\nSession profit: %s | %s"):format(
+			TradeMonitorState.realTradesCompleted,
+			FormatSignedValue(TradeMonitorState.totalProfitMM2),
+			FormatSignedRubleValue(TradeMonitorState.totalProfitRub)
+		)
+		TradeMonitorUI.totalsLabel.TextColor3 = Color3.fromRGB(120, 255, 160)
+	end
+
+	RenderTradeMonitorHistory()
+end
+
+local function RefreshTradeMonitorState()
+	local session = TradeMonitorState.current
+	if not session then
+		RefreshTradeMonitorUI()
+		return
+	end
+
+	session.partner = GetTradeSessionPartner()
+	session.active = Config and Config.in_trade == true
+	session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
+	session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
+
+	local localTotals = GetTradeOfferTotals(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
+	local remoteTotals = GetTradeOfferTotals(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
+	session.localMM2 = localTotals.mm2
+	session.localRub = localTotals.rub
+	session.remoteMM2 = remoteTotals.mm2
+	session.remoteRub = remoteTotals.rub
+	session.localItems = localTotals.items
+	session.remoteItems = remoteTotals.items
+	session.netMM2 = remoteTotals.mm2 - localTotals.mm2
+	session.netRub = remoteTotals.rub - localTotals.rub
+
+	RefreshTradeMonitorUI()
+end
+
+local function NoteTradeRemoteActivity(partnerName, remoteName)
+	TradeMonitorState.remotePartnerName = partnerName or TradeMonitorState.remotePartnerName
+	TradeMonitorState.remoteEventName = remoteName or TradeMonitorState.remoteEventName
+	TradeMonitorState.remoteEventAt = tick()
+	TradeMonitorState.remoteMarkerId = TradeMonitorState.remoteMarkerId + 1
+	if TradeMonitorState.current then
+		TradeMonitorState.current.remoteEventAt = TradeMonitorState.remoteEventAt
+		TradeMonitorState.current.remoteEventName = TradeMonitorState.remoteEventName
+		if partnerName and partnerName ~= "" then
+			TradeMonitorState.current.partner = partnerName
+		end
+		RefreshTradeMonitorState()
+	end
+end
+
+local function BeginTradeMonitorSession()
+	TradeMonitorState.sessionCounter = TradeMonitorState.sessionCounter + 1
+	local now = tick()
+	local fromRemote = TradeMonitorState.remoteMarkerId ~= TradeMonitorState.consumedRemoteMarkerId
+		and TradeMonitorState.remoteEventAt > 0
+		and (now - TradeMonitorState.remoteEventAt) <= 8
+	if fromRemote then
+		TradeMonitorState.consumedRemoteMarkerId = TradeMonitorState.remoteMarkerId
+	end
+	TradeMonitorState.current = {
+		id = TradeMonitorState.sessionCounter,
+		startedAt = now,
+		active = true,
+		partner = GetTradeSessionPartner(),
+		remoteEventAt = fromRemote and TradeMonitorState.remoteEventAt or 0,
+		remoteEventName = fromRemote and TradeMonitorState.remoteEventName or "manual",
+		localMM2 = 0,
+		localRub = 0,
+		remoteMM2 = 0,
+		remoteRub = 0,
+		netMM2 = 0,
+		netRub = 0,
+		localItems = 0,
+		remoteItems = 0,
+		youAccepted = false,
+		themAccepted = false,
+	}
+	RefreshTradeMonitorState()
+end
+
+local function FinalizeTradeMonitorSession(completed)
+	local session = TradeMonitorState.current
+	if not session then
+		RefreshTradeMonitorUI()
+		return
+	end
+
+	RefreshTradeMonitorState()
+	session = TradeMonitorState.current
+	session.active = false
+	session.completed = completed == true
+	local classification = ClassifyTradeSession(session)
+	local statusText = completed and "Completed" or "Closed"
+	local shouldKeep = completed or (session.localItems or 0) > 0 or (session.remoteItems or 0) > 0 or classification == "real"
+
+	if completed and classification == "real" then
+		TradeMonitorState.realTradesCompleted = TradeMonitorState.realTradesCompleted + 1
+		TradeMonitorState.totalProfitMM2 = TradeMonitorState.totalProfitMM2 + (session.netMM2 or 0)
+		TradeMonitorState.totalProfitRub = TradeMonitorState.totalProfitRub + (session.netRub or 0)
+	end
+
+	if shouldKeep then
+		table.insert(TradeMonitorState.history, 1, {
+			timeLabel = os.date("%H:%M:%S"),
+			classification = classification,
+			partner = session.partner,
+			statusText = statusText,
+			localMM2 = session.localMM2 or 0,
+			localRub = session.localRub or 0,
+			remoteMM2 = session.remoteMM2 or 0,
+			remoteRub = session.remoteRub or 0,
+			netMM2 = session.netMM2 or 0,
+			netRub = session.netRub or 0,
+		})
+		while #TradeMonitorState.history > 12 do
+			table.remove(TradeMonitorState.history)
+		end
+	end
+
+	TradeMonitorState.current = nil
+	RefreshTradeMonitorUI()
+end
 
 -- === Trade Table ===
-local TradeTable = {
+TradeTable = {
 	LastOffer = os.time(),
 	Locked = false,
 	Player1 = {
@@ -1589,6 +1918,7 @@ end
 local function AcceptTrade()
 	if not TradeTable then return end
 	if TradeTable.Player1.Accepted == true and TradeTable.Player2.Accepted == true then
+		pcall(RefreshTradeMonitorState)
 		TradeTable.Locked = true
 		task.wait(0.2)
 
@@ -1624,6 +1954,10 @@ local function AcceptTrade()
 				if PartnerUserBox then PartnerUserBox.Text = partner end
 			end)
 		end
+
+		pcall(function()
+			FinalizeTradeMonitorSession(true)
+		end)
 
 		TradeTable = {
 			LastOffer = os.time(),
@@ -1677,6 +2011,7 @@ local function OfferItemLocalPlayer(ItemName, ItemType)
 	TradeTable.Player1.Accepted = false
 	TradeTable.Player2.Accepted = false
 	pcall(function() functions.UpdateTrade() end)
+	pcall(RefreshTradeMonitorState)
 end
 
 local function RemoveItemLocalPlayer(ItemName, ItemType)
@@ -1698,6 +2033,7 @@ local function RemoveItemLocalPlayer(ItemName, ItemType)
 		end
 	end
 	pcall(function() functions.UpdateTrade() end)
+	pcall(RefreshTradeMonitorState)
 end
 
 -- === Offer / Remove another player ===
@@ -1747,6 +2083,7 @@ local function OfferItemAnotherPlayer(ItemName, ItemType)
 	TradeTable.Player1.Accepted = false
 	TradeTable.Player2.Accepted = false
 	pcall(function() functions.UpdateTrade() end)
+	pcall(RefreshTradeMonitorState)
 	return true
 end
 
@@ -1768,6 +2105,7 @@ local function RemoveItemAnotherPlayer()
 		TradeTable.Player1.Accepted = false
 		TradeTable.Player2.Accepted = false
 		pcall(function() functions.UpdateTrade() end)
+		pcall(RefreshTradeMonitorState)
 	end
 end
 
@@ -1903,10 +2241,14 @@ functions.UpdateTrade = function()
 			v44 = #Offer2 < 1
 		end
 		l_AddItem_0(v44)
+		RefreshTradeMonitorState()
 	end)
 end
 
 function DeclineTrade()
+	pcall(function()
+		FinalizeTradeMonitorSession(false)
+	end)
 	pcall(function() TradeGUI.Enabled = false end)
 
 	local partner = DEFAULT_PARTNER_NAME
@@ -2002,6 +2344,7 @@ end
 function StartTrade()
 	if Config.in_trade == true then return end
 	Config.in_trade = true
+	pcall(BeginTradeMonitorSession)
 
 	pcall(function()
 		for _, v49 in pairs({"Weapons", "Pets"}) do
@@ -2030,6 +2373,7 @@ function StartTrade()
 	end)
 
 	TradeGUI.Enabled = true
+	pcall(RefreshTradeMonitorState)
 
 	pcall(function()
 		if SearchTextSignal then
@@ -2071,6 +2415,7 @@ end
 
 TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
 	local name = partnerNameFromArgs(arg1, arg2)
+	NoteTradeRemoteActivity(name or LastTradePartner, "StartTrade")
 	if name then
 		LastTradePartner = name
 		pcall(function()
@@ -2087,16 +2432,17 @@ TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
 	end
 end)
 
-pcall(function()
-	for _, remote in ipairs(TradeRemotes:GetDescendants()) do
-		if remote ~= TradeRemotes.StartTrade and remote:IsA("RemoteEvent") then
-			remote.OnClientEvent:Connect(function(...)
-				local name = partnerNameFromArgs(...)
-				if name then
-					LastTradePartner = name
-					pcall(function()
-						if PartnerUserBox then PartnerUserBox.Text = name end
-					end)
+	pcall(function()
+		for _, remote in ipairs(TradeRemotes:GetDescendants()) do
+			if remote ~= TradeRemotes.StartTrade and remote:IsA("RemoteEvent") then
+				remote.OnClientEvent:Connect(function(...)
+					local name = partnerNameFromArgs(...)
+					NoteTradeRemoteActivity(name or LastTradePartner, remote.Name)
+					if name then
+						LastTradePartner = name
+						pcall(function()
+							if PartnerUserBox then PartnerUserBox.Text = name end
+						end)
 					print("[mm2run] LastTradePartner updated from " .. remote.Name .. ": " .. name)
 				end
 			end)
@@ -2524,7 +2870,7 @@ tabPadding.PaddingTop = UDim.new(0, 6)
 tabPadding.PaddingBottom = UDim.new(0, 6)
 tabPadding.Parent = tabContainer
 
-local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Config"}
+local tabs = {"Control", "Trade", "Players", "Items", "Spawner", "Values", "Other", "Config"}
 local tabButtons = {}
 local tabFrames = {}
 local activeTab = "Control"
@@ -3178,7 +3524,178 @@ do
 	controlBindStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
 	controlBindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	controlBindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
-	controlBindStatusLabel.Parent = controlFrame
+controlBindStatusLabel.Parent = controlFrame
+end
+
+-- ===== TRADE TAB =====
+do
+	local tradeFrame = tabFrames["Trade"]
+
+	local tradeIntro = Instance.new("TextLabel")
+	tradeIntro.Size = UDim2.new(1, 0, 0, 34)
+	tradeIntro.BackgroundTransparency = 1
+	tradeIntro.Text = "Live trade scanner. It marks manual/local trades as fake and remote-started trades as real."
+	tradeIntro.Font = Enum.Font.Gotham
+	tradeIntro.TextSize = 13
+	tradeIntro.TextWrapped = true
+	tradeIntro.TextColor3 = WINDOW_THEME.mutedText
+	tradeIntro.TextXAlignment = Enum.TextXAlignment.Left
+	tradeIntro.TextYAlignment = Enum.TextYAlignment.Top
+	tradeIntro.Parent = tradeFrame
+
+	local statusCard = Instance.new("Frame")
+	statusCard.Size = UDim2.new(1, 0, 0, 94)
+	statusCard.BackgroundColor3 = WINDOW_THEME.chipColor
+	statusCard.BackgroundTransparency = 0.16
+	statusCard.BorderSizePixel = 0
+	statusCard.Parent = tradeFrame
+
+	local statusCardCorner = Instance.new("UICorner")
+	statusCardCorner.CornerRadius = UDim.new(0, 16)
+	statusCardCorner.Parent = statusCard
+
+	local statusCardStroke = Instance.new("UIStroke")
+	statusCardStroke.Color = WINDOW_THEME.panelEdge
+	statusCardStroke.Thickness = 1
+	statusCardStroke.Transparency = 0.72
+	statusCardStroke.Parent = statusCard
+
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.Size = UDim2.new(1, -20, 1, -18)
+	statusLabel.Position = UDim2.new(0, 10, 0, 9)
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Text = ""
+	statusLabel.Font = Enum.Font.GothamBold
+	statusLabel.TextSize = 13
+	statusLabel.TextWrapped = true
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	statusLabel.TextYAlignment = Enum.TextYAlignment.Top
+	statusLabel.Parent = statusCard
+
+	local currentCard = Instance.new("Frame")
+	currentCard.Size = UDim2.new(1, 0, 0, 110)
+	currentCard.BackgroundColor3 = WINDOW_THEME.inputColor
+	currentCard.BackgroundTransparency = 0.08
+	currentCard.BorderSizePixel = 0
+	currentCard.Parent = tradeFrame
+
+	local currentCardCorner = Instance.new("UICorner")
+	currentCardCorner.CornerRadius = UDim.new(0, 16)
+	currentCardCorner.Parent = currentCard
+
+	local currentCardStroke = Instance.new("UIStroke")
+	currentCardStroke.Color = WINDOW_THEME.panelEdge
+	currentCardStroke.Thickness = 1
+	currentCardStroke.Transparency = 0.76
+	currentCardStroke.Parent = currentCard
+
+	local currentLabel = Instance.new("TextLabel")
+	currentLabel.Size = UDim2.new(1, -20, 1, -18)
+	currentLabel.Position = UDim2.new(0, 10, 0, 9)
+	currentLabel.BackgroundTransparency = 1
+	currentLabel.Text = ""
+	currentLabel.Font = Enum.Font.Gotham
+	currentLabel.TextSize = 13
+	currentLabel.TextWrapped = true
+	currentLabel.TextXAlignment = Enum.TextXAlignment.Left
+	currentLabel.TextYAlignment = Enum.TextYAlignment.Top
+	currentLabel.Parent = currentCard
+
+	local totalsCard = Instance.new("Frame")
+	totalsCard.Size = UDim2.new(1, 0, 0, 70)
+	totalsCard.BackgroundColor3 = WINDOW_THEME.buttonColor
+	totalsCard.BackgroundTransparency = 0.18
+	totalsCard.BorderSizePixel = 0
+	totalsCard.Parent = tradeFrame
+
+	local totalsCardCorner = Instance.new("UICorner")
+	totalsCardCorner.CornerRadius = UDim.new(0, 16)
+	totalsCardCorner.Parent = totalsCard
+
+	local totalsCardStroke = Instance.new("UIStroke")
+	totalsCardStroke.Color = WINDOW_THEME.panelEdge
+	totalsCardStroke.Thickness = 1
+	totalsCardStroke.Transparency = 0.76
+	totalsCardStroke.Parent = totalsCard
+
+	local totalsLabel = Instance.new("TextLabel")
+	totalsLabel.Size = UDim2.new(1, -20, 1, -16)
+	totalsLabel.Position = UDim2.new(0, 10, 0, 8)
+	totalsLabel.BackgroundTransparency = 1
+	totalsLabel.Text = ""
+	totalsLabel.Font = Enum.Font.GothamBold
+	totalsLabel.TextSize = 13
+	totalsLabel.TextWrapped = true
+	totalsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	totalsLabel.TextYAlignment = Enum.TextYAlignment.Top
+	totalsLabel.Parent = totalsCard
+
+	local historyHeader = Instance.new("TextLabel")
+	historyHeader.Size = UDim2.new(1, 0, 0, 18)
+	historyHeader.BackgroundTransparency = 1
+	historyHeader.Text = "Recent trade history"
+	historyHeader.Font = Enum.Font.GothamBold
+	historyHeader.TextSize = 14
+	historyHeader.TextColor3 = WINDOW_THEME.panelText
+	historyHeader.TextXAlignment = Enum.TextXAlignment.Left
+	historyHeader.Parent = tradeFrame
+
+	local historyScroll = Instance.new("ScrollingFrame")
+	historyScroll.Size = UDim2.new(1, 0, 0, 180)
+	historyScroll.BackgroundColor3 = WINDOW_THEME.chipColor
+	historyScroll.BackgroundTransparency = 0.16
+	historyScroll.BorderSizePixel = 0
+	historyScroll.ScrollBarThickness = 5
+	historyScroll.ScrollBarImageColor3 = WINDOW_THEME.panelEdge
+	historyScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	historyScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	historyScroll.Parent = tradeFrame
+
+	local historyScrollCorner = Instance.new("UICorner")
+	historyScrollCorner.CornerRadius = UDim.new(0, 16)
+	historyScrollCorner.Parent = historyScroll
+
+	local historyScrollStroke = Instance.new("UIStroke")
+	historyScrollStroke.Color = WINDOW_THEME.panelEdge
+	historyScrollStroke.Thickness = 1
+	historyScrollStroke.Transparency = 0.8
+	historyScrollStroke.Parent = historyScroll
+
+	local historyLayout = Instance.new("UIListLayout")
+	historyLayout.FillDirection = Enum.FillDirection.Vertical
+	historyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	historyLayout.Padding = UDim.new(0, 6)
+	historyLayout.Parent = historyScroll
+
+	local historyPadding = Instance.new("UIPadding")
+	historyPadding.PaddingTop = UDim.new(0, 8)
+	historyPadding.PaddingBottom = UDim.new(0, 8)
+	historyPadding.PaddingLeft = UDim.new(0, 8)
+	historyPadding.PaddingRight = UDim.new(0, 8)
+	historyPadding.Parent = historyScroll
+
+	local function updateTradeHistoryHeight()
+		local offsetY = historyScroll.AbsolutePosition.Y - tradeFrame.AbsolutePosition.Y
+		local available = tradeFrame.AbsoluteSize.Y - offsetY - 8
+		historyScroll.Size = UDim2.new(1, 0, 0, math.max(120, available))
+	end
+
+	tradeFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTradeHistoryHeight)
+	task.defer(updateTradeHistoryHeight)
+
+	TradeMonitorUI = {
+		statusLabel = statusLabel,
+		currentLabel = currentLabel,
+		totalsLabel = totalsLabel,
+		historyScroll = historyScroll,
+	}
+
+	RefreshTradeMonitorUI()
+	task.spawn(function()
+		while task.wait(0.5) do
+			pcall(RefreshTradeMonitorState)
+		end
+	end)
 end
 
 -- ===== FILL PLAYERS TAB =====
