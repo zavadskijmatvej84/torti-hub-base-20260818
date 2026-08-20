@@ -1,3 +1,88 @@
+    {name='Zombified (Knife)', rarity='Uncommon', value='120', trend='Stable', demand=3},
+    {name='Brains', rarity='Uncommon', value='135', trend='Stable', demand=3},
+    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=3},
+    {name='Sweater (Knife)', rarity='Uncommon', value='60', trend='Stable', demand=3},
+    {name='Branches', rarity='Uncommon', value='50', trend='Stable', demand=2},
+    {name='Snowflake', rarity='Uncommon', value='20', trend='Stable', demand=2},
+    {name='Skulls', rarity='Uncommon', value='15', trend='Stable', demand=3},
+    {name='Zombified (Gun)', rarity='Uncommon', value='15', trend='Stable', demand=2},
+    {name='Void', rarity='Uncommon', value='12', trend='Stable', demand=2},
+    {name='Zombie (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
+    {name='Frozen (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=1},
+    {name='Lights (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Mummy 2018 (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
+    {name='Potion (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Gothic (Gun)', rarity='Uncommon', value='7', trend='Stable', demand=2},
+    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Webs', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Pumpkin Pie', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Holly (Gun)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Potion (2017)', rarity='Uncommon', value='3', trend='Stable', demand=1},
+    {name='Potion (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Steel (Gun)', rarity='Uncommon', value='8', trend='Stable', demand=2},
+    {name='Frozen (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Mummy (2017)', rarity='Uncommon', value='20', trend='Stable', demand=1},
+    {name='Mummy 2018 (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Zombie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=2},
+    {name='Zombie', rarity='Uncommon', value='7', trend='Stable', demand=2},
+    {name='Wrap (Gun)', rarity='Uncommon', value='12', trend='Stable', demand=2},
+    {name='Wrap (Knife)', rarity='Uncommon', value='12', trend='Stable', demand=2},
+    {name='Lights (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Moons', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Vampire', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Wolf', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Gothic (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
+    {name='Hazard (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
+    {name='Stars (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Zombie (2023)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Nutcracker', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
+    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowy', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Wrapped (Gun)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Wrapped (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Gifted', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
+    {name='Tree (2021)', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Meltdown', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Lantern', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Cookie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=2},
+    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Moonlight', rarity='Uncommon', value='1', trend='Stable', demand=2},
+    {name='Pool Noodle', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
+    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},
+    {name='Mistletoe (Gun)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
+    {name='Snowflake 2022 (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
+    {name='Wraiths (Knife)', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
+    {name='Hazard (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
+    {name='Love (Gun)', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
+    {name='Gingerheart', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
+    {name='Rose', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
+    {name='Wrapped Gun (2024)', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
+    {name='Frosty', rarity='Uncommon', value='0.03', trend='Stable', demand=1},
+    {name='Holly (Knife)', rarity='Uncommon', value='0.03', trend='Stable', demand=1},
+    {name='Carrot (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Clown Gun (2024)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Fireplace', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Forest', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Marble', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Melon', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Mummy 2020 (Knife)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
+    {name='Canes (Gun)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Carrot (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Stockings (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Brains 2022', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Carrot', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Cookie (Gun)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Decorated', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Eyes', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Fall Camo', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Floatie', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Gingerbread', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Meadow', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Monster', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
     {name='Moons (2024)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
     {name='Mummy 2020 (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
     {name='Painted (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
@@ -823,45 +908,3 @@ local function RefreshConfigsList()
 
                 local loadBtn = Instance.new("TextButton")
                 loadBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
-                loadBtn.Position = UDim2.new(0.52, 2, 0.125, 0)
-                loadBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 80)
-                loadBtn.Text = "Load"
-                loadBtn.Font = Enum.Font.Gotham
-                loadBtn.TextSize = 11
-                loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                loadBtn.Parent = row
-
-                local lc = Instance.new("UICorner")
-                lc.CornerRadius = UDim.new(0, 4)
-                lc.Parent = loadBtn
-
-                local delBtn = Instance.new("TextButton")
-                delBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
-                delBtn.Position = UDim2.new(0.76, 2, 0.125, 0)
-                delBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-                delBtn.Text = "Del"
-                delBtn.Font = Enum.Font.Gotham
-                delBtn.TextSize = 11
-                delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                delBtn.Parent = row
-
-                local dc = Instance.new("UICorner")
-                dc.CornerRadius = UDim.new(0, 4)
-                dc.Parent = delBtn
-
-                loadBtn.MouseButton1Click:Connect(function()
-                    pcall(function()
-                        local path = "mm2run_configs/" .. name .. ".json"
-                        local data = game:GetService("HttpService"):JSONDecode(readfile(path))
-
-                        InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", data.Weapons or {}, false)
-                        InventoryOverlay.SetVisibleOwnedSnapshot("Pets", data.Pets or {}, false)
-                        InventoryOverlay.FireInventoryDataChanged()
-                        print("[mm2run/config] loaded: " .. name)
-                    end)
-                end)
-
-                delBtn.MouseButton1Click:Connect(function()
-                    pcall(function()
-                        delfile("mm2run_configs/" .. name .. ".json")
-                        print("[mm2run/config] deleted: " .. name)

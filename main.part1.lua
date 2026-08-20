@@ -866,3 +866,45 @@ local VisiblePlayerCurrencyNames = {
 	coins = true,
 	coin = true,
 	gems = true,
+	gem = true,
+	tokens = true,
+	token = true,
+	gold = true,
+	candy = true,
+	candies = true,
+	snowtokens = true,
+	snowtoken = true,
+	beachballs = true,
+	beachball = true,
+	eggs = true,
+	egg = true,
+	shards = true,
+	shard = true,
+	credits = true,
+	credit = true,
+	keys = true,
+	key = true,
+}
+
+local function GetNumericValue(instance)
+	if instance:IsA("IntValue") or instance:IsA("NumberValue") then
+		return instance.Value
+	end
+	return nil
+end
+
+local function CollectLocalCurrencyRows()
+	local scanned = ScanProfileCurrencies(ProfileData or {})
+	local rows = {}
+	for _, entry in pairs(scanned) do
+		if type(entry) == "table" then
+			table.insert(rows, entry)
+		end
+	end
+
+	table.sort(rows, function(a, b)
+		if a.amount ~= b.amount then
+			return a.amount > b.amount
+		end
+		return a.label < b.label
+	end)

@@ -1,86 +1,3 @@
-		settle = 0.15,
-	},
-}
-
-local function SilentBlockPlayer(Selected)
-	if not Selected then return end
-	local playerName = (typeof(Selected) == "Instance" and Selected.Name) or tostring(Selected)
-	print("[block] >>> SilentBlockPlayer: " .. playerName)
-
-	pcall(function() setthreadidentity(8) end)
-
-	local preWatchers = {}
-	local function watchFor(parent)
-		local conn = parent.DescendantAdded:Connect(function(d)
-			if d.Name == SilentBlockConfig.modalName then
-				silentHide(d)
-				local inner = d.DescendantAdded:Connect(function() silentHide(d) end)
-				table.insert(preWatchers, inner)
-			end
-		end)
-		table.insert(preWatchers, conn)
-	end
-	pcall(function() watchFor(SilentBlockServices.CoreGui) end)
-
-	SilentBlockServices.StarterGui:SetCore("PromptBlockPlayer", Selected)
-
-	local startTime = tick()
-	local modal = nil
-	while not modal do
-		SilentBlockServices.RunService.Heartbeat:Wait()
-		if tick() - startTime > SilentBlockConfig.modalAppearTimeout then
-			warn("[block] modal never appeared for " .. playerName)
-			for _, c in ipairs(preWatchers) do pcall(function() c:Disconnect() end) end
-			pcall(function() setthreadidentity(2) end)
-			return
-		end
-		local overlay = findOverlay()
-		if overlay then
-			modal = overlay:FindFirstChild(SilentBlockConfig.modalName, true)
-		end
-	end
-
-	silentHide(modal)
-
-	local posConn
-	posConn = SilentBlockServices.RunService.Heartbeat:Connect(function()
-		pcall(function()
-			if modal and modal.Parent then
-				silentHide(modal)
-			else
-				posConn:Disconnect()
-			end
-		end)
-	end)
-
-	local blockBtn = findBlockButton(modal)
-
-	if blockBtn then
-		print("[block] Block button found at " .. blockBtn:GetFullName())
-
-		local attempts = 0
-		while attempts < SilentBlockConfig.maxAttempts do
-			attempts = attempts + 1
-			local dismissed = false
-
-			for _, strategy in ipairs(SilentBlockStrategies) do
-				strategy.run(blockBtn)
-				task.wait(strategy.settle)
-				if not strategy.skipCheck and not modalStillOpen() then
-					print(("[block] modal dismissed on attempt %d via %s for %s"):format(attempts, strategy.name, playerName))
-					dismissed = true
-					break
-				end
-			end
-
-			if dismissed then break end
-		end
-		pcall(function() SilentBlockServices.GuiService.SelectedObject = nil end)
-	else
-		warn("[block] couldn't find Block button for " .. playerName)
-	end
-
-	pcall(function() if posConn then posConn:Disconnect() end end)
 	for _, c in ipairs(preWatchers) do pcall(function() c:Disconnect() end) end
 
 	local timeout = tick() + SilentBlockConfig.modalDismissTimeout
@@ -452,6 +369,24 @@ PlayerAutoRefreshToggleButton = nil
 PlayerAutoRefreshSecondsBox = nil
 PlayerAutoRefreshStatusLabel = nil
 playerValueRows = {}
+ControlBindButtons = {}
+ControlBindStatusLabel = nil
+
+local ControlBindState = {
+	bindings = {},
+	listeningActionId = nil,
+}
+
+local ControlBindDefinitions = {
+	{ id = "recentTrade", label = "Recent trade" },
+	{ id = "randomPlayer", label = "Random player" },
+	{ id = "startTrade", label = "Start trade" },
+	{ id = "randomItems", label = "Random items" },
+	{ id = "acceptOffer", label = "Accept their offer" },
+	{ id = "blockPlayer", label = "Block player" },
+}
+
+local ControlActions = {}
 
 local AutoBlockState = {
 	enabled = false,
@@ -548,6 +483,196 @@ local function updatePlayerAutoRefreshButtonText()
 	PlayerAutoRefreshToggleButton.BackgroundTransparency = PlayerValuesAutoRefreshState.enabled and 0.72 or 0.84
 end
 
+local function setControlBindStatus(text, color)
+	if not ControlBindStatusLabel then
+		return
+	end
+	ControlBindStatusLabel.Text = text
+	if color then
+		ControlBindStatusLabel.TextColor3 = color
+	end
+end
+
+local function formatControlBindKey(keyCode)
+	if not keyCode then
+		return "Unbound"
+	end
+	return keyCode.Name
+end
+
+local function updateControlBindButtonText(actionId)
+	local button = ControlBindButtons[actionId]
+	if not button then
+		return
+	end
+
+	if ControlBindState.listeningActionId == actionId then
+		button.Text = "Press key..."
+		return
+	end
+
+	button.Text = formatControlBindKey(ControlBindState.bindings[actionId])
+end
+
+local function assignControlBind(actionId, keyCode)
+	for otherActionId, otherKeyCode in pairs(ControlBindState.bindings) do
+		if otherActionId ~= actionId and otherKeyCode == keyCode then
+			ControlBindState.bindings[otherActionId] = nil
+			updateControlBindButtonText(otherActionId)
+		end
+	end
+
+	ControlBindState.bindings[actionId] = keyCode
+	updateControlBindButtonText(actionId)
+	setControlBindStatus(("Bound %s to %s"):format(actionId, keyCode.Name), Color3.fromRGB(140, 220, 160))
+end
+
+local function clearControlBind(actionId)
+	ControlBindState.bindings[actionId] = nil
+	if ControlBindState.listeningActionId == actionId then
+		ControlBindState.listeningActionId = nil
+	end
+	updateControlBindButtonText(actionId)
+	setControlBindStatus(("Cleared bind for %s"):format(actionId), Color3.fromRGB(205, 183, 132))
+end
+
+local function startControlBindListening(actionId)
+	local previousActionId = ControlBindState.listeningActionId
+	ControlBindState.listeningActionId = actionId
+	if previousActionId and previousActionId ~= actionId then
+		updateControlBindButtonText(previousActionId)
+	end
+	updateControlBindButtonText(actionId)
+	setControlBindStatus("Press any key to bind. Esc cancels, Backspace clears.", Color3.fromRGB(187, 198, 213))
+end
+
+local function triggerControlAction(actionId)
+	local callback = ControlActions[actionId]
+	if not callback then
+		return
+	end
+
+	local ok, err = pcall(callback)
+	if not ok then
+		warn("[control-bind] action failed for " .. tostring(actionId) .. ": " .. tostring(err))
+		setControlBindStatus(("Action failed: %s"):format(actionId), Color3.fromRGB(255, 120, 120))
+	end
+end
+
+local function createKeybindRow(parent, label, actionId)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 42)
+	row.BackgroundTransparency = 1
+	row.Parent = parent
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(0.47, 0, 1, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = label
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 14
+	nameLabel.TextColor3 = Color3.fromRGB(212, 220, 233)
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Parent = row
+
+	local bindButton = Instance.new("TextButton")
+	bindButton.Size = UDim2.new(0.33, -6, 1, 0)
+	bindButton.Position = UDim2.new(0.47, 6, 0, 0)
+	bindButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	bindButton.BackgroundTransparency = 0.86
+	bindButton.BorderSizePixel = 0
+	bindButton.Text = "Unbound"
+	bindButton.Font = Enum.Font.GothamBold
+	bindButton.TextSize = 13
+	bindButton.TextColor3 = Color3.fromRGB(248, 250, 255)
+	bindButton.AutoButtonColor = false
+	bindButton.Parent = row
+
+	local bindCorner = Instance.new("UICorner")
+	bindCorner.CornerRadius = UDim.new(0, 12)
+	bindCorner.Parent = bindButton
+
+	local bindStroke = Instance.new("UIStroke")
+	bindStroke.Color = Color3.fromRGB(255, 255, 255)
+	bindStroke.Thickness = 1
+	bindStroke.Transparency = 0.86
+	bindStroke.Parent = bindButton
+
+	local clearButton = Instance.new("TextButton")
+	clearButton.Size = UDim2.new(0.2, -6, 1, 0)
+	clearButton.Position = UDim2.new(0.8, 6, 0, 0)
+	clearButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	clearButton.BackgroundTransparency = 0.9
+	clearButton.BorderSizePixel = 0
+	clearButton.Text = "Clear"
+	clearButton.Font = Enum.Font.GothamBold
+	clearButton.TextSize = 13
+	clearButton.TextColor3 = Color3.fromRGB(230, 190, 190)
+	clearButton.AutoButtonColor = false
+	clearButton.Parent = row
+
+	local clearCorner = Instance.new("UICorner")
+	clearCorner.CornerRadius = UDim.new(0, 12)
+	clearCorner.Parent = clearButton
+
+	local clearStroke = Instance.new("UIStroke")
+	clearStroke.Color = Color3.fromRGB(255, 255, 255)
+	clearStroke.Thickness = 1
+	clearStroke.Transparency = 0.88
+	clearStroke.Parent = clearButton
+
+	bindButton.MouseButton1Click:Connect(function()
+		startControlBindListening(actionId)
+	end)
+
+	clearButton.MouseButton1Click:Connect(function()
+		clearControlBind(actionId)
+	end)
+
+	ControlBindButtons[actionId] = bindButton
+	updateControlBindButtonText(actionId)
+
+	return row
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then
+		return
+	end
+
+	local keyCode = input.KeyCode
+	if keyCode == Enum.KeyCode.Unknown then
+		return
+	end
+
+	if ControlBindState.listeningActionId then
+		local actionId = ControlBindState.listeningActionId
+		ControlBindState.listeningActionId = nil
+		if keyCode == Enum.KeyCode.Escape then
+			updateControlBindButtonText(actionId)
+			setControlBindStatus("Bind cancelled.", Color3.fromRGB(205, 183, 132))
+			return
+		end
+		if keyCode == Enum.KeyCode.Backspace or keyCode == Enum.KeyCode.Delete then
+			clearControlBind(actionId)
+			return
+		end
+		assignControlBind(actionId, keyCode)
+		return
+	end
+
+	if gameProcessed or UserInputService:GetFocusedTextBox() then
+		return
+	end
+
+	for _, definition in ipairs(ControlBindDefinitions) do
+		if ControlBindState.bindings[definition.id] == keyCode then
+			triggerControlAction(definition.id)
+			break
+		end
+	end
+end)
+
 -- ===== FILL CONTROL TAB =====
 local controlFrame = tabFrames["Control"]
 PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
@@ -556,76 +681,122 @@ PartnerUserBox.FocusLost:Connect(function()
     PartnerUserBox.Text = TradeTable.Player2.Player
 end)
 
-createButton(controlFrame, "Recent trade", function()
-    if LastTradePartner and LastTradePartner ~= "" then
-        TradeTable.Player2.Player = LastTradePartner
-        PartnerUserBox.Text = LastTradePartner
-    end
-end)
+local FakeTradePartners = {
+	"xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
+	"CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
+	"SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
+	"VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
+	"MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
+	"NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
+	"AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
+	"OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
+	"PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
+	"DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
+	"CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
+	"StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
+	"SolarFlareKid", "TwilightWisp",
+}
 
-createButton(controlFrame, "Random player", function()
-    local FakeTradePartners = {
-        "xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
-        "CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
-        "SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
-        "VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
-        "MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
-        "NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
-        "AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
-        "OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
-        "PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
-        "DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
-        "CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
-        "StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
-        "SolarFlareKid", "TwilightWisp",
-    }
-    local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
-    TradeTable.Player2.Player = chosen
-    PartnerUserBox.Text = chosen
-    pcall(function()
-        TheirOffer.Username.Text = "(" .. chosen .. ")"
-    end)
-    print("[mm2run/random] picked fake partner: " .. chosen)
-end)
+ControlActions.recentTrade = function()
+	if LastTradePartner and LastTradePartner ~= "" then
+		TradeTable.Player2.Player = LastTradePartner
+		PartnerUserBox.Text = LastTradePartner
+	end
+end
 
-createButton(controlFrame, "Start trade", function()
-    StartTrade()
-end)
+ControlActions.randomPlayer = function()
+	local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
+	TradeTable.Player2.Player = chosen
+	PartnerUserBox.Text = chosen
+	pcall(function()
+		TheirOffer.Username.Text = "(" .. chosen .. ")"
+	end)
+	print("[mm2run/random] picked fake partner: " .. chosen)
+end
 
-createButton(controlFrame, "Random items", function()
-    if #weaponButtons == 0 then
-        print("[mm2run/random] item list not built yet")
-        return
-    end
-    local info = weaponButtons[math.random(1, #weaponButtons)]
-    local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
-    if ok then
-        print("[mm2run/random] added random item: " .. info.entry.name)
-    else
-        print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
-    end
-end)
+ControlActions.startTrade = function()
+	StartTrade()
+end
 
-createButton(controlFrame, "Accept their offer", function()
-    if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
-        return
-    end
-    if v84 then
-        return
-    end
-    TheirOffer.Accepted.Visible = true
-    TradeTable.Player2.Accepted = true
-    AcceptTrade()
-end)
+ControlActions.randomItems = function()
+	if #weaponButtons == 0 then
+		print("[mm2run/random] item list not built yet")
+		return
+	end
+	local info = weaponButtons[math.random(1, #weaponButtons)]
+	local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
+	if ok then
+		print("[mm2run/random] added random item: " .. info.entry.name)
+	else
+		print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
+	end
+end
 
-createButton(controlFrame, "Block player", function()
-    pcall(function()
-        local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-        if Selected then
-            SilentBlockPlayer(Selected)
-        end
-    end)
-end)
+ControlActions.acceptOffer = function()
+	if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
+		return
+	end
+	if v84 then
+		return
+	end
+	TheirOffer.Accepted.Visible = true
+	TradeTable.Player2.Accepted = true
+	AcceptTrade()
+end
+
+ControlActions.blockPlayer = function()
+	pcall(function()
+		local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
+		if Selected then
+			SilentBlockPlayer(Selected)
+		end
+	end)
+end
+
+createButton(controlFrame, "Recent trade", ControlActions.recentTrade)
+createButton(controlFrame, "Random player", ControlActions.randomPlayer)
+createButton(controlFrame, "Start trade", ControlActions.startTrade)
+createButton(controlFrame, "Random items", ControlActions.randomItems)
+createButton(controlFrame, "Accept their offer", ControlActions.acceptOffer)
+createButton(controlFrame, "Block player", ControlActions.blockPlayer)
+
+local controlBindHeader = Instance.new("TextLabel")
+controlBindHeader.Size = UDim2.new(1, 0, 0, 18)
+controlBindHeader.BackgroundTransparency = 1
+controlBindHeader.Text = "Keybinds"
+controlBindHeader.Font = Enum.Font.GothamBold
+controlBindHeader.TextSize = 15
+controlBindHeader.TextColor3 = Color3.fromRGB(240, 244, 255)
+controlBindHeader.TextXAlignment = Enum.TextXAlignment.Left
+controlBindHeader.Parent = controlFrame
+
+local controlBindHint = Instance.new("TextLabel")
+controlBindHint.Size = UDim2.new(1, 0, 0, 28)
+controlBindHint.BackgroundTransparency = 1
+controlBindHint.Text = "All binds start empty. Click a bind, then press a key."
+controlBindHint.Font = Enum.Font.Gotham
+controlBindHint.TextSize = 12
+controlBindHint.TextWrapped = true
+controlBindHint.TextColor3 = Color3.fromRGB(180, 183, 192)
+controlBindHint.TextXAlignment = Enum.TextXAlignment.Left
+controlBindHint.TextYAlignment = Enum.TextYAlignment.Top
+controlBindHint.Parent = controlFrame
+
+for _, definition in ipairs(ControlBindDefinitions) do
+	createKeybindRow(controlFrame, definition.label, definition.id)
+end
+
+ControlBindStatusLabel = Instance.new("TextLabel")
+ControlBindStatusLabel.Size = UDim2.new(1, 0, 0, 30)
+ControlBindStatusLabel.BackgroundTransparency = 1
+ControlBindStatusLabel.Text = "Status: no binds yet"
+ControlBindStatusLabel.Font = Enum.Font.Gotham
+ControlBindStatusLabel.TextSize = 12
+ControlBindStatusLabel.TextWrapped = true
+ControlBindStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
+ControlBindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+ControlBindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+ControlBindStatusLabel.Parent = controlFrame
 
 -- ===== FILL PLAYERS TAB =====
 local playersFrame = tabFrames["Players"]
@@ -737,131 +908,3 @@ local spawnerStatusLabel = Instance.new("TextLabel")
 spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 15)
 spawnerStatusLabel.BackgroundTransparency = 1
 spawnerStatusLabel.Text = "Click weapon to spawn:"
-spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
-spawnerStatusLabel.TextSize = 12
-spawnerStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-spawnerStatusLabel.Parent = spawnerFrame
-
-local function _itemsTabNormalize(s)
-    s = string.lower(tostring(s or ""))
-    s = string.gsub(s, "^c%.%s*", "chroma ")
-    s = string.gsub(s, "(%s)c%.%s*", "%1chroma ")
-	s = string.gsub(s, "['\"]", "")
-    s = string.gsub(s, "%s+", " ")
-    s = string.gsub(s, "^%s+", "")
-    s = string.gsub(s, "%s+$", "")
-    return s
-end
-
-local SpawnerAllowedBases = {
-    "Alienbeam", "America", "Amerilaser", "Australis", "Bat", "BattleAxe", "BattleAxe II",
-    "Batwing", "Beachy", "Bioblade", "Blaster", "Bloom", "Blue Seer", "Blizzard",
-    "Boneblade", "Borealis", "Candleflame", "Candy", "Celestial", "Chill", "Clockwork",
-    "Constellation", "Cookieblade", "Cookiecane", "Corrupt", "Darkbringer", "Darkshot",
-    "Darksword", "Deathshard", "Eggblade", "Elderwood Blade", "Elderwood Revolver",
-    "Elderwood Scythe", "Eternal", "Eternal II", "Eternal III", "Eternal IV", "Eternalcane",
-    "Evergreen", "Evergun", "Fang", "Flames", "Flora", "Flowerwood", "Flowerwood Gun",
-    "Frostbite", "Frostsaber", "Gemstone", "Ghostblade", "Gingerblade", "Ginger Luger",
-    "Gingermint", "Gingerscope", "Green Luger", "Hallows Blade", "Hallows Edge", "Hallowscythe",
-    "Hallowgun", "Handsaw", "Harvester", "Heart Wand", "Heartblade", "Heat", "Iceblaster",
-    "Icebreaker", "Icecream", "Ice Dragon", "Iceflake", "Icepiercer", "Ice Shard", "Icewing",
-    "Jinglegun", "Laser", "Lightbringer", "Logchopper", "Luger", "Lugercane", "Makeshift",
-    "Minty", "Nebula", "Nightblade", "Niks Scythe", "Ocean", "Old Glory", "Orange Seer",
-    "Ornament", "Pearl", "Pearlshine", "Peppermint", "Phantom", "Pixel", "Plasma Beam",
-    "Plasma Blade", "Prismatic", "Pumpking", "Purple Seer", "Rainbow", "Rainbow Gun",
-    "Raygun", "Red Luger", "Red Seer", "Rune", "Sakura", "Sands", "Saw", "Seer", "Shark",
-    "Slasher", "Snowcannon", "Snow Dagger", "Snowflake", "Snowstorm", "Soul", "Spectre",
-    "Spider", "Spirit", "Sugar", "Sunrise", "Sunset", "Sweet", "Swirly Axe", "Swirly Blade",
-    "Swirlygun", "Tides", "Traveler's Axe", "Traveler's Gun", "Treat", "Turkey", "Vampire's Axe",
-    "Vampire's Edge", "Vampire's Gun", "Virtual", "Watergun", "Waves", "Winter's Edge",
-    "Xenoknife", "Xenoshot", "Xmas", "Yellow Seer"
-}
-
-local SpawnerAllowSet = {}
-for _, n in ipairs(SpawnerAllowedBases) do
-    SpawnerAllowSet[_itemsTabNormalize(n)] = true
-end
-
-local function _isSpawnerAllowed(entryName)
-    local n = _itemsTabNormalize(entryName)
-    if SpawnerAllowSet[n] then return true end
-    local stripped = string.gsub(n, "^chroma ", "")
-    return SpawnerAllowSet[stripped] == true
-end
-
-local function _isTradable(data)
-    if type(data) ~= "table" then return false end
-    if data.Tradable == false then return false end
-    if data.CanTrade == false then return false end
-    if data.Untradable == true then return false end
-    if data.NonTradable == true then return false end
-    if data.Locked == true then return false end
-    return true
-end
-
-local SpawnerRandomRanges = {
-    Chroma    = {1, 2},
-    Godly     = {1, 5},
-    Ancient   = {2, 6},
-    Unique    = {2, 8},
-    Classic   = {3, 10},
-    Legendary = {4, 12},
-    Vintage   = {5, 15},
-    Rare      = {8, 25},
-    Uncommon  = {10, 40},
-    Common    = {15, 60},
-}
-
-local function _randomAmount(rarity, evo)
-    if evo then return 1 end
-    local r = SpawnerRandomRanges[rarity] or SpawnerRandomRanges.Common
-    return math.random(r[1], r[2])
-end
-
-local spawnerScrollFrame = Instance.new("ScrollingFrame")
-spawnerScrollFrame.Size = UDim2.new(1, 0, 0, 120)
-spawnerScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-spawnerScrollFrame.BackgroundTransparency = 0.3
-spawnerScrollFrame.BorderSizePixel = 0
-spawnerScrollFrame.ScrollBarThickness = 6
-spawnerScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
-spawnerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-spawnerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-spawnerScrollFrame.Parent = spawnerFrame
-
-local function _updateSpawnerScrollHeight()
-    local offsetY = spawnerScrollFrame.AbsolutePosition.Y - spawnerFrame.AbsolutePosition.Y
-    local available = spawnerFrame.AbsoluteSize.Y - offsetY - 4
-    spawnerScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
-end
-spawnerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateSpawnerScrollHeight)
-task.defer(_updateSpawnerScrollHeight)
-
-do
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 5)
-    c.Parent = spawnerScrollFrame
-    local s = Instance.new("UIStroke")
-    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    s.Color = Color3.fromRGB(80, 80, 120)
-    s.Thickness = 1
-    s.Parent = spawnerScrollFrame
-    local lay = Instance.new("UIListLayout")
-    lay.FillDirection = Enum.FillDirection.Vertical
-    lay.SortOrder = Enum.SortOrder.LayoutOrder
-    lay.Padding = UDim.new(0, 2)
-    lay.Parent = spawnerScrollFrame
-    local pad = Instance.new("UIPadding")
-    pad.PaddingTop = UDim.new(0, 3)
-    pad.PaddingBottom = UDim.new(0, 3)
-    pad.PaddingLeft = UDim.new(0, 3)
-    pad.PaddingRight = UDim.new(0, 3)
-    pad.Parent = spawnerScrollFrame
-end
-
--- ===== FILL VALUES TAB =====
-local RefreshPlayerValues = function() end
-
-local Values
-

@@ -1006,7 +1006,7 @@ local TradeTable = {
 		Offer = {}
 	},
 	Player2 = {
-		Player = "m0_3a",
+		Player = "To_rti",
 		Accepted = false,
 		Offer = {}
 	},

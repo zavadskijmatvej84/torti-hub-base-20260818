@@ -34,12 +34,12 @@ local function AcceptTrade()
 
 		pcall(function() TradeGUI.Enabled = false end)
 
-		local partner = "m0_3a"
+		local partner = "To_rti"
 		if TradeTable.Player2 and TradeTable.Player2.Player then
 			partner = TradeTable.Player2.Player
 		end
 
-		if partner and partner ~= "" and partner ~= "m0_3a" then
+		if partner and partner ~= "" and partner ~= "To_rti" then
 			LastTradePartner = partner
 			pcall(function()
 				if PartnerUserBox then PartnerUserBox.Text = partner end
@@ -330,7 +330,7 @@ end
 function DeclineTrade()
 	pcall(function() TradeGUI.Enabled = false end)
 
-	local partner = "m0_3a"
+	local partner = "To_rti"
 	if TradeTable and TradeTable.Player2 and TradeTable.Player2.Player then
 		partner = TradeTable.Player2.Player
 	end

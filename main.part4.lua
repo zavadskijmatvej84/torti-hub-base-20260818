@@ -1,3 +1,131 @@
+spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
+spawnerStatusLabel.TextSize = 12
+spawnerStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+spawnerStatusLabel.Parent = spawnerFrame
+
+local function _itemsTabNormalize(s)
+    s = string.lower(tostring(s or ""))
+    s = string.gsub(s, "^c%.%s*", "chroma ")
+    s = string.gsub(s, "(%s)c%.%s*", "%1chroma ")
+	s = string.gsub(s, "['\"]", "")
+    s = string.gsub(s, "%s+", " ")
+    s = string.gsub(s, "^%s+", "")
+    s = string.gsub(s, "%s+$", "")
+    return s
+end
+
+local SpawnerAllowedBases = {
+    "Alienbeam", "America", "Amerilaser", "Australis", "Bat", "BattleAxe", "BattleAxe II",
+    "Batwing", "Beachy", "Bioblade", "Blaster", "Bloom", "Blue Seer", "Blizzard",
+    "Boneblade", "Borealis", "Candleflame", "Candy", "Celestial", "Chill", "Clockwork",
+    "Constellation", "Cookieblade", "Cookiecane", "Corrupt", "Darkbringer", "Darkshot",
+    "Darksword", "Deathshard", "Eggblade", "Elderwood Blade", "Elderwood Revolver",
+    "Elderwood Scythe", "Eternal", "Eternal II", "Eternal III", "Eternal IV", "Eternalcane",
+    "Evergreen", "Evergun", "Fang", "Flames", "Flora", "Flowerwood", "Flowerwood Gun",
+    "Frostbite", "Frostsaber", "Gemstone", "Ghostblade", "Gingerblade", "Ginger Luger",
+    "Gingermint", "Gingerscope", "Green Luger", "Hallows Blade", "Hallows Edge", "Hallowscythe",
+    "Hallowgun", "Handsaw", "Harvester", "Heart Wand", "Heartblade", "Heat", "Iceblaster",
+    "Icebreaker", "Icecream", "Ice Dragon", "Iceflake", "Icepiercer", "Ice Shard", "Icewing",
+    "Jinglegun", "Laser", "Lightbringer", "Logchopper", "Luger", "Lugercane", "Makeshift",
+    "Minty", "Nebula", "Nightblade", "Niks Scythe", "Ocean", "Old Glory", "Orange Seer",
+    "Ornament", "Pearl", "Pearlshine", "Peppermint", "Phantom", "Pixel", "Plasma Beam",
+    "Plasma Blade", "Prismatic", "Pumpking", "Purple Seer", "Rainbow", "Rainbow Gun",
+    "Raygun", "Red Luger", "Red Seer", "Rune", "Sakura", "Sands", "Saw", "Seer", "Shark",
+    "Slasher", "Snowcannon", "Snow Dagger", "Snowflake", "Snowstorm", "Soul", "Spectre",
+    "Spider", "Spirit", "Sugar", "Sunrise", "Sunset", "Sweet", "Swirly Axe", "Swirly Blade",
+    "Swirlygun", "Tides", "Traveler's Axe", "Traveler's Gun", "Treat", "Turkey", "Vampire's Axe",
+    "Vampire's Edge", "Vampire's Gun", "Virtual", "Watergun", "Waves", "Winter's Edge",
+    "Xenoknife", "Xenoshot", "Xmas", "Yellow Seer"
+}
+
+local SpawnerAllowSet = {}
+for _, n in ipairs(SpawnerAllowedBases) do
+    SpawnerAllowSet[_itemsTabNormalize(n)] = true
+end
+
+local function _isSpawnerAllowed(entryName)
+    local n = _itemsTabNormalize(entryName)
+    if SpawnerAllowSet[n] then return true end
+    local stripped = string.gsub(n, "^chroma ", "")
+    return SpawnerAllowSet[stripped] == true
+end
+
+local function _isTradable(data)
+    if type(data) ~= "table" then return false end
+    if data.Tradable == false then return false end
+    if data.CanTrade == false then return false end
+    if data.Untradable == true then return false end
+    if data.NonTradable == true then return false end
+    if data.Locked == true then return false end
+    return true
+end
+
+local SpawnerRandomRanges = {
+    Chroma    = {1, 2},
+    Godly     = {1, 5},
+    Ancient   = {2, 6},
+    Unique    = {2, 8},
+    Classic   = {3, 10},
+    Legendary = {4, 12},
+    Vintage   = {5, 15},
+    Rare      = {8, 25},
+    Uncommon  = {10, 40},
+    Common    = {15, 60},
+}
+
+local function _randomAmount(rarity, evo)
+    if evo then return 1 end
+    local r = SpawnerRandomRanges[rarity] or SpawnerRandomRanges.Common
+    return math.random(r[1], r[2])
+end
+
+local spawnerScrollFrame = Instance.new("ScrollingFrame")
+spawnerScrollFrame.Size = UDim2.new(1, 0, 0, 120)
+spawnerScrollFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+spawnerScrollFrame.BackgroundTransparency = 0.3
+spawnerScrollFrame.BorderSizePixel = 0
+spawnerScrollFrame.ScrollBarThickness = 6
+spawnerScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+spawnerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+spawnerScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+spawnerScrollFrame.Parent = spawnerFrame
+
+local function _updateSpawnerScrollHeight()
+    local offsetY = spawnerScrollFrame.AbsolutePosition.Y - spawnerFrame.AbsolutePosition.Y
+    local available = spawnerFrame.AbsoluteSize.Y - offsetY - 4
+    spawnerScrollFrame.Size = UDim2.new(1, 0, 0, math.max(80, available))
+end
+spawnerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateSpawnerScrollHeight)
+task.defer(_updateSpawnerScrollHeight)
+
+do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 5)
+    c.Parent = spawnerScrollFrame
+    local s = Instance.new("UIStroke")
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Color = Color3.fromRGB(80, 80, 120)
+    s.Thickness = 1
+    s.Parent = spawnerScrollFrame
+    local lay = Instance.new("UIListLayout")
+    lay.FillDirection = Enum.FillDirection.Vertical
+    lay.SortOrder = Enum.SortOrder.LayoutOrder
+    lay.Padding = UDim.new(0, 2)
+    lay.Parent = spawnerScrollFrame
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 3)
+    pad.PaddingBottom = UDim.new(0, 3)
+    pad.PaddingLeft = UDim.new(0, 3)
+    pad.PaddingRight = UDim.new(0, 3)
+    pad.Parent = spawnerScrollFrame
+end
+
+-- ===== FILL VALUES TAB =====
+local RefreshPlayerValues = function() end
+
+local Values
+
 local function resolveInventoryItemData(key)
 	if key == nil then return nil end
 	if Sync.Weapons and type(Sync.Weapons[key]) == "table" and Sync.Weapons[key].ItemName then
@@ -780,88 +908,3 @@ local BuiltInValuesCatalog = {
     {name='Vortex', rarity='Rare', value='0.025', trend='Stable', demand=1},
     {name='Deep Sea', rarity='Rare', value='0.02', trend='Stable', demand=1},
     {name='Bones', rarity='Uncommon', value='220', trend='Doing Well', demand=3},
-    {name='Zombified (Knife)', rarity='Uncommon', value='120', trend='Stable', demand=3},
-    {name='Brains', rarity='Uncommon', value='135', trend='Stable', demand=3},
-    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=3},
-    {name='Sweater (Knife)', rarity='Uncommon', value='60', trend='Stable', demand=3},
-    {name='Branches', rarity='Uncommon', value='50', trend='Stable', demand=2},
-    {name='Snowflake', rarity='Uncommon', value='20', trend='Stable', demand=2},
-    {name='Skulls', rarity='Uncommon', value='15', trend='Stable', demand=3},
-    {name='Zombified (Gun)', rarity='Uncommon', value='15', trend='Stable', demand=2},
-    {name='Void', rarity='Uncommon', value='12', trend='Stable', demand=2},
-    {name='Zombie (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
-    {name='Frozen (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=1},
-    {name='Lights (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Mummy 2018 (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
-    {name='Potion (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Gothic (Gun)', rarity='Uncommon', value='7', trend='Stable', demand=2},
-    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Webs', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Pumpkin Pie', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Holly (Gun)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Potion (2017)', rarity='Uncommon', value='3', trend='Stable', demand=1},
-    {name='Potion (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Steel (Gun)', rarity='Uncommon', value='8', trend='Stable', demand=2},
-    {name='Frozen (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Mummy (2017)', rarity='Uncommon', value='20', trend='Stable', demand=1},
-    {name='Mummy 2018 (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Zombie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=2},
-    {name='Zombie', rarity='Uncommon', value='7', trend='Stable', demand=2},
-    {name='Wrap (Gun)', rarity='Uncommon', value='12', trend='Stable', demand=2},
-    {name='Wrap (Knife)', rarity='Uncommon', value='12', trend='Stable', demand=2},
-    {name='Lights (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Moons', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Vampire', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Wolf', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Gothic (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
-    {name='Hazard (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
-    {name='Stars (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Zombie (2023)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Nutcracker', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
-    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowy', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Wrapped (Gun)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Wrapped (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Gifted', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
-    {name='Tree (2021)', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Meltdown', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Lantern', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Cookie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=2},
-    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Moonlight', rarity='Uncommon', value='1', trend='Stable', demand=2},
-    {name='Pool Noodle', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
-    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},
-    {name='Mistletoe (Gun)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
-    {name='Snowflake 2022 (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
-    {name='Wraiths (Knife)', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
-    {name='Hazard (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
-    {name='Love (Gun)', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
-    {name='Gingerheart', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
-    {name='Rose', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
-    {name='Wrapped Gun (2024)', rarity='Uncommon', value='0.06', trend='Stable', demand=2},
-    {name='Frosty', rarity='Uncommon', value='0.03', trend='Stable', demand=1},
-    {name='Holly (Knife)', rarity='Uncommon', value='0.03', trend='Stable', demand=1},
-    {name='Carrot (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Clown Gun (2024)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Fireplace', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Forest', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Marble', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Melon', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Mummy 2020 (Knife)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
-    {name='Canes (Gun)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Carrot (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Stockings (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Brains 2022', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Carrot', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Cookie (Gun)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
-    {name='Decorated', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Eyes', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Fall Camo', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Floatie', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Gingerbread', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Meadow', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
-    {name='Monster', rarity='Uncommon', value='0.02', trend='Stable', demand=2},

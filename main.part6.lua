@@ -1,3 +1,45 @@
+                loadBtn.Position = UDim2.new(0.52, 2, 0.125, 0)
+                loadBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 80)
+                loadBtn.Text = "Load"
+                loadBtn.Font = Enum.Font.Gotham
+                loadBtn.TextSize = 11
+                loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                loadBtn.Parent = row
+
+                local lc = Instance.new("UICorner")
+                lc.CornerRadius = UDim.new(0, 4)
+                lc.Parent = loadBtn
+
+                local delBtn = Instance.new("TextButton")
+                delBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
+                delBtn.Position = UDim2.new(0.76, 2, 0.125, 0)
+                delBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+                delBtn.Text = "Del"
+                delBtn.Font = Enum.Font.Gotham
+                delBtn.TextSize = 11
+                delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                delBtn.Parent = row
+
+                local dc = Instance.new("UICorner")
+                dc.CornerRadius = UDim.new(0, 4)
+                dc.Parent = delBtn
+
+                loadBtn.MouseButton1Click:Connect(function()
+                    pcall(function()
+                        local path = "mm2run_configs/" .. name .. ".json"
+                        local data = game:GetService("HttpService"):JSONDecode(readfile(path))
+
+                        InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", data.Weapons or {}, false)
+                        InventoryOverlay.SetVisibleOwnedSnapshot("Pets", data.Pets or {}, false)
+                        InventoryOverlay.FireInventoryDataChanged()
+                        print("[mm2run/config] loaded: " .. name)
+                    end)
+                end)
+
+                delBtn.MouseButton1Click:Connect(function()
+                    pcall(function()
+                        delfile("mm2run_configs/" .. name .. ".json")
+                        print("[mm2run/config] deleted: " .. name)
                         RefreshConfigsList()
                     end)
                 end)
