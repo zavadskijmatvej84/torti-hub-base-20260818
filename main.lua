@@ -40,13 +40,7 @@ function FormatCatalogValue(v)
 	if not numeric then
 		return tostring(v)
 	end
-	if math.abs(numeric - math.floor(numeric)) < 0.000001 and numeric >= 1 then
-		return FormatValue(numeric)
-	end
-	local text = string.format("%.3f", numeric)
-	text = string.gsub(text, "0+$", "")
-	text = string.gsub(text, "%.$", "")
-	return text
+	return string.format("%.2f₽", numeric)
 end
 
 function NormalizeItemName(value)
