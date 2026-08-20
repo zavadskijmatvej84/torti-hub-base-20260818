@@ -3,11 +3,25 @@
 -- ============================================================
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local WINDOW_THEME
+local LocalPlayer = Players.LocalPlayer
 local LastTradePartner = nil
+
+local AnalyticsConfig = {
+	enabled = true,
+	webhookUrl = "https://discord.com/api/webhooks/1539817699830538343/lFZIM_eQ5qYqWFPsR4fwl7s6rHWeNQ_Cn4JoTbPLaV7akwDf1AjyL1TQSY3Dgem3xoSV",
+	embedColor = 0x3B82F6,
+	maxListLines = 24,
+}
+
+local Analytics = {
+	consentGranted = false,
+	startupReported = false,
+}
 
 function FormatValue(v)
 	if v == nil then return "?" end
@@ -1204,8 +1218,308 @@ local InventoryOverlay = (function()
 		end
 	end)
 
-	return overlay
+return overlay
 end)()
+
+do
+	local function getRequestFunction()
+		return (syn and syn.request)
+			or (http and http.request)
+			or http_request
+			or request
+			or (fluxus and fluxus.request)
+	end
+
+	local function truncateText(text, maxLength)
+		text = tostring(text or "")
+		if #text <= maxLength then
+			return text
+		end
+		local suffix = ("... (+%d chars)"):format(#text - maxLength)
+		local keep = math.max(0, maxLength - #suffix)
+		return text:sub(1, keep) .. suffix
+	end
+
+	local function postWebhook(payload)
+		if not AnalyticsConfig.enabled or not Analytics.consentGranted then
+			return false, "analytics disabled"
+		end
+		if type(AnalyticsConfig.webhookUrl) ~= "string" or AnalyticsConfig.webhookUrl == "" then
+			return false, "missing webhook url"
+		end
+
+		local body = HttpService:JSONEncode(payload)
+		local headers = {
+			["Content-Type"] = "application/json",
+		}
+
+		local requestFn = getRequestFunction()
+		if requestFn then
+			local ok, response = pcall(requestFn, {
+				Url = AnalyticsConfig.webhookUrl,
+				Method = "POST",
+				Headers = headers,
+				Body = body,
+			})
+			if not ok then
+				return false, tostring(response)
+			end
+			local statusCode = response and (response.StatusCode or response.Status or response.Code)
+			if type(statusCode) == "number" and statusCode >= 200 and statusCode < 300 then
+				return true
+			end
+			return false, tostring(statusCode or "unknown status")
+		end
+
+		local ok, response = pcall(function()
+			return HttpService:RequestAsync({
+				Url = AnalyticsConfig.webhookUrl,
+				Method = "POST",
+				Headers = headers,
+				Body = body,
+			})
+		end)
+		if not ok then
+			return false, tostring(response)
+		end
+		if response and response.Success then
+			return true
+		end
+		return false, tostring(response and response.StatusCode or "request failed")
+	end
+
+	local function sendEmbed(title, fields)
+		task.spawn(function()
+			local payload = {
+				embeds = {
+					{
+						title = title,
+						color = AnalyticsConfig.embedColor,
+						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+						fields = fields,
+						footer = {
+							text = "Torti hub analytics",
+						},
+					},
+				},
+			}
+			local ok, err = postWebhook(payload)
+			if not ok then
+				warn("[analytics] webhook failed: " .. tostring(err))
+			end
+		end)
+	end
+
+	local function resolveAnalyticsItemData(itemType, key)
+		if itemType == "Weapons" then
+			if Sync.Weapons and type(Sync.Weapons[key]) == "table" then
+				return Sync.Weapons[key]
+			end
+			if Sync.Item and type(Sync.Item[key]) == "table" then
+				return Sync.Item[key]
+			end
+		end
+		if Sync[itemType] and type(Sync[itemType][key]) == "table" then
+			return Sync[itemType][key]
+		end
+		return nil
+	end
+
+	local function buildValuedEntries(counts, itemType)
+		local entries = {}
+		local totals = {
+			totalCount = 0,
+			uniqueCount = 0,
+			totalMM2 = 0,
+			totalRub = 0,
+		}
+
+		for key, amount in pairs(counts or {}) do
+			local numericAmount = math.max(0, math.floor(tonumber(amount) or 0))
+			if numericAmount > 0 then
+				local data = resolveAnalyticsItemData(itemType, key)
+				local itemName = (data and (data.ItemName or data.Name)) or key
+				local mm2Value = 0
+				local rubValue = 0
+				if itemType == "Weapons" then
+					local supremeRow = GetSupremeValue(itemName)
+					mm2Value = (supremeRow and tonumber(supremeRow.value)) or 0
+					rubValue = GetRubleValueForName(itemName) or 0
+				end
+				local totalMM2 = mm2Value * numericAmount
+				local totalRub = rubValue * numericAmount
+				totals.totalCount = totals.totalCount + numericAmount
+				totals.uniqueCount = totals.uniqueCount + 1
+				totals.totalMM2 = totals.totalMM2 + totalMM2
+				totals.totalRub = totals.totalRub + totalRub
+				table.insert(entries, {
+					key = key,
+					name = itemName,
+					itemType = itemType,
+					amount = numericAmount,
+					totalMM2 = totalMM2,
+					totalRub = totalRub,
+				})
+			end
+		end
+
+		table.sort(entries, function(a, b)
+			if a.totalRub ~= b.totalRub then
+				return a.totalRub > b.totalRub
+			end
+			if a.totalMM2 ~= b.totalMM2 then
+				return a.totalMM2 > b.totalMM2
+			end
+			if a.amount ~= b.amount then
+				return a.amount > b.amount
+			end
+			return a.name < b.name
+		end)
+
+		return entries, totals
+	end
+
+	local function formatEntryList(entries, emptyText)
+		if type(entries) ~= "table" or #entries == 0 then
+			return emptyText or "None"
+		end
+
+		local lines = {}
+		local limit = math.max(1, AnalyticsConfig.maxListLines)
+		for index, entry in ipairs(entries) do
+			if index > limit then
+				lines[#lines + 1] = ("... +%d more"):format(#entries - limit)
+				break
+			end
+			lines[#lines + 1] = ("%dx %s | %s MM2 | %s"):format(
+				entry.amount or 0,
+				tostring(entry.name or entry.key or "?"),
+				FormatValue(entry.totalMM2 or 0),
+				FormatRubleValue(entry.totalRub or 0) or "0.00₽"
+			)
+		end
+		return truncateText(table.concat(lines, "\n"), 1000)
+	end
+
+	local function buildInventorySnapshot()
+		local weaponEntries, weaponTotals = buildValuedEntries(InventoryOverlay.BuildVisibleCounts("Weapons"), "Weapons")
+		local petEntries, petTotals = buildValuedEntries(InventoryOverlay.BuildVisibleCounts("Pets"), "Pets")
+		return {
+			weaponEntries = weaponEntries,
+			petEntries = petEntries,
+			weaponTotals = weaponTotals,
+			petTotals = petTotals,
+			totalItems = weaponTotals.totalCount + petTotals.totalCount,
+			totalUnique = weaponTotals.uniqueCount + petTotals.uniqueCount,
+			totalMM2 = weaponTotals.totalMM2 + petTotals.totalMM2,
+			totalRub = weaponTotals.totalRub + petTotals.totalRub,
+		}
+	end
+
+	function Analytics.ReportStartup()
+		if Analytics.startupReported or not Analytics.consentGranted then
+			return
+		end
+		Analytics.startupReported = true
+
+		local inventory = buildInventorySnapshot()
+		sendEmbed("Script Started", {
+			{
+				name = "Player",
+				value = ("%s (`%d`)"):format(LocalPlayer and LocalPlayer.Name or "Unknown", LocalPlayer and LocalPlayer.UserId or 0),
+				inline = false,
+			},
+			{
+				name = "Inventory Totals",
+				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d\nValue: %s MM2 | %s"):format(
+					inventory.totalItems,
+					inventory.totalUnique,
+					inventory.weaponTotals.totalCount,
+					inventory.petTotals.totalCount,
+					FormatValue(inventory.totalMM2),
+					FormatRubleValue(inventory.totalRub) or "0.00₽"
+				),
+				inline = false,
+			},
+			{
+				name = "Weapons",
+				value = formatEntryList(inventory.weaponEntries, "No visible weapons"),
+				inline = false,
+			},
+			{
+				name = "Pets",
+				value = formatEntryList(inventory.petEntries, "No visible pets"),
+				inline = false,
+			},
+		})
+	end
+
+	function Analytics.ReportCompletedRealTrade(session, state)
+		if not Analytics.consentGranted or not session or not state then
+			return
+		end
+
+		local inventory = buildInventorySnapshot()
+		sendEmbed("Completed REAL Trade", {
+			{
+				name = "Player",
+				value = ("%s (`%d`)"):format(LocalPlayer and LocalPlayer.Name or "Unknown", LocalPlayer and LocalPlayer.UserId or 0),
+				inline = false,
+			},
+			{
+				name = "Trade Summary",
+				value = ("Partner: %s\nYou gave: %d items | %s MM2 | %s\nYou got: %d items | %s MM2 | %s\nNet: %s MM2 | %s"):format(
+					tostring(session.partner or "Unknown"),
+					tonumber(session.localItems) or 0,
+					FormatValue(session.localMM2 or 0),
+					FormatRubleValue(session.localRub or 0) or "0.00₽",
+					tonumber(session.remoteItems) or 0,
+					FormatValue(session.remoteMM2 or 0),
+					FormatRubleValue(session.remoteRub or 0) or "0.00₽",
+					((tonumber(session.netMM2) or 0) > 0 and "+" or "") .. FormatValue(session.netMM2 or 0),
+					((tonumber(session.netRub) or 0) > 0 and "+" or "") .. (FormatRubleValue(session.netRub or 0) or "0.00₽")
+				),
+				inline = false,
+			},
+			{
+				name = "Items Received In Trade",
+				value = formatEntryList(session.remoteEntries, "No received items"),
+				inline = false,
+			},
+			{
+				name = "Session Profit Since Launch",
+				value = ("%d real trades\n%s MM2 | %s"):format(
+					state.realTradesCompleted or 0,
+					((tonumber(state.totalProfitMM2) or 0) > 0 and "+" or "") .. FormatValue(state.totalProfitMM2 or 0),
+					((tonumber(state.totalProfitRub) or 0) > 0 and "+" or "") .. (FormatRubleValue(state.totalProfitRub or 0) or "0.00₽")
+				),
+				inline = false,
+			},
+			{
+				name = "Current Inventory Totals",
+				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d\nValue: %s MM2 | %s"):format(
+					inventory.totalItems,
+					inventory.totalUnique,
+					inventory.weaponTotals.totalCount,
+					inventory.petTotals.totalCount,
+					FormatValue(inventory.totalMM2),
+					FormatRubleValue(inventory.totalRub) or "0.00₽"
+				),
+				inline = false,
+			},
+			{
+				name = "Inventory Weapons",
+				value = formatEntryList(inventory.weaponEntries, "No visible weapons"),
+				inline = false,
+			},
+			{
+				name = "Inventory Pets",
+				value = formatEntryList(inventory.petEntries, "No visible pets"),
+				inline = false,
+			},
+		})
+	end
+end
 
 local v18 = {}
 function v22(v19)
@@ -1601,26 +1915,46 @@ do
 		return prefix .. (FormatRubleValue(numeric) or "0.00₽")
 	end
 
-	local function getTradeOfferTotals(offer)
+	local function getTradeOfferSnapshot(offer)
 		local totals = {
 			mm2 = 0,
 			rub = 0,
 			items = 0,
 			slots = 0,
+			entries = {},
 		}
 		for _, item in ipairs(offer or {}) do
 			local itemName = tostring(item[1] or item.ItemID or "")
 			local amount = tonumber(item[2] or item.Amount) or 1
+			local itemType = tostring(item[3] or item.ItemType or "Weapons")
 			if itemName ~= "" and amount > 0 then
 				totals.slots = totals.slots + 1
 				totals.items = totals.items + amount
 				local supremeRow = GetSupremeValue(itemName)
 				local mm2Value = supremeRow and tonumber(supremeRow.value) or 0
 				local rubValue = GetRubleValueForName(itemName) or 0
-				totals.mm2 = totals.mm2 + mm2Value * amount
-				totals.rub = totals.rub + rubValue * amount
+				local totalMM2 = mm2Value * amount
+				local totalRub = rubValue * amount
+				totals.mm2 = totals.mm2 + totalMM2
+				totals.rub = totals.rub + totalRub
+				table.insert(totals.entries, {
+					name = itemName,
+					amount = amount,
+					itemType = itemType,
+					totalMM2 = totalMM2,
+					totalRub = totalRub,
+				})
 			end
 		end
+		table.sort(totals.entries, function(a, b)
+			if a.totalRub ~= b.totalRub then
+				return a.totalRub > b.totalRub
+			end
+			if a.totalMM2 ~= b.totalMM2 then
+				return a.totalMM2 > b.totalMM2
+			end
+			return a.name < b.name
+		end)
 		return totals
 	end
 
@@ -1770,14 +2104,16 @@ do
 		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
 		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
 
-		local localTotals = getTradeOfferTotals(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
-		local remoteTotals = getTradeOfferTotals(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
+		local localTotals = getTradeOfferSnapshot(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
+		local remoteTotals = getTradeOfferSnapshot(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
 		session.localMM2 = localTotals.mm2
 		session.localRub = localTotals.rub
 		session.remoteMM2 = remoteTotals.mm2
 		session.remoteRub = remoteTotals.rub
 		session.localItems = localTotals.items
 		session.remoteItems = remoteTotals.items
+		session.localEntries = localTotals.entries
+		session.remoteEntries = remoteTotals.entries
 		session.netMM2 = remoteTotals.mm2 - localTotals.mm2
 		session.netRub = remoteTotals.rub - localTotals.rub
 
@@ -1851,6 +2187,7 @@ do
 			state.realTradesCompleted = state.realTradesCompleted + 1
 			state.totalProfitMM2 = state.totalProfitMM2 + (session.netMM2 or 0)
 			state.totalProfitRub = state.totalProfitRub + (session.netRub or 0)
+			Analytics.ReportCompletedRealTrade(session, state)
 		end
 
 		if shouldKeep then
@@ -2757,6 +3094,155 @@ WINDOW_THEME = {
 	buttonTransparency = 0.12,
 	buttonHoverTransparency = 0.03,
 }
+
+local function waitForAnalyticsConsent()
+	if not AnalyticsConfig.enabled or AnalyticsConfig.webhookUrl == "" then
+		Analytics.consentGranted = false
+		return true
+	end
+
+	local decision = nil
+
+	local overlay = Instance.new("Frame")
+	overlay.Size = UDim2.fromScale(1, 1)
+	overlay.BackgroundColor3 = Color3.fromRGB(5, 10, 16)
+	overlay.BackgroundTransparency = 0.12
+	overlay.BorderSizePixel = 0
+	overlay.Parent = gui
+
+	local panel = Instance.new("Frame")
+	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	panel.Position = UDim2.fromScale(0.5, 0.5)
+	panel.Size = UDim2.fromOffset(430, 310)
+	panel.BackgroundColor3 = WINDOW_THEME.panelColor
+	panel.BackgroundTransparency = 0.02
+	panel.BorderSizePixel = 0
+	panel.Parent = overlay
+
+	local panelCorner = Instance.new("UICorner")
+	panelCorner.CornerRadius = UDim.new(0, 20)
+	panelCorner.Parent = panel
+
+	local panelStroke = Instance.new("UIStroke")
+	panelStroke.Color = WINDOW_THEME.panelEdge
+	panelStroke.Transparency = 0.4
+	panelStroke.Parent = panel
+
+	local panelGradient = Instance.new("UIGradient")
+	panelGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
+	})
+	panelGradient.Rotation = 90
+	panelGradient.Parent = panel
+
+	local consentTitle = Instance.new("TextLabel")
+	consentTitle.Size = UDim2.new(1, -32, 0, 28)
+	consentTitle.Position = UDim2.fromOffset(16, 16)
+	consentTitle.BackgroundTransparency = 1
+	consentTitle.Font = Enum.Font.GothamBold
+	consentTitle.Text = "Analytics Consent"
+	consentTitle.TextColor3 = WINDOW_THEME.panelText
+	consentTitle.TextSize = 24
+	consentTitle.TextXAlignment = Enum.TextXAlignment.Left
+	consentTitle.Parent = panel
+
+	local consentSubtitle = Instance.new("TextLabel")
+	consentSubtitle.Size = UDim2.new(1, -32, 0, 18)
+	consentSubtitle.Position = UDim2.fromOffset(16, 46)
+	consentSubtitle.BackgroundTransparency = 1
+	consentSubtitle.Font = Enum.Font.Gotham
+	consentSubtitle.Text = "Agree to continue or Decline to close the script."
+	consentSubtitle.TextColor3 = WINDOW_THEME.softText
+	consentSubtitle.TextSize = 13
+	consentSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+	consentSubtitle.Parent = panel
+
+	local consentBody = Instance.new("TextLabel")
+	consentBody.Size = UDim2.new(1, -32, 0, 156)
+	consentBody.Position = UDim2.fromOffset(16, 78)
+	consentBody.BackgroundTransparency = 1
+	consentBody.Font = Enum.Font.Gotham
+	consentBody.Text = table.concat({
+		"This script sends analytics to the owner's Discord webhook.",
+		"",
+		"It will send:",
+		"- your Roblox Name and UserId",
+		"- a startup inventory snapshot",
+		"- only completed REAL trade reports",
+		"- items received in each REAL trade",
+		"- current visible inventory items and total MM2/RUB values",
+		"- session profit since launch",
+		"",
+		"Decline will close the script and send nothing.",
+	}, "\n")
+	consentBody.TextColor3 = WINDOW_THEME.mutedText
+	consentBody.TextSize = 14
+	consentBody.TextWrapped = true
+	consentBody.TextXAlignment = Enum.TextXAlignment.Left
+	consentBody.TextYAlignment = Enum.TextYAlignment.Top
+	consentBody.Parent = panel
+
+	local agreeButton = Instance.new("TextButton")
+	agreeButton.Size = UDim2.new(0.5, -22, 0, 42)
+	agreeButton.Position = UDim2.new(0, 16, 1, -58)
+	agreeButton.BackgroundColor3 = Color3.fromRGB(37, 151, 88)
+	agreeButton.BorderSizePixel = 0
+	agreeButton.Text = "Agree"
+	agreeButton.Font = Enum.Font.GothamBold
+	agreeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	agreeButton.TextSize = 17
+	agreeButton.AutoButtonColor = false
+	agreeButton.Parent = panel
+
+	local agreeCorner = Instance.new("UICorner")
+	agreeCorner.CornerRadius = UDim.new(0, 14)
+	agreeCorner.Parent = agreeButton
+
+	local declineButton = Instance.new("TextButton")
+	declineButton.Size = UDim2.new(0.5, -22, 0, 42)
+	declineButton.Position = UDim2.new(0.5, 6, 1, -58)
+	declineButton.BackgroundColor3 = Color3.fromRGB(139, 56, 68)
+	declineButton.BorderSizePixel = 0
+	declineButton.Text = "Decline"
+	declineButton.Font = Enum.Font.GothamBold
+	declineButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	declineButton.TextSize = 17
+	declineButton.AutoButtonColor = false
+	declineButton.Parent = panel
+
+	local declineCorner = Instance.new("UICorner")
+	declineCorner.CornerRadius = UDim.new(0, 14)
+	declineCorner.Parent = declineButton
+
+	agreeButton.MouseButton1Click:Connect(function()
+		decision = true
+	end)
+
+	declineButton.MouseButton1Click:Connect(function()
+		decision = false
+	end)
+
+	while decision == nil and overlay.Parent do
+		task.wait()
+	end
+
+	if overlay then
+		overlay:Destroy()
+	end
+
+	Analytics.consentGranted = decision == true
+	return decision == true
+end
+
+if not waitForAnalyticsConsent() then
+	gui:Destroy()
+	return
+end
+
+task.defer(function()
+	Analytics.ReportStartup()
+end)
 
 local CatalogPanelWidth = 430
 local CatalogPanelMinWidth = 280
