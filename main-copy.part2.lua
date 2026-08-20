@@ -948,6 +948,8 @@ local KeybindListFrame = nil
 local KeybindStatusLabel = nil
 local KeybindWaitingActionId = nil
 local RefreshKeybindRows = function() end
+local KeybindStoragePath = "mm2run_keybinds.json"
+local KeybindStorageReady = type(readfile) == "function" and type(writefile) == "function" and type(isfile) == "function"
 
 local function keybindDisplayName(keyName)
     if type(keyName) ~= "string" or keyName == "" then
@@ -964,6 +966,111 @@ local function setKeybindStatus(text, color)
     if color then
         KeybindStatusLabel.TextColor3 = color
     end
+end
+
+local function buildKeybindSnapshot()
+    local snapshot = {}
+    for _, actionId in ipairs(KeybindActionOrder) do
+        local keyName = KeybindAssignments[actionId]
+        if type(keyName) == "string" and keyName ~= "" then
+            snapshot[actionId] = keyName
+        end
+    end
+    return snapshot
+end
+
+local function saveKeybindAssignments(showStatus)
+    if not KeybindStorageReady then
+        if showStatus then
+            setKeybindStatus("Keybind save is not supported by this executor.", Color3.fromRGB(255, 170, 120))
+        end
+        return false
+    end
+
+    local okSave, saveErr = pcall(function()
+        local payload = game:GetService("HttpService"):JSONEncode(buildKeybindSnapshot())
+        writefile(KeybindStoragePath, payload)
+    end)
+
+    if showStatus then
+        if okSave then
+            setKeybindStatus("Keybinds saved to file.", Color3.fromRGB(150, 220, 150))
+        else
+            setKeybindStatus("Keybind save failed: " .. tostring(saveErr), Color3.fromRGB(255, 140, 140))
+        end
+    end
+
+    return okSave
+end
+
+local function resetAllKeybindAssignments(showStatus)
+    KeybindWaitingActionId = nil
+    for actionId in pairs(KeybindAssignments) do
+        KeybindAssignments[actionId] = nil
+    end
+
+    if KeybindStorageReady then
+        pcall(function()
+            if type(delfile) == "function" and isfile(KeybindStoragePath) then
+                delfile(KeybindStoragePath)
+            else
+                writefile(KeybindStoragePath, "{}")
+            end
+        end)
+    end
+
+    if showStatus then
+        setKeybindStatus("All keybinds cleared.", Color3.fromRGB(180, 183, 192))
+    end
+    RefreshKeybindRows()
+end
+
+local function loadKeybindAssignments(showStatus)
+    if not KeybindStorageReady then
+        if showStatus then
+            setKeybindStatus("Keybind save is not supported by this executor.", Color3.fromRGB(255, 170, 120))
+        end
+        return false
+    end
+
+    if not isfile(KeybindStoragePath) then
+        if showStatus then
+            setKeybindStatus("No saved keybinds file yet.", Color3.fromRGB(180, 183, 192))
+        end
+        return false
+    end
+
+    local okLoad, payload = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(readfile(KeybindStoragePath))
+    end)
+    if not okLoad or type(payload) ~= "table" then
+        if showStatus then
+            setKeybindStatus("Keybind load failed.", Color3.fromRGB(255, 140, 140))
+        end
+        return false
+    end
+
+    KeybindWaitingActionId = nil
+    for actionId in pairs(KeybindAssignments) do
+        KeybindAssignments[actionId] = nil
+    end
+
+    local usedKeys = {}
+    local loadedCount = 0
+    for _, actionId in ipairs(KeybindActionOrder) do
+        local keyName = payload[actionId]
+        if KeybindActions[actionId] and type(keyName) == "string" and keyName ~= "" and not usedKeys[keyName] then
+            KeybindAssignments[actionId] = keyName
+            usedKeys[keyName] = true
+            loadedCount = loadedCount + 1
+        end
+    end
+
+    RefreshKeybindRows()
+    if showStatus then
+        setKeybindStatus(("Loaded %s saved keybind(s)."):format(loadedCount), Color3.fromRGB(150, 220, 150))
+    end
+    return true
 end
 
 local function activateKeybindAction(actionId)
@@ -986,6 +1093,7 @@ local function clearKeybindAssignment(actionId, silent)
         setKeybindStatus(("Cleared keybind for %s"):format(action and action.label or actionId), Color3.fromRGB(180, 183, 192))
     end
     RefreshKeybindRows()
+    saveKeybindAssignments(false)
 end
 
 local function assignKeybind(actionId, keyName)
@@ -1002,6 +1110,7 @@ local function assignKeybind(actionId, keyName)
     local action = KeybindActions[actionId]
     setKeybindStatus(("%s -> %s"):format(action and action.label or actionId, keybindDisplayName(keyName)), Color3.fromRGB(150, 220, 150))
     RefreshKeybindRows()
+    saveKeybindAssignments(false)
 end
 
 local function beginKeybindCapture(actionId)

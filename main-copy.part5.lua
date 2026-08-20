@@ -882,6 +882,40 @@ KeybindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 KeybindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 KeybindStatusLabel.Parent = playersFrame
 
+local keybindToolsRow = Instance.new("Frame")
+keybindToolsRow.Size = UDim2.new(1, 0, 0, 30)
+keybindToolsRow.BackgroundTransparency = 1
+keybindToolsRow.Parent = playersFrame
+
+local saveKeybindsBtn = Instance.new("TextButton")
+saveKeybindsBtn.Size = UDim2.new(0.5, -4, 1, 0)
+saveKeybindsBtn.BackgroundColor3 = Color3.fromRGB(60, 150, 90)
+saveKeybindsBtn.BorderSizePixel = 0
+saveKeybindsBtn.Text = "Save now"
+saveKeybindsBtn.Font = Enum.Font.Gotham
+saveKeybindsBtn.TextSize = 11
+saveKeybindsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveKeybindsBtn.Parent = keybindToolsRow
+
+local saveKeybindsCorner = Instance.new("UICorner")
+saveKeybindsCorner.CornerRadius = UDim.new(0, 4)
+saveKeybindsCorner.Parent = saveKeybindsBtn
+
+local resetKeybindsBtn = Instance.new("TextButton")
+resetKeybindsBtn.Size = UDim2.new(0.5, -4, 1, 0)
+resetKeybindsBtn.Position = UDim2.new(0.5, 4, 0, 0)
+resetKeybindsBtn.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+resetKeybindsBtn.BorderSizePixel = 0
+resetKeybindsBtn.Text = "Reset all"
+resetKeybindsBtn.Font = Enum.Font.Gotham
+resetKeybindsBtn.TextSize = 11
+resetKeybindsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+resetKeybindsBtn.Parent = keybindToolsRow
+
+local resetKeybindsCorner = Instance.new("UICorner")
+resetKeybindsCorner.CornerRadius = UDim.new(0, 4)
+resetKeybindsCorner.Parent = resetKeybindsBtn
+
 KeybindListFrame = Instance.new("ScrollingFrame")
 KeybindListFrame.Size = UDim2.new(1, 0, 0, 220)
 KeybindListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -1002,6 +1036,20 @@ RefreshKeybindRows = function()
 end
 
 RefreshKeybindRows()
+loadKeybindAssignments(false)
+if KeybindStorageReady then
+	setKeybindStatus("Choose an action, press Bind, then press your key. Saved keybinds load automatically.", Color3.fromRGB(180, 183, 192))
+else
+	setKeybindStatus("Choose an action, press Bind, then press your key. File save is unavailable in this executor.", Color3.fromRGB(255, 170, 120))
+end
+
+saveKeybindsBtn.MouseButton1Click:Connect(function()
+	saveKeybindAssignments(true)
+end)
+
+resetKeybindsBtn.MouseButton1Click:Connect(function()
+	resetAllKeybindAssignments(true)
+end)
 
 task.defer(function()
 	RefreshPlayerValues()
