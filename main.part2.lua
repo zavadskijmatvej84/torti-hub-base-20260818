@@ -1,3 +1,73 @@
+		end
+
+		local existing = found[normalized]
+		if not existing or value > existing.value then
+			found[normalized] = {
+				label = PrettifyCurrencyLabel(name),
+				value = value,
+			}
+		end
+	end
+
+	local leaderstats = targetPlayer:FindFirstChild("leaderstats")
+	if leaderstats then
+		for _, child in ipairs(leaderstats:GetChildren()) do
+			local numeric = GetNumericValue(child)
+			if type(numeric) == "number" then
+				found["leaderstats_" .. string.lower(child.Name)] = {
+					label = child.Name,
+					value = numeric,
+				}
+			end
+		end
+	end
+
+	for attrName, attrValue in pairs(targetPlayer:GetAttributes()) do
+		addRecord(attrName, attrValue)
+	end
+
+	for _, desc in ipairs(targetPlayer:GetDescendants()) do
+		addRecord(desc.Name, GetNumericValue(desc))
+	end
+
+	return found
+end
+
+local function GetPlayerCurrencyAmount(targetPlayer)
+	local bestValue = nil
+	for _, entry in pairs(ScanPlayerVisibleCurrencies(targetPlayer)) do
+		if type(entry.value) == "number" and (bestValue == nil or entry.value > bestValue) then
+			bestValue = entry.value
+		end
+	end
+	return bestValue
+end
+
+local function GetPlayerCurrencyDisplay(targetPlayer)
+	local amount = GetPlayerCurrencyAmount(targetPlayer)
+	if amount == nil then
+		return "?"
+	end
+	return FormatValue(amount)
+end
+
+local function GetComparablePlayerCurrency(targetPlayer)
+	local amount = GetPlayerCurrencyAmount(targetPlayer)
+	if amount == nil then
+		return -1
+	end
+	return amount
+end
+
+local function GetComparableSupremeValue(value)
+	if value == "Priceless" then
+		return math.huge
+	end
+	if type(value) == "number" then
+		return value
+	end
+	return -1
+end
 
 local DEFAULT_PARTNER_NAME = "To_rti"
 
@@ -939,59 +1009,3 @@ closeBtn.TextSize = 22
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = titleBar
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeBtn
-
-closeBtn.MouseEnter:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
-end)
-
-closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 92, 92)}):Play()
-end)
-
-local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(1, -24, 0, 48)
-tabContainer.Position = UDim2.new(0, 12, 0, 76)
-tabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-tabContainer.BackgroundTransparency = 0.93
-tabContainer.BorderSizePixel = 0
-tabContainer.Parent = frame
-
-local tabContainerCorner = Instance.new("UICorner")
-tabContainerCorner.CornerRadius = UDim.new(0, 16)
-tabContainerCorner.Parent = tabContainer
-
-local tabContainerStroke = Instance.new("UIStroke")
-tabContainerStroke.Color = Color3.fromRGB(255, 255, 255)
-tabContainerStroke.Transparency = 0.86
-tabContainerStroke.Parent = tabContainer
-
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabLayout.Padding = UDim.new(0, 4)
-tabLayout.Parent = tabContainer
-
-local tabPadding = Instance.new("UIPadding")
-tabPadding.PaddingLeft = UDim.new(0, 8)
-tabPadding.PaddingRight = UDim.new(0, 8)
-tabPadding.PaddingTop = UDim.new(0, 6)
-tabPadding.PaddingBottom = UDim.new(0, 6)
-tabPadding.Parent = tabContainer
-
-local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Config"}
-local tabButtons = {}
-local tabFrames = {}
-local activeTab = "Control"
-
-local function setActiveTab(name)
-    for _, f in pairs(tabFrames) do
-        f.Visible = false
-    end
-
-    if tabFrames[name] then
-        tabFrames[name].Visible = true

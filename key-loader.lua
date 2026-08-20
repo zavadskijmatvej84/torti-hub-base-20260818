@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 
-local SPLIT_LOADER_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/main/main-split-loader.lua?v=20260820-spawn-catalog-compact-v4"
+local SPLIT_LOADER_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/main/main-split-loader.lua?v=20260820-config-load-fix-v5"
 local ACCESS_KEY = "Tort1"
 
 local function notify(text)

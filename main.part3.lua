@@ -1,3 +1,59 @@
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+closeBtn.MouseEnter:Connect(function()
+    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
+end)
+
+closeBtn.MouseLeave:Connect(function()
+    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 92, 92)}):Play()
+end)
+
+local tabContainer = Instance.new("Frame")
+tabContainer.Size = UDim2.new(1, -24, 0, 48)
+tabContainer.Position = UDim2.new(0, 12, 0, 76)
+tabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+tabContainer.BackgroundTransparency = 0.93
+tabContainer.BorderSizePixel = 0
+tabContainer.Parent = frame
+
+local tabContainerCorner = Instance.new("UICorner")
+tabContainerCorner.CornerRadius = UDim.new(0, 16)
+tabContainerCorner.Parent = tabContainer
+
+local tabContainerStroke = Instance.new("UIStroke")
+tabContainerStroke.Color = Color3.fromRGB(255, 255, 255)
+tabContainerStroke.Transparency = 0.86
+tabContainerStroke.Parent = tabContainer
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+tabLayout.Padding = UDim.new(0, 4)
+tabLayout.Parent = tabContainer
+
+local tabPadding = Instance.new("UIPadding")
+tabPadding.PaddingLeft = UDim.new(0, 8)
+tabPadding.PaddingRight = UDim.new(0, 8)
+tabPadding.PaddingTop = UDim.new(0, 6)
+tabPadding.PaddingBottom = UDim.new(0, 6)
+tabPadding.Parent = tabContainer
+
+local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Config"}
+local tabButtons = {}
+local tabFrames = {}
+local activeTab = "Control"
+
+local function setActiveTab(name)
+    for _, f in pairs(tabFrames) do
+        f.Visible = false
+    end
+
+    if tabFrames[name] then
+        tabFrames[name].Visible = true
         tabFrames[name].CanvasPosition = Vector2.new(0, 0)
     end
 
@@ -953,45 +1009,3 @@ do
 	local countLabel = Instance.new("TextLabel")
 	countLabel.Size = UDim2.new(0, 128, 0, 20)
 	countLabel.Position = UDim2.new(0, 6, 0, 72)
-	countLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	countLabel.BackgroundTransparency = 0.9
-	countLabel.BorderSizePixel = 0
-	countLabel.Text = "Loading items..."
-	countLabel.Font = Enum.Font.GothamMedium
-	countLabel.TextSize = 11
-	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
-	countLabel.TextXAlignment = Enum.TextXAlignment.Center
-	countLabel.Parent = controls
-	SpawnerCatalogUI.countLabel = countLabel
-
-	local countCorner = Instance.new("UICorner")
-	countCorner.CornerRadius = UDim.new(1, 0)
-	countCorner.Parent = countLabel
-
-	local countStroke = Instance.new("UIStroke")
-	countStroke.Color = Color3.fromRGB(255, 255, 255)
-	countStroke.Thickness = 1
-	countStroke.Transparency = 0.92
-	countStroke.Parent = countLabel
-
-	local catalogScrollFrame = Instance.new("ScrollingFrame")
-	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 96)
-	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -96)
-	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	catalogScrollFrame.BackgroundTransparency = 0.965
-	catalogScrollFrame.BorderSizePixel = 0
-	catalogScrollFrame.ScrollBarThickness = 6
-	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
-	catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	catalogScrollFrame.Parent = catalogBody
-	SpawnerCatalogUI.scrollFrame = catalogScrollFrame
-
-	local catalogScrollCorner = Instance.new("UICorner")
-	catalogScrollCorner.CornerRadius = UDim.new(0, 18)
-	catalogScrollCorner.Parent = catalogScrollFrame
-
-	local catalogScrollStroke = Instance.new("UIStroke")
-	catalogScrollStroke.Color = Color3.fromRGB(255, 255, 255)
-	catalogScrollStroke.Thickness = 1
-	catalogScrollStroke.Transparency = 0.9
-	catalogScrollStroke.Parent = catalogScrollFrame

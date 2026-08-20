@@ -1,3 +1,31 @@
+    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=2},
+    {name='Zombie', rarity='Uncommon', value='7', trend='Stable', demand=2},
+    {name='Wrap (Gun)', rarity='Uncommon', value='12', trend='Stable', demand=2},
+    {name='Wrap (Knife)', rarity='Uncommon', value='12', trend='Stable', demand=2},
+    {name='Lights (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Moons', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Vampire', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Wolf', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Gothic (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
+    {name='Hazard (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
+    {name='Stars (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Zombie (2023)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Nutcracker', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
+    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowy', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Wrapped (Gun)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Wrapped (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Gifted', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
+    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
+    {name='Tree (2021)', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Meltdown', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Lantern', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Cookie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=2},
+    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Moonlight', rarity='Uncommon', value='1', trend='Stable', demand=2},
+    {name='Pool Noodle', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
+    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},
     {name='Mistletoe (Gun)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
     {name='Snowflake 2022 (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
     {name='Wraiths (Knife)', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
@@ -980,18 +1008,4 @@ local function createResizeHandle(pos, anchor, rx, ry, mx, my)
     h.BackgroundTransparency = 1
     h.ZIndex = 99
     h.Parent = frame
-
-    h.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            resizeData = {
-                start = input.Position,
-                size = frame.Size,
-                pos = frame.Position,
-                rx = rx, ry = ry, mx = mx, my = my
-            }
-        end
-    end)
-
-    return h
-end
 

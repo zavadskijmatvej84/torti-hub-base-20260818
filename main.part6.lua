@@ -1,3 +1,17 @@
+    h.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizeData = {
+                start = input.Position,
+                size = frame.Size,
+                pos = frame.Position,
+                rx = rx, ry = ry, mx = mx, my = my
+            }
+        end
+    end)
+
+    return h
+end
+
 createResizeHandle(UDim2.new(1, -10, 1, -10), Vector2.new(1, 1), 1, 1, 0, 0)
 createResizeHandle(UDim2.new(0, 10, 1, -10), Vector2.new(0, 1), -1, 1, 1, 0)
 

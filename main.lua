@@ -266,6 +266,8 @@ local InventoryOverlay = (function()
 		shadowByType = {},
 	}
 
+	local keyIndexByType = {}
+
 	local function normalizeOwnedAmount(value)
 		local numeric = tonumber(value)
 		if numeric then
@@ -277,16 +279,95 @@ local InventoryOverlay = (function()
 		return 1
 	end
 
-	local function copyOwnedCounts(source)
+	local function getSyncBucket(itemType)
+		if itemType == "Weapons" then
+			return Sync.Weapons or Sync.Item
+		end
+		return Sync[itemType]
+	end
+
+	local function buildKeyIndex(itemType)
+		local bucket = getSyncBucket(itemType)
+		local index = {
+			exact = {},
+			normalized = {},
+		}
+		if type(bucket) ~= "table" then
+			return index
+		end
+
+		for key, value in pairs(bucket) do
+			if type(key) == "string" and key ~= "" then
+				index.exact[key] = key
+				local normalizedKey = NormalizeItemName(key)
+				if normalizedKey ~= "" and not index.normalized[normalizedKey] then
+					index.normalized[normalizedKey] = key
+				end
+			end
+
+			if type(value) == "table" then
+				for _, alias in ipairs({
+					value.ItemName,
+					value.Name,
+					value.DisplayName,
+					value.Key,
+					value.Id,
+				}) do
+					if type(alias) == "string" and alias ~= "" then
+						if not index.exact[alias] then
+							index.exact[alias] = key
+						end
+						local normalizedAlias = NormalizeItemName(alias)
+						if normalizedAlias ~= "" and not index.normalized[normalizedAlias] then
+							index.normalized[normalizedAlias] = key
+						end
+					end
+				end
+			end
+		end
+
+		return index
+	end
+
+	local function resolveOwnedKey(itemType, rawItemName)
+		if type(rawItemName) ~= "string" or rawItemName == "" then
+			return rawItemName
+		end
+
+		local bucket = getSyncBucket(itemType)
+		if type(bucket) == "table" and bucket[rawItemName] then
+			return rawItemName
+		end
+
+		if not keyIndexByType[itemType] then
+			keyIndexByType[itemType] = buildKeyIndex(itemType)
+		end
+
+		local index = keyIndexByType[itemType]
+		local exact = index.exact[rawItemName]
+		if exact then
+			return exact
+		end
+
+		local normalized = NormalizeItemName(rawItemName)
+		if normalized ~= "" and index.normalized[normalized] then
+			return index.normalized[normalized]
+		end
+
+		return rawItemName
+	end
+
+	local function copyOwnedCounts(source, itemType)
 		local copy = {}
 		if type(source) ~= "table" then
 			return copy
 		end
 		for key, value in pairs(source) do
 			if type(key) == "string" then
+				local canonicalKey = resolveOwnedKey(itemType, key)
 				local amount = normalizeOwnedAmount(value)
-				if amount > 0 then
-					copy[key] = amount
+				if type(canonicalKey) == "string" and canonicalKey ~= "" and amount > 0 then
+					copy[canonicalKey] = (copy[canonicalKey] or 0) + amount
 				end
 			end
 		end
@@ -313,18 +394,23 @@ local InventoryOverlay = (function()
 
 		for key, value in pairs(owned) do
 			if type(key) == "string" then
+				local canonicalKey = resolveOwnedKey(itemType, key)
 				local amount = normalizeOwnedAmount(value)
-				if amount > 0 then
-					stringCounts[key] = (stringCounts[key] or 0) + amount
+				if type(canonicalKey) == "string" and canonicalKey ~= "" and amount > 0 then
+					stringCounts[canonicalKey] = (stringCounts[canonicalKey] or 0) + amount
 				end
 			elseif type(value) == "string" and value ~= "" then
-				listCounts[value] = (listCounts[value] or 0) + 1
+				local canonicalValue = resolveOwnedKey(itemType, value)
+				if type(canonicalValue) == "string" and canonicalValue ~= "" then
+					listCounts[canonicalValue] = (listCounts[canonicalValue] or 0) + 1
+				end
 			elseif type(value) == "table" then
 				local itemName = value.Name or value.ItemName or value.Key or value.Id
 				if type(itemName) == "string" and itemName ~= "" then
+					local canonicalItemName = resolveOwnedKey(itemType, itemName)
 					local amount = normalizeOwnedAmount(value.Amount or value.Count or value.Quantity or 1)
-					if amount > 0 then
-						listCounts[itemName] = (listCounts[itemName] or 0) + amount
+					if type(canonicalItemName) == "string" and canonicalItemName ~= "" and amount > 0 then
+						listCounts[canonicalItemName] = (listCounts[canonicalItemName] or 0) + amount
 					end
 				end
 			end
@@ -559,12 +645,17 @@ local InventoryOverlay = (function()
 
 	function overlay.GetVisibleOwnedAmount(itemType, itemName)
 		syncOverlayBaseFromProfile()
+		itemName = resolveOwnedKey(itemType, itemName)
 		local baseStringAmount, baseListAmount = getBaseEntryAmounts(itemType, itemName)
 		return getVisibleAmountFromParts(baseStringAmount, baseListAmount, getOverlayDelta(itemType)[itemName] or 0)
 	end
 
 	function overlay.AdjustVisibleOwnedAmount(itemName, amountDelta, itemType, shouldFire)
 		itemType = itemType or "Weapons"
+		itemName = resolveOwnedKey(itemType, itemName)
+		if type(itemName) ~= "string" or itemName == "" then
+			return 0
+		end
 		amountDelta = math.floor(tonumber(amountDelta) or 0)
 		if amountDelta == 0 then
 			return overlay.GetVisibleOwnedAmount(itemType, itemName)
@@ -595,41 +686,34 @@ local InventoryOverlay = (function()
 
 	function overlay.SetVisibleOwnedSnapshot(itemType, targetCounts, shouldFire)
 		itemType = itemType or "Weapons"
-		syncOverlayBaseFromProfile()
+		local cleanTarget = copyOwnedCounts(targetCounts, itemType)
+		local owned = getOwnedBucket(itemType)
+		local nextBase = {}
+		local nextShadow = {}
 
-		local base = getOverlayBase(itemType)
-		local nextDelta = {}
-		local cleanTarget = copyOwnedCounts(targetCounts)
-		local seen = {}
-
-		for itemName, targetAmount in pairs(cleanTarget) do
-			seen[itemName] = true
-			local baseStringAmount, baseListAmount = getBaseEntryAmounts(itemType, itemName)
-			local targetStringAmount = math.max(0, targetAmount - baseListAmount)
-			local diff = targetStringAmount - baseStringAmount
-			if diff ~= 0 then
-				nextDelta[itemName] = math.floor(diff)
-			end
+		for key in pairs(owned) do
+			owned[key] = nil
 		end
 
-		for itemName in pairs(base) do
-			if not seen[itemName] then
-				local baseStringAmount = getBaseEntryAmounts(itemType, itemName)
-				local diff = -baseStringAmount
-				if diff ~= 0 then
-					nextDelta[itemName] = diff
-				end
-			end
+		for itemName, amount in pairs(cleanTarget) do
+			owned[itemName] = amount
+			nextBase[itemName] = {
+				stringAmount = amount,
+				listAmount = 0,
+			}
+			nextShadow[itemName] = amount
 		end
 
-		state.deltaByType[itemType] = nextDelta
-		applyOverlayForType(itemType)
+		state.baseByType[itemType] = nextBase
+		state.deltaByType[itemType] = {}
+		state.shadowByType[itemType] = nextShadow
 		if shouldFire ~= false then
 			fireInventoryDataChanged()
 		end
 	end
 
 	function overlay.CheckForItem(itemName, itemType)
+		itemName = resolveOwnedKey(itemType, itemName)
 		local amount = overlay.GetVisibleOwnedAmount(itemType, itemName)
 		if amount > 0 then
 			return true, amount

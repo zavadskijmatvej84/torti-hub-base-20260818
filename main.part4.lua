@@ -1,3 +1,45 @@
+	countLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	countLabel.BackgroundTransparency = 0.9
+	countLabel.BorderSizePixel = 0
+	countLabel.Text = "Loading items..."
+	countLabel.Font = Enum.Font.GothamMedium
+	countLabel.TextSize = 11
+	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
+	countLabel.TextXAlignment = Enum.TextXAlignment.Center
+	countLabel.Parent = controls
+	SpawnerCatalogUI.countLabel = countLabel
+
+	local countCorner = Instance.new("UICorner")
+	countCorner.CornerRadius = UDim.new(1, 0)
+	countCorner.Parent = countLabel
+
+	local countStroke = Instance.new("UIStroke")
+	countStroke.Color = Color3.fromRGB(255, 255, 255)
+	countStroke.Thickness = 1
+	countStroke.Transparency = 0.92
+	countStroke.Parent = countLabel
+
+	local catalogScrollFrame = Instance.new("ScrollingFrame")
+	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 96)
+	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -96)
+	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	catalogScrollFrame.BackgroundTransparency = 0.965
+	catalogScrollFrame.BorderSizePixel = 0
+	catalogScrollFrame.ScrollBarThickness = 6
+	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+	catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	catalogScrollFrame.Parent = catalogBody
+	SpawnerCatalogUI.scrollFrame = catalogScrollFrame
+
+	local catalogScrollCorner = Instance.new("UICorner")
+	catalogScrollCorner.CornerRadius = UDim.new(0, 18)
+	catalogScrollCorner.Parent = catalogScrollFrame
+
+	local catalogScrollStroke = Instance.new("UIStroke")
+	catalogScrollStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogScrollStroke.Thickness = 1
+	catalogScrollStroke.Transparency = 0.9
+	catalogScrollStroke.Parent = catalogScrollFrame
 
 	local catalogGridPadding = Instance.new("UIPadding")
 	catalogGridPadding.PaddingTop = UDim.new(0, 12)
@@ -967,31 +1009,3 @@ local BuiltInValuesCatalog = {
     {name='Mummy (2017)', rarity='Uncommon', value='20', trend='Stable', demand=1},
     {name='Mummy 2018 (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
     {name='Zombie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=2},
-    {name='Zombie', rarity='Uncommon', value='7', trend='Stable', demand=2},
-    {name='Wrap (Gun)', rarity='Uncommon', value='12', trend='Stable', demand=2},
-    {name='Wrap (Knife)', rarity='Uncommon', value='12', trend='Stable', demand=2},
-    {name='Lights (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Moons', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Vampire', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Wolf', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Gothic (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=2},
-    {name='Hazard (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
-    {name='Stars (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Zombie (2023)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Nutcracker', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
-    {name='Snowman (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowy', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Wrapped (Gun)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Wrapped (Knife)', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Gifted', rarity='Uncommon', value='0.6', trend='Stable', demand=1},
-    {name='Snowman (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=2},
-    {name='Tree (2021)', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Meltdown', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Lantern', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Cookie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=2},
-    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Moonlight', rarity='Uncommon', value='1', trend='Stable', demand=2},
-    {name='Pool Noodle', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
-    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},
