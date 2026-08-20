@@ -40,7 +40,7 @@ function FormatCatalogValue(v)
 	if not numeric then
 		return tostring(v)
 	end
-	return string.format("%.2f RUB ₽", numeric)
+	return string.format("%s | %.2f₽", FormatValue(numeric), numeric)
 end
 
 function NormalizeItemName(value)
