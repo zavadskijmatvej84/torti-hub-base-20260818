@@ -1,7 +1,7 @@
 local StarterGui = game:GetService("StarterGui")
 
-local MAIN_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/c426af10eafce720127295642587ef01d1ac987c/main.lua"
-local BUILD_VERSION = "20260820-trade-tab-v21"
+local MAIN_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/1a2800f14597885ae69c0d933a6c6ecd54475b4b/main.lua"
+local BUILD_VERSION = "20260820-trade-tab-v22"
 
 local function notify(text)
 	pcall(function()

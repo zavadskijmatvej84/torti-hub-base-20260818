@@ -3,7 +3,7 @@ local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
-local SPLIT_LOADER_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/2ff6e45e41e2c117ecb7eea00d4147ff1a95e8d0/main-split-loader.lua?v=20260820-trade-tab-v21"
+local SPLIT_LOADER_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/main/main-split-loader.lua?v=20260820-trade-tab-v22"
 local ACCESS_KEY = "Tort1"
 
 local function notify(text)
