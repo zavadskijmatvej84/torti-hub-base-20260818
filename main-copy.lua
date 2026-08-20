@@ -1,7 +1,7 @@
 local StarterGui = game:GetService("StarterGui")
 
 local BASE_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818/main/"
-local BUILD_VERSION = "20260820a"
+local BUILD_VERSION = "20260820b"
 local PART_FILES = {
 	"main-copy.part1.lua",
 	"main-copy.part2.lua",

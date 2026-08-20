@@ -294,6 +294,100 @@ do
             end
         end)
     end)
+
+    local keybindsLabel = Instance.new("TextLabel")
+    keybindsLabel.Size = UDim2.new(1, 0, 0, 18)
+    keybindsLabel.BackgroundTransparency = 1
+    keybindsLabel.Text = "Keybinds"
+    keybindsLabel.Font = Enum.Font.GothamMedium
+    keybindsLabel.TextSize = 14
+    keybindsLabel.TextColor3 = Color3.fromRGB(212, 220, 233)
+    keybindsLabel.TextXAlignment = Enum.TextXAlignment.Left
+    keybindsLabel.Parent = controlFrame
+
+    KeybindStatusLabel = Instance.new("TextLabel")
+    KeybindStatusLabel.Size = UDim2.new(1, 0, 0, 36)
+    KeybindStatusLabel.BackgroundTransparency = 1
+    KeybindStatusLabel.Text = "Choose an action, press Bind, then press your key."
+    KeybindStatusLabel.Font = Enum.Font.Gotham
+    KeybindStatusLabel.TextSize = 12
+    KeybindStatusLabel.TextWrapped = true
+    KeybindStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
+    KeybindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    KeybindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+    KeybindStatusLabel.Parent = controlFrame
+
+    local keybindToolsRow = Instance.new("Frame")
+    keybindToolsRow.Size = UDim2.new(1, 0, 0, 30)
+    keybindToolsRow.BackgroundTransparency = 1
+    keybindToolsRow.Parent = controlFrame
+
+    local saveKeybindsBtn = Instance.new("TextButton")
+    saveKeybindsBtn.Size = UDim2.new(0.5, -4, 1, 0)
+    saveKeybindsBtn.BackgroundColor3 = Color3.fromRGB(60, 150, 90)
+    saveKeybindsBtn.BorderSizePixel = 0
+    saveKeybindsBtn.Text = "Save now"
+    saveKeybindsBtn.Font = Enum.Font.Gotham
+    saveKeybindsBtn.TextSize = 11
+    saveKeybindsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    saveKeybindsBtn.Parent = keybindToolsRow
+
+    local saveKeybindsCorner = Instance.new("UICorner")
+    saveKeybindsCorner.CornerRadius = UDim.new(0, 4)
+    saveKeybindsCorner.Parent = saveKeybindsBtn
+
+    local resetKeybindsBtn = Instance.new("TextButton")
+    resetKeybindsBtn.Size = UDim2.new(0.5, -4, 1, 0)
+    resetKeybindsBtn.Position = UDim2.new(0.5, 4, 0, 0)
+    resetKeybindsBtn.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
+    resetKeybindsBtn.BorderSizePixel = 0
+    resetKeybindsBtn.Text = "Reset all"
+    resetKeybindsBtn.Font = Enum.Font.Gotham
+    resetKeybindsBtn.TextSize = 11
+    resetKeybindsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    resetKeybindsBtn.Parent = keybindToolsRow
+
+    local resetKeybindsCorner = Instance.new("UICorner")
+    resetKeybindsCorner.CornerRadius = UDim.new(0, 4)
+    resetKeybindsCorner.Parent = resetKeybindsBtn
+
+    saveKeybindsBtn.MouseButton1Click:Connect(function()
+        saveKeybindAssignments(true)
+    end)
+
+    resetKeybindsBtn.MouseButton1Click:Connect(function()
+        resetAllKeybindAssignments(true)
+    end)
+
+    KeybindListFrame = Instance.new("ScrollingFrame")
+    KeybindListFrame.Size = UDim2.new(1, 0, 0, 220)
+    KeybindListFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    KeybindListFrame.BackgroundTransparency = 0.3
+    KeybindListFrame.BorderSizePixel = 0
+    KeybindListFrame.ScrollBarThickness = 6
+    KeybindListFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+    KeybindListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    KeybindListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    KeybindListFrame.Parent = controlFrame
+
+    do
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 5)
+        c.Parent = KeybindListFrame
+
+        local lay = Instance.new("UIListLayout")
+        lay.FillDirection = Enum.FillDirection.Vertical
+        lay.SortOrder = Enum.SortOrder.LayoutOrder
+        lay.Padding = UDim.new(0, 4)
+        lay.Parent = KeybindListFrame
+
+        local pad = Instance.new("UIPadding")
+        pad.PaddingTop = UDim.new(0, 4)
+        pad.PaddingBottom = UDim.new(0, 4)
+        pad.PaddingLeft = UDim.new(0, 4)
+        pad.PaddingRight = UDim.new(0, 4)
+        pad.Parent = KeybindListFrame
+    end
 end
 
 -- ===== FILL PLAYERS TAB =====
