@@ -6011,6 +6011,7 @@ end
 
 RefreshConfigsList()
 
+do
 -- ===== OTHER TAB =====
 local otherFrame = tabFrames["Other"]
 
@@ -6073,7 +6074,9 @@ AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 AutoBlockStatusLabel.Parent = otherFrame
 
 updateAutoBlockButtonText()
+end
 
+do
 -- ===== RESIZE HANDLES & DRAGGING =====
 local resizeData = nil
 
@@ -6179,7 +6182,9 @@ end)
 closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
+end
 
+do
 -- ===== POPULATE WEAPONS, PLAYERS & VALUES =====
 
 local ItemsTabAllowedNames = {
@@ -6720,7 +6725,9 @@ end)
 if RefreshSpawnerButtons then
 	RefreshSpawnerButtons()
 end
+end
 
+do
 -- === PLAYERS TAB VALUES ===
 local playersStatusLabel = Instance.new("TextLabel")
 playersStatusLabel.Size = UDim2.new(1, 0, 0, 16)
@@ -7166,6 +7173,7 @@ task.spawn(function()
 		end
 	end
 end)
+end
 
 print("[mm2run] System merged and running successfully!")
 
