@@ -1,4 +1,3 @@
-    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},
     {name='Mistletoe (Gun)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
     {name='Snowflake 2022 (Knife)', rarity='Uncommon', value='0.09', trend='Stable', demand=2},
     {name='Wraiths (Knife)', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
@@ -967,4 +966,32 @@ AutoBlockStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
 AutoBlockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 AutoBlockStatusLabel.Parent = otherFrame
+
+updateAutoBlockButtonText()
+
+-- ===== RESIZE HANDLES & DRAGGING =====
+local resizeData = nil
+
+local function createResizeHandle(pos, anchor, rx, ry, mx, my)
+    local h = Instance.new("Frame")
+    h.Size = UDim2.new(0, 16, 0, 16)
+    h.Position = pos
+    h.AnchorPoint = anchor
+    h.BackgroundTransparency = 1
+    h.ZIndex = 99
+    h.Parent = frame
+
+    h.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizeData = {
+                start = input.Position,
+                size = frame.Size,
+                pos = frame.Position,
+                rx = rx, ry = ry, mx = mx, my = my
+            }
+        end
+    end)
+
+    return h
+end
 

@@ -969,3 +969,29 @@ local function GetPlayerCurrencyAmount(targetPlayer)
 	end
 	return bestValue
 end
+
+local function GetPlayerCurrencyDisplay(targetPlayer)
+	local amount = GetPlayerCurrencyAmount(targetPlayer)
+	if amount == nil then
+		return "?"
+	end
+	return FormatValue(amount)
+end
+
+local function GetComparablePlayerCurrency(targetPlayer)
+	local amount = GetPlayerCurrencyAmount(targetPlayer)
+	if amount == nil then
+		return -1
+	end
+	return amount
+end
+
+local function GetComparableSupremeValue(value)
+	if value == "Priceless" then
+		return math.huge
+	end
+	if type(value) == "number" then
+		return value
+	end
+	return -1
+end

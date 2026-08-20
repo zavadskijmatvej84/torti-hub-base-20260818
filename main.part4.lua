@@ -1,13 +1,39 @@
+
+	local catalogGridPadding = Instance.new("UIPadding")
+	catalogGridPadding.PaddingTop = UDim.new(0, 12)
+	catalogGridPadding.PaddingBottom = UDim.new(0, 12)
+	catalogGridPadding.PaddingLeft = UDim.new(0, 12)
+	catalogGridPadding.PaddingRight = UDim.new(0, 12)
+	catalogGridPadding.Parent = catalogScrollFrame
+
+	local catalogGrid = Instance.new("UIGridLayout")
+	catalogGrid.FillDirection = Enum.FillDirection.Horizontal
+	catalogGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	catalogGrid.SortOrder = Enum.SortOrder.LayoutOrder
+	catalogGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+	catalogGrid.CellSize = UDim2.new(0, 136, 0, 180)
+	catalogGrid.Parent = catalogScrollFrame
+
+	local function updateCatalogGridCellSize()
+		local width = math.max(240, catalogScrollFrame.AbsoluteSize.X - 24)
+		local columns = 2
+		if width >= 1180 then
+			columns = 6
+		elseif width >= 940 then
+			columns = 5
+		elseif width >= 720 then
+			columns = 4
 		elseif width >= 520 then
 			columns = 3
 		end
-		local spacing = 12 * (columns - 1)
-		local cellWidth = math.max(132, math.floor((width - spacing) / columns))
-		catalogGrid.CellSize = UDim2.new(0, cellWidth, 0, cellWidth + 88)
+		local spacing = 10 * (columns - 1)
+		local cellWidth = math.max(118, math.floor((width - spacing) / columns))
+		local cellHeight = math.max(172, math.floor(cellWidth * 1.18))
+		catalogGrid.CellSize = UDim2.new(0, cellWidth, 0, cellHeight)
 	end
 
 	local function updateCatalogScrollHeight()
-		local available = math.max(160, catalogBody.AbsoluteSize.Y - 136)
+		local available = math.max(160, catalogBody.AbsoluteSize.Y - 96)
 		catalogScrollFrame.Size = UDim2.new(1, 0, 0, available)
 	end
 
@@ -968,3 +994,4 @@ local BuiltInValuesCatalog = {
     {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
     {name='Moonlight', rarity='Uncommon', value='1', trend='Stable', demand=2},
     {name='Pool Noodle', rarity='Uncommon', value='0.15', trend='Stable', demand=2},
+    {name='Steel (Knife)', rarity='Uncommon', value='0.3', trend='Stable', demand=2},

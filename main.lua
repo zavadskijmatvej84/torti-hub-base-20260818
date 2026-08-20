@@ -2731,7 +2731,7 @@ do
 	local catalogOverlay = Instance.new("Frame")
 	catalogOverlay.Size = UDim2.new(1, 0, 1, 0)
 	catalogOverlay.BackgroundColor3 = Color3.fromRGB(3, 4, 8)
-	catalogOverlay.BackgroundTransparency = 0.32
+	catalogOverlay.BackgroundTransparency = 0.4
 	catalogOverlay.BorderSizePixel = 0
 	catalogOverlay.Visible = false
 	catalogOverlay.Parent = gui
@@ -2739,8 +2739,8 @@ do
 	local catalogWindow = Instance.new("Frame")
 	catalogWindow.AnchorPoint = Vector2.new(0.5, 0.5)
 	catalogWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	catalogWindow.Size = UDim2.new(0.82, 0, 0.82, 0)
-	catalogWindow.BackgroundColor3 = Color3.fromRGB(10, 11, 15)
+	catalogWindow.Size = UDim2.new(0.74, 0, 0.72, 0)
+	catalogWindow.BackgroundColor3 = Color3.fromRGB(9, 10, 15)
 	catalogWindow.BackgroundTransparency = 0.02
 	catalogWindow.BorderSizePixel = 0
 	catalogWindow.ClipsDescendants = true
@@ -2758,18 +2758,19 @@ do
 
 	local catalogGradient = Instance.new("UIGradient")
 	catalogGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 28, 34)),
-		ColorSequenceKeypoint.new(0.45, Color3.fromRGB(14, 15, 20)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 9, 12)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 26, 34)),
+		ColorSequenceKeypoint.new(0.34, Color3.fromRGB(14, 16, 24)),
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(9, 10, 16)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(7, 8, 12)),
 	})
-	catalogGradient.Rotation = 90
+	catalogGradient.Rotation = 105
 	catalogGradient.Parent = catalogWindow
 
 	local catalogGlow = Instance.new("Frame")
-	catalogGlow.Size = UDim2.new(1, -2, 0, 120)
+	catalogGlow.Size = UDim2.new(1, -2, 0, 90)
 	catalogGlow.Position = UDim2.new(0, 1, 0, 1)
-	catalogGlow.BackgroundColor3 = Color3.fromRGB(102, 115, 255)
-	catalogGlow.BackgroundTransparency = 0.92
+	catalogGlow.BackgroundColor3 = Color3.fromRGB(72, 104, 255)
+	catalogGlow.BackgroundTransparency = 0.9
 	catalogGlow.BorderSizePixel = 0
 	catalogGlow.Parent = catalogWindow
 
@@ -2777,9 +2778,33 @@ do
 	catalogGlowCorner.CornerRadius = UDim.new(0, 24)
 	catalogGlowCorner.Parent = catalogGlow
 
+	local catalogOrbA = Instance.new("Frame")
+	catalogOrbA.Size = UDim2.new(0, 220, 0, 220)
+	catalogOrbA.Position = UDim2.new(1, -110, 0, -86)
+	catalogOrbA.BackgroundColor3 = Color3.fromRGB(88, 121, 255)
+	catalogOrbA.BackgroundTransparency = 0.94
+	catalogOrbA.BorderSizePixel = 0
+	catalogOrbA.Parent = catalogWindow
+
+	local catalogOrbACorner = Instance.new("UICorner")
+	catalogOrbACorner.CornerRadius = UDim.new(1, 0)
+	catalogOrbACorner.Parent = catalogOrbA
+
+	local catalogOrbB = Instance.new("Frame")
+	catalogOrbB.Size = UDim2.new(0, 180, 0, 180)
+	catalogOrbB.Position = UDim2.new(0, -70, 1, -90)
+	catalogOrbB.BackgroundColor3 = Color3.fromRGB(166, 92, 255)
+	catalogOrbB.BackgroundTransparency = 0.965
+	catalogOrbB.BorderSizePixel = 0
+	catalogOrbB.Parent = catalogWindow
+
+	local catalogOrbBCorner = Instance.new("UICorner")
+	catalogOrbBCorner.CornerRadius = UDim.new(1, 0)
+	catalogOrbBCorner.Parent = catalogOrbB
+
 	local header = Instance.new("Frame")
-	header.Size = UDim2.new(1, -28, 0, 58)
-	header.Position = UDim2.new(0, 14, 0, 14)
+	header.Size = UDim2.new(1, -28, 0, 50)
+	header.Position = UDim2.new(0, 14, 0, 12)
 	header.BackgroundTransparency = 1
 	header.Parent = catalogWindow
 
@@ -2788,30 +2813,30 @@ do
 	title.BackgroundTransparency = 1
 	title.Text = "Spawn Catalog"
 	title.Font = Enum.Font.GothamBold
-	title.TextSize = 24
+	title.TextSize = 22
 	title.TextColor3 = Color3.fromRGB(244, 247, 252)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.Parent = header
 
 	local subtitle = Instance.new("TextLabel")
 	subtitle.Size = UDim2.new(1, -62, 0, 18)
-	subtitle.Position = UDim2.new(0, 0, 0, 30)
+	subtitle.Position = UDim2.new(0, 0, 0, 26)
 	subtitle.BackgroundTransparency = 1
-	subtitle.Text = "Image, value and one-click spawn."
+	subtitle.Text = "Compact card catalog with instant spawn."
 	subtitle.Font = Enum.Font.Gotham
-	subtitle.TextSize = 13
+	subtitle.TextSize = 12
 	subtitle.TextColor3 = Color3.fromRGB(154, 159, 170)
 	subtitle.TextXAlignment = Enum.TextXAlignment.Left
 	subtitle.Parent = header
 
 	local closeCatalogButton = Instance.new("TextButton")
-	closeCatalogButton.Size = UDim2.new(0, 36, 0, 36)
-	closeCatalogButton.Position = UDim2.new(1, -36, 0, 0)
+	closeCatalogButton.Size = UDim2.new(0, 32, 0, 32)
+	closeCatalogButton.Position = UDim2.new(1, -32, 0, 2)
 	closeCatalogButton.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
 	closeCatalogButton.BorderSizePixel = 0
 	closeCatalogButton.Text = "x"
 	closeCatalogButton.Font = Enum.Font.GothamBold
-	closeCatalogButton.TextSize = 22
+	closeCatalogButton.TextSize = 18
 	closeCatalogButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	closeCatalogButton.AutoButtonColor = false
 	closeCatalogButton.Parent = header
@@ -2821,25 +2846,87 @@ do
 	closeCatalogCorner.Parent = closeCatalogButton
 
 	local catalogBody = Instance.new("Frame")
-	catalogBody.Size = UDim2.new(1, -28, 1, -86)
-	catalogBody.Position = UDim2.new(0, 14, 0, 74)
+	catalogBody.Size = UDim2.new(1, -28, 1, -74)
+	catalogBody.Position = UDim2.new(0, 14, 0, 62)
 	catalogBody.BackgroundTransparency = 1
 	catalogBody.Parent = catalogWindow
 
 	local controls = Instance.new("Frame")
-	controls.Size = UDim2.new(1, 0, 0, 126)
+	controls.Size = UDim2.new(1, 0, 0, 92)
 	controls.BackgroundTransparency = 1
 	controls.Parent = catalogBody
 
-	local controlsLayout = Instance.new("UIListLayout")
-	controlsLayout.FillDirection = Enum.FillDirection.Vertical
-	controlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	controlsLayout.Padding = UDim.new(0, 8)
-	controlsLayout.Parent = controls
+	local controlsPanel = Instance.new("Frame")
+	controlsPanel.Size = UDim2.new(1, 0, 0, 66)
+	controlsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	controlsPanel.BackgroundTransparency = 0.94
+	controlsPanel.BorderSizePixel = 0
+	controlsPanel.Parent = controls
 
-	SpawnerSearchBox = createInput(controls, "Search weapon:", "")
+	local controlsPanelCorner = Instance.new("UICorner")
+	controlsPanelCorner.CornerRadius = UDim.new(0, 18)
+	controlsPanelCorner.Parent = controlsPanel
 
-	SpawnerSortButton = createButton(controls, GetSpawnerSortButtonText(), function()
+	local controlsPanelStroke = Instance.new("UIStroke")
+	controlsPanelStroke.Color = Color3.fromRGB(255, 255, 255)
+	controlsPanelStroke.Thickness = 1
+	controlsPanelStroke.Transparency = 0.9
+	controlsPanelStroke.Parent = controlsPanel
+
+	local controlsGlow = Instance.new("Frame")
+	controlsGlow.Size = UDim2.new(0.36, 0, 1, 0)
+	controlsGlow.BackgroundColor3 = Color3.fromRGB(92, 123, 255)
+	controlsGlow.BackgroundTransparency = 0.92
+	controlsGlow.BorderSizePixel = 0
+	controlsGlow.Parent = controlsPanel
+
+	local controlsGlowCorner = Instance.new("UICorner")
+	controlsGlowCorner.CornerRadius = UDim.new(0, 18)
+	controlsGlowCorner.Parent = controlsGlow
+
+	local controlsRow = Instance.new("Frame")
+	controlsRow.Size = UDim2.new(1, -18, 0, 54)
+	controlsRow.Position = UDim2.new(0, 9, 0, 6)
+	controlsRow.BackgroundTransparency = 1
+	controlsRow.Parent = controlsPanel
+
+	local searchWrap = Instance.new("Frame")
+	searchWrap.Size = UDim2.new(1, -186, 1, 0)
+	searchWrap.BackgroundTransparency = 1
+	searchWrap.Parent = controlsRow
+
+	local sortWrap = Instance.new("Frame")
+	sortWrap.Size = UDim2.new(0, 176, 1, 0)
+	sortWrap.Position = UDim2.new(1, -176, 0, 0)
+	sortWrap.BackgroundTransparency = 1
+	sortWrap.Parent = controlsRow
+
+	SpawnerSearchBox = createInput(searchWrap, "Search weapon:", "")
+
+	local searchContainer = SpawnerSearchBox.Parent and SpawnerSearchBox.Parent.Parent
+	local searchHolder = SpawnerSearchBox.Parent
+	if searchContainer then
+		searchContainer.Size = UDim2.new(1, 0, 1, 0)
+		for _, child in ipairs(searchContainer:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child.Size = UDim2.new(1, 0, 0, 14)
+				child.Font = Enum.Font.GothamMedium
+				child.TextSize = 12
+				child.TextColor3 = Color3.fromRGB(150, 156, 168)
+			end
+		end
+	end
+	if searchHolder then
+		searchHolder.Size = UDim2.new(1, 0, 0, 36)
+		searchHolder.Position = UDim2.new(0, 0, 1, -36)
+		searchHolder.BackgroundTransparency = 0.9
+	end
+	SpawnerSearchBox.Size = UDim2.new(1, -20, 1, 0)
+	SpawnerSearchBox.Position = UDim2.new(0, 10, 0, 0)
+	SpawnerSearchBox.TextSize = 16
+	SpawnerSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+
+	SpawnerSortButton = createButton(sortWrap, GetSpawnerSortButtonText(), function()
 		if SpawnerSortMode == "default" then
 			SpawnerSortMode = "value_desc"
 		elseif SpawnerSortMode == "value_desc" then
@@ -2852,25 +2939,40 @@ do
 			RefreshSpawnerButtons()
 		end
 	end)
-	SpawnerSortButton.TextSize = 14
+	SpawnerSortButton.TextSize = 13
 	SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
+	SpawnerSortButton.Position = UDim2.new(0, 0, 1, -36)
+	SpawnerSortButton.BackgroundTransparency = 0.8
 
 	local countLabel = Instance.new("TextLabel")
-	countLabel.Size = UDim2.new(1, 0, 0, 16)
-	countLabel.BackgroundTransparency = 1
+	countLabel.Size = UDim2.new(0, 128, 0, 20)
+	countLabel.Position = UDim2.new(0, 6, 0, 72)
+	countLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	countLabel.BackgroundTransparency = 0.9
+	countLabel.BorderSizePixel = 0
 	countLabel.Text = "Loading items..."
-	countLabel.Font = Enum.Font.Gotham
-	countLabel.TextSize = 12
+	countLabel.Font = Enum.Font.GothamMedium
+	countLabel.TextSize = 11
 	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
-	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.TextXAlignment = Enum.TextXAlignment.Center
 	countLabel.Parent = controls
 	SpawnerCatalogUI.countLabel = countLabel
 
+	local countCorner = Instance.new("UICorner")
+	countCorner.CornerRadius = UDim.new(1, 0)
+	countCorner.Parent = countLabel
+
+	local countStroke = Instance.new("UIStroke")
+	countStroke.Color = Color3.fromRGB(255, 255, 255)
+	countStroke.Thickness = 1
+	countStroke.Transparency = 0.92
+	countStroke.Parent = countLabel
+
 	local catalogScrollFrame = Instance.new("ScrollingFrame")
-	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 136)
-	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -136)
+	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 96)
+	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -96)
 	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	catalogScrollFrame.BackgroundTransparency = 0.96
+	catalogScrollFrame.BackgroundTransparency = 0.965
 	catalogScrollFrame.BorderSizePixel = 0
 	catalogScrollFrame.ScrollBarThickness = 6
 	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
@@ -2899,27 +3001,30 @@ do
 	catalogGrid.FillDirection = Enum.FillDirection.Horizontal
 	catalogGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
 	catalogGrid.SortOrder = Enum.SortOrder.LayoutOrder
-	catalogGrid.CellPadding = UDim2.new(0, 12, 0, 12)
-	catalogGrid.CellSize = UDim2.new(0, 150, 0, 220)
+	catalogGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+	catalogGrid.CellSize = UDim2.new(0, 136, 0, 180)
 	catalogGrid.Parent = catalogScrollFrame
 
 	local function updateCatalogGridCellSize()
 		local width = math.max(240, catalogScrollFrame.AbsoluteSize.X - 24)
 		local columns = 2
-		if width >= 980 then
+		if width >= 1180 then
+			columns = 6
+		elseif width >= 940 then
 			columns = 5
-		elseif width >= 760 then
+		elseif width >= 720 then
 			columns = 4
 		elseif width >= 520 then
 			columns = 3
 		end
-		local spacing = 12 * (columns - 1)
-		local cellWidth = math.max(132, math.floor((width - spacing) / columns))
-		catalogGrid.CellSize = UDim2.new(0, cellWidth, 0, cellWidth + 88)
+		local spacing = 10 * (columns - 1)
+		local cellWidth = math.max(118, math.floor((width - spacing) / columns))
+		local cellHeight = math.max(172, math.floor(cellWidth * 1.18))
+		catalogGrid.CellSize = UDim2.new(0, cellWidth, 0, cellHeight)
 	end
 
 	local function updateCatalogScrollHeight()
-		local available = math.max(160, catalogBody.AbsoluteSize.Y - 136)
+		local available = math.max(160, catalogBody.AbsoluteSize.Y - 96)
 		catalogScrollFrame.Size = UDim2.new(1, 0, 0, available)
 	end
 
@@ -5144,42 +5249,69 @@ local function createSpawnerCard(entry, tradable)
 	end
 
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local accentColor = baseColor:Lerp(Color3.fromRGB(109, 138, 255), 0.32)
 	local card = Instance.new("Frame")
-	card.Size = UDim2.new(0, 150, 0, 238)
-	card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	card.BackgroundTransparency = tradable and 0.94 or 0.9
+	card.Size = UDim2.new(0, 136, 0, 180)
+	card.BackgroundColor3 = Color3.fromRGB(18, 20, 27)
+	card.BackgroundTransparency = tradable and 0.06 or 0.12
 	card.BorderSizePixel = 0
 	card.Parent = parent
 
 	local cardCorner = Instance.new("UICorner")
-	cardCorner.CornerRadius = UDim.new(0, 18)
+	cardCorner.CornerRadius = UDim.new(0, 16)
 	cardCorner.Parent = card
 
 	local cardStroke = Instance.new("UIStroke")
-	cardStroke.Color = baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.18)
+	cardStroke.Color = accentColor
 	cardStroke.Thickness = 1
-	cardStroke.Transparency = tradable and 0.82 or 0.9
+	cardStroke.Transparency = tradable and 0.8 or 0.88
 	cardStroke.Parent = card
 
+	local cardGradient = Instance.new("UIGradient")
+	cardGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 30, 39)),
+		ColorSequenceKeypoint.new(0.65, Color3.fromRGB(18, 20, 27)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 15, 21)),
+	})
+	cardGradient.Rotation = 90
+	cardGradient.Parent = card
+
+	local cardTint = Instance.new("Frame")
+	cardTint.Size = UDim2.new(1, 0, 0, 50)
+	cardTint.BackgroundColor3 = accentColor
+	cardTint.BackgroundTransparency = 0.94
+	cardTint.BorderSizePixel = 0
+	cardTint.Parent = card
+
+	local cardTintCorner = Instance.new("UICorner")
+	cardTintCorner.CornerRadius = UDim.new(0, 16)
+	cardTintCorner.Parent = cardTint
+
 	local preview = Instance.new("Frame")
-	preview.Size = UDim2.new(1, -20, 0, 108)
-	preview.Position = UDim2.new(0, 10, 0, 10)
+	preview.Size = UDim2.new(1, -16, 0, 78)
+	preview.Position = UDim2.new(0, 8, 0, 8)
 	preview.BackgroundColor3 = baseColor
-	preview.BackgroundTransparency = tradable and 0.18 or 0.38
+	preview.BackgroundTransparency = tradable and 0.14 or 0.26
 	preview.BorderSizePixel = 0
 	preview.Parent = card
 
 	local previewCorner = Instance.new("UICorner")
-	previewCorner.CornerRadius = UDim.new(0, 14)
+	previewCorner.CornerRadius = UDim.new(0, 12)
 	previewCorner.Parent = preview
 
 	local previewGradient = Instance.new("UIGradient")
 	previewGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.25)),
-		ColorSequenceKeypoint.new(1, baseColor:Lerp(Color3.fromRGB(8, 9, 12), 0.45)),
+		ColorSequenceKeypoint.new(0, baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.18)),
+		ColorSequenceKeypoint.new(1, baseColor:Lerp(Color3.fromRGB(8, 9, 12), 0.52)),
 	})
-	previewGradient.Rotation = 135
+	previewGradient.Rotation = 145
 	previewGradient.Parent = preview
+
+	local previewStroke = Instance.new("UIStroke")
+	previewStroke.Color = Color3.fromRGB(255, 255, 255)
+	previewStroke.Thickness = 1
+	previewStroke.Transparency = 0.92
+	previewStroke.Parent = preview
 
 	local previewImage = Instance.new("ImageLabel")
 	previewImage.Size = UDim2.new(1, -12, 1, -12)
@@ -5189,25 +5321,25 @@ local function createSpawnerCard(entry, tradable)
 	previewImage.Parent = preview
 
 	local previewFallback = Instance.new("TextLabel")
-	previewFallback.Size = UDim2.new(1, -14, 1, -14)
-	previewFallback.Position = UDim2.new(0, 7, 0, 7)
+	previewFallback.Size = UDim2.new(1, -12, 1, -12)
+	previewFallback.Position = UDim2.new(0, 6, 0, 6)
 	previewFallback.BackgroundTransparency = 1
 	previewFallback.Font = Enum.Font.GothamBold
-	previewFallback.TextSize = 22
+	previewFallback.TextSize = 17
 	previewFallback.TextWrapped = true
 	previewFallback.TextColor3 = Color3.fromRGB(255, 255, 255)
 	previewFallback.Text = (entry.chroma and "CHROMA\n" or "") .. string.upper(entry.type)
 	previewFallback.Parent = preview
 
 	local rarityChip = Instance.new("TextLabel")
-	rarityChip.Size = UDim2.new(0, 96, 0, 24)
-	rarityChip.Position = UDim2.new(0, 10, 0, 10)
+	rarityChip.Size = UDim2.new(0, 82, 0, 20)
+	rarityChip.Position = UDim2.new(0, 8, 0, 8)
 	rarityChip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	rarityChip.BackgroundTransparency = 0.82
+	rarityChip.BackgroundTransparency = 0.84
 	rarityChip.BorderSizePixel = 0
 	rarityChip.Text = entry.rarity
 	rarityChip.Font = Enum.Font.GothamBold
-	rarityChip.TextSize = 11
+	rarityChip.TextSize = 10
 	rarityChip.TextColor3 = Color3.fromRGB(255, 255, 255)
 	rarityChip.Parent = preview
 
@@ -5216,41 +5348,68 @@ local function createSpawnerCard(entry, tradable)
 	rarityChipCorner.Parent = rarityChip
 
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, -20, 0, 44)
-	nameLabel.Position = UDim2.new(0, 10, 0, 126)
+	nameLabel.Size = UDim2.new(1, -16, 0, 34)
+	nameLabel.Position = UDim2.new(0, 8, 0, 92)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = Enum.Font.GothamBold
-	nameLabel.TextSize = 17
+	nameLabel.TextSize = 15
 	nameLabel.TextWrapped = true
 	nameLabel.TextColor3 = Color3.fromRGB(245, 247, 252)
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.TextYAlignment = Enum.TextYAlignment.Top
 	nameLabel.Parent = card
 
+	local metaRow = Instance.new("Frame")
+	metaRow.Size = UDim2.new(1, -16, 0, 18)
+	metaRow.Position = UDim2.new(0, 8, 0, 126)
+	metaRow.BackgroundTransparency = 1
+	metaRow.Parent = card
+
+	local typeChip = Instance.new("TextLabel")
+	typeChip.Size = UDim2.new(0.38, 0, 1, 0)
+	typeChip.BackgroundTransparency = 1
+	typeChip.Font = Enum.Font.GothamMedium
+	typeChip.TextSize = 11
+	typeChip.TextColor3 = Color3.fromRGB(150, 156, 170)
+	typeChip.TextXAlignment = Enum.TextXAlignment.Left
+	typeChip.Text = entry.type
+	typeChip.Parent = metaRow
+
 	local valueLabel = Instance.new("TextLabel")
-	valueLabel.Size = UDim2.new(1, -20, 0, 18)
-	valueLabel.Position = UDim2.new(0, 10, 0, 172)
+	valueLabel.Size = UDim2.new(0.62, 0, 1, 0)
+	valueLabel.Position = UDim2.new(0.38, 0, 0, 0)
 	valueLabel.BackgroundTransparency = 1
-	valueLabel.Font = Enum.Font.Gotham
-	valueLabel.TextSize = 13
+	valueLabel.Font = Enum.Font.GothamBold
+	valueLabel.TextSize = 11
 	valueLabel.TextColor3 = Color3.fromRGB(171, 224, 180)
-	valueLabel.TextXAlignment = Enum.TextXAlignment.Left
-	valueLabel.Parent = card
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+	valueLabel.Parent = metaRow
+
+	local detailLabel = Instance.new("TextLabel")
+	detailLabel.Size = UDim2.new(1, -16, 0, 14)
+	detailLabel.Position = UDim2.new(0, 8, 0, 144)
+	detailLabel.BackgroundTransparency = 1
+	detailLabel.Font = Enum.Font.GothamMedium
+	detailLabel.TextSize = 10
+	detailLabel.TextColor3 = Color3.fromRGB(108, 113, 124)
+	detailLabel.TextXAlignment = Enum.TextXAlignment.Left
+	detailLabel.Text = tradable and "click to spawn quickly" or "locked source item"
+	detailLabel.Parent = card
 
 	local spawnButton = Instance.new("TextButton")
-	spawnButton.Size = UDim2.new(1, -20, 0, 38)
-	spawnButton.Position = UDim2.new(0, 10, 1, -48)
-	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.45)
+	spawnButton.Size = UDim2.new(1, -16, 0, 30)
+	spawnButton.Position = UDim2.new(0, 8, 1, -38)
+	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.52)
 	spawnButton.BorderSizePixel = 0
 	spawnButton.Text = "Spawn"
 	spawnButton.Font = Enum.Font.GothamBold
-	spawnButton.TextSize = 15
+	spawnButton.TextSize = 13
 	spawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	spawnButton.AutoButtonColor = false
 	spawnButton.Parent = card
 
 	local spawnCorner = Instance.new("UICorner")
-	spawnCorner.CornerRadius = UDim.new(0, 12)
+	spawnCorner.CornerRadius = UDim.new(0, 10)
 	spawnCorner.Parent = spawnButton
 
 	spawnButton.MouseEnter:Connect(function()
@@ -5343,7 +5502,7 @@ RefreshSpawnerButtons = function()
 	end
 
 	if SpawnerCatalogUI.countLabel then
-		SpawnerCatalogUI.countLabel.Text = ("%d items shown"):format(visibleOrder)
+		SpawnerCatalogUI.countLabel.Text = ("%d shown"):format(visibleOrder)
 	end
 end
 
