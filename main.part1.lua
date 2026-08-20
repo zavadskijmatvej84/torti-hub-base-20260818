@@ -40,7 +40,22 @@ function FormatCatalogValue(v)
 	if not numeric then
 		return tostring(v)
 	end
-	return string.format("%s | %.2f₽", FormatValue(numeric), numeric)
+	if math.abs(numeric - math.floor(numeric)) < 0.000001 and numeric >= 1 then
+		return FormatValue(numeric)
+	end
+	local text = string.format("%.3f", numeric)
+	text = string.gsub(text, "0+$", "")
+	text = string.gsub(text, "%.$", "")
+	return text
+end
+
+function FormatRubleValue(v)
+	if v == nil then return nil end
+	local numeric = tonumber(v)
+	if not numeric then
+		return tostring(v)
+	end
+	return string.format("%.2f₽", numeric)
 end
 
 function NormalizeItemName(value)
@@ -53,6 +68,344 @@ function NormalizeItemName(value)
 	s = string.gsub(s, "%s+$", "")
 	return s
 end
+
+local RubleValueRowsText = [=[
+Passion,217729.38
+Evergun,189891.63
+Bauble,84603.57
+Vampire's Gun,59375
+Constellation,58750
+Alienbeam,53750
+Gingerscope,34250
+Sunrise,34050
+Raygun,31246.24
+Sunset,28771.56
+Snowcannon,23017.47
+Traveler's Axe,17283.75
+Blizzard,15029.43
+Snowstorm,13047.99
+Traveler's Gun,11996.25
+Elderwood Scythe,11975
+Heart Wand,10500
+Watergun,10125
+Alienbeam,8553.43
+Snow Dagger,7425
+Evergun,7221.25
+Constellation,6498.75
+Evergreen,6334.87
+Turkey,5151.25
+Celestial,5062.5
+Treat,4800
+Darksword,4571.25
+Vampire's Gun,4500
+Raygun,4500
+Sweet,4497.5
+Darkshot,4140
+Beachy,3250
+Vampire's Axe,3200
+Icecream,3058.75
+Sakura,2900
+Blossom,2812.5
+Sunrise,2625
+Bauble,2125
+Snowcannon,1955
+Cane,1835
+Soul,1491.25
+Sunset,1437.5
+Spirit,1356.25
+Rainbow Gun,1161.25
+Flora,1111.26
+Rainbow,1073.75
+Bloom,998.75
+Corrupt,970.2
+Heart Wand,900
+Xenoknife,879.87
+Spirit,1356.25
+Rainbow Gun,1161.25
+Flora,1111.26
+Rainbow,1073.75
+Bloom,998.75
+Corrupt,970.2
+Heart Wand,900
+Xenoknife,879.87
+Xenoshot,856.25
+Bats,760.38
+Blizzard,748.75
+Ocean,722
+Snowstorm,698.75
+Flowerwood Gun,692.5
+Waves,625
+Snow Dagger,597.5
+Harvester,575
+Watergun,574.99
+Mummified,562.49
+Bones,562.39
+Flowerwood Knife,556.86
+Latte,540
+Icepiercer,493.75
+Brains,475
+Sweet,435
+Treat,425
+Borealis,412.5
+Glitch1,399.99
+Australis,379.99
+Latte,374.9
+Snowflake,370.16
+Bat,350
+Gifts,347.5
+Beachy,337.5
+Ornament,337.5
+Sands,337.5
+Ghoulish,329.4
+Icecream,318.75
+Sweater,316.22
+Pine,310.93
+Dungeon,312.4
+Candy,300
+Darkknife,275
+Gingerbread,260
+Nether,250
+Heartblade,250
+Icebreaker,220
+Pearlshine,218.75
+Pearl,208.75
+Silent Night,201.86
+Elderwood Scythe,194.56
+Darkbringer,193.75
+Lightbringer,187.49
+Pop Art,183.33
+Luger,176.25
+Elf,175
+Batwing,171.25
+Cats,156.25
+Aurora,150
+Laser,147.49
+Iceblaster,139.99
+Vampire,137.5
+Branches,137.4
+Candleflame,131.24
+Cotton Candy,127.5
+Alex,125
+Traveler,124.9
+Gemstone,120
+Shark,116.24
+Sugar,115
+Elderwood Revolver,113.1
+Spectre,112.49
+Amerilaser,111.25
+Sparkle9,111.25
+Sparkle4,110
+Elderwood Blade,78.6
+Nightblade,78.11
+Sparkle7,77.5
+Apocalypse,77.5
+Shark,76.25
+Logchopper,75.1
+Sparkle10,75
+Korblox,75
+BattleAxe II,75
+Icebeam,74.97
+Slasher,73.69
+Tides,72.5
+Green Luger,71.33
+Prism,71.25
+Icewing,71.25
+Old Glory,71.25
+Makeshift,68.75
+JD,68.75
+BattleAxe,67.5
+Webbed,66.95
+Pixel,66.25
+Plasmablade,64.99
+Sparkle6,63.75
+Zombified,63.34
+Blaster,62.5
+Glitch2,62.5
+Xmas,62.5
+Pumpkin,109.76
+Darkbringer,108.94
+Hallowscythe,108.74
+Heat,107.5
+Swirly Gun,106.24
+Ecto,106.14
+Swirly Axe,104.98
+Lightbringer,104.7
+Phantom,99.99
+Red Luger,97.5
+Spectral,96.25
+Vampire's Edge,93.75
+Deathshard,92.44
+Wrapped,90
+Laser,88.75
+Frosted,87.85
+Makeshift,87.49
+Candleflame,86.21
+Makeshift,87.49
+Candleflame,86.21
+Cookiecane,82.49
+Fang,81.25
+Luger,80.63
+Plasmabeam,80
+Hallowgun,79.99
+Beach,79.89
+Gingerblade,62.5
+Boneblade,62.5
+Saw,60
+Sparkle8,60
+Jinglegun,60
+Nebula,58
+Swirly Gun,56.25
+CandyCorn,56.25
+Frosted,55
+Gemstone,55
+Monster,54.88
+America,53.75
+Ice Shard,53.63
+Bioblade,53.2
+Eternalcane,51.25
+Sparkle5,50
+Slimy,50
+Starry,50
+Lugercane,49.99
+Ginger Luger,49.5
+Eternal,48.75
+Slasher,48.72
+Starry,48.45
+Snowflakes,47.75
+Laser,47.5
+Cookiecane,44.99
+Deathshard,43.75
+Elf,43.75
+Minty,43.75
+Prismatic,42.5
+Spider,42.49
+Hallow's Edge,42.49
+Gingermint,42.37
+Bioblade,38.75
+Ice Shard,37.5
+Gingerblade,36.25
+Blood,36.17
+Shadow,36.17
+Swirl,36.14
+Aurora,35
+Bunnies,35
+Eternalcane,35
+Tides,35
+Arctic,34.87
+Candy Corn,34.66
+Coal,33.75
+Sparkle1,33.75
+Spider,33.74
+Virtual,33.74
+Chill,32.5
+Eternal III,32.5
+Hallow's Edge,32.5
+Swirly Blade,32.49
+Watcher,31.6
+RIP,31.25
+Phaser,31.25
+Eternal II,31.25
+Seer,31.25
+Fang,31.25
+Handsaw,31.25
+Broken,31.25
+Flames,31.23
+Silent Night,30.87
+Purple Seer,30
+Red Seer,30
+Clockwork,30
+Blue Seer,30
+Peppermint,29.98
+Sweetheart,29.62
+Ice Dragon,28.75
+Blue Elite,28.75
+Frostsaber,28.75
+Snowflakes,28.21
+Boneblade,27.5
+Winter's Edge,26.25
+Cookieblade,26.25
+Floral,26.15
+Vampire,25
+Aurora,25
+Phantom,25
+Orange Seer,25
+Frostbite,25
+Snowflake,25
+Tailslide,24.9
+Blue Elite,24.9
+Zombie,24.9
+Pumpkin,24.75
+Golden,23.75
+Skool,23.73
+Starry,23.27
+Prince,22.5
+Ghost,22.5
+Combat II,22.23
+Sparkle2,21.24
+Green Elite,20
+Cowboy,20
+Green Elite,20
+Void,20
+Gingerbread,19.97
+Darkgun,18.75
+Vampire,18.75
+Candy Swirl,18.71
+Paws,18.71
+Witched,18.61
+Wrap,18.25
+Magma,17.5
+Zombie,17.49
+Xeno,16.92
+Ginger,16.25
+Predator,16.24
+Cavern,16.11
+TNL,15.87
+Valentine,15.87
+Ghost,14.97
+Chromatic,15
+Nightstar,15
+Ghostfire,14.9
+Sketch,14.9
+Frostfade,13.75
+Santa's Magic,13.75
+Frostfade,13.75
+Predator,13.46
+Goo,12.5
+Cane,12.5
+Euro,12.5
+Sparkle,12.5
+Ollie,12.5
+Skulls,12.5
+Icecracker,12.5
+Energized,12.5
+Moonlight,12.5
+Checker,12.5
+Blossom,12.49
+Brains,12.43
+Hazard,11.24
+Gothic,11.25
+Toxic,11.25
+Webs,11.25
+Wrap,11.24
+Orange Marble,11.24
+Ginger,10.59
+Zombie,10.38
+Corl,10
+Magma,10
+Cookie,10
+Scratch,10
+Cavern,10
+Energized,10
+Black,10
+Energized,10
+Black,10
+Cookie,10
+Cavern,10
+Scratch,10
+Green Fire,10
+Santa's Spirit,9.88
+Frostflame,9.56
+]=]
 
 local SupremeSnapshotLabel = "August 15, 2026 at 2:00 PM"
 local SupremeValueRows = {
@@ -156,6 +509,111 @@ local SupremeValueRows = {
 	{category = "Uncommon", name = "Ghostly", value = "x2 T1 Uncommons"},
 }
 
+local ChromaCatalogBaseNames = {}
+for _, row in ipairs(SupremeValueRows) do
+	if row.category == "Chroma" then
+		local baseName = string.gsub(tostring(row.name or ""), "^Chroma%s+", "")
+		ChromaCatalogBaseNames[NormalizeItemName(baseName)] = true
+	end
+end
+
+local RubleValuesByKey = {}
+
+local function PushRubleValue(name, amount)
+	local key = NormalizeItemName(name)
+	local numeric = tonumber(amount)
+	if key == "" or not numeric then
+		return
+	end
+	local bucket = RubleValuesByKey[key]
+	if not bucket then
+		bucket = {}
+		RubleValuesByKey[key] = bucket
+	end
+	for _, existing in ipairs(bucket) do
+		if math.abs(existing - numeric) < 0.000001 then
+			return
+		end
+	end
+	table.insert(bucket, numeric)
+end
+
+for line in string.gmatch(RubleValueRowsText, "[^\r\n]+") do
+	local name, amountText = string.match(line, "^(.-),%s*([%d%.]+)%s*$")
+	if name and amountText then
+		PushRubleValue(name, amountText)
+	end
+end
+
+for _, bucket in pairs(RubleValuesByKey) do
+	table.sort(bucket, function(a, b)
+		return a > b
+	end)
+end
+
+local SpecialChromaRubleAliases = {
+	["travelers gun"] = "Passion",
+}
+
+local function GetRubleValueForCatalogItem(item)
+	if type(item) ~= "table" then
+		return nil
+	end
+	local displayName = tostring(item.name or "")
+	local baseName = string.gsub(displayName, "^Chroma%s+", "")
+	local normalizedBase = NormalizeItemName(baseName)
+	local category = tostring(item.category or "")
+
+	local candidateKeys = {}
+	local seen = {}
+	local function addCandidateKey(name)
+		local key = NormalizeItemName(name)
+		if key == "" or seen[key] then
+			return
+		end
+		seen[key] = true
+		table.insert(candidateKeys, key)
+	end
+
+	addCandidateKey(displayName)
+
+	if category == "Chroma" then
+		local alias = SpecialChromaRubleAliases[normalizedBase]
+		if alias then
+			addCandidateKey(alias)
+		end
+	end
+
+	addCandidateKey(baseName)
+
+	for _, key in ipairs(candidateKeys) do
+		local bucket = RubleValuesByKey[key]
+		if bucket and #bucket > 0 then
+			if category == "Chroma" then
+				return bucket[1]
+			end
+			if ChromaCatalogBaseNames[normalizedBase] and #bucket >= 2 then
+				return bucket[2]
+			end
+			return bucket[1]
+		end
+	end
+
+	return nil
+end
+
+local function FormatCatalogDisplayValue(item)
+	if type(item) ~= "table" then
+		return "?"
+	end
+	local mm2Text = FormatCatalogValue(item.value)
+	local rubleValue = GetRubleValueForCatalogItem(item)
+	local rubleText = FormatRubleValue(rubleValue)
+	if rubleText then
+		return ("%s | %s"):format(mm2Text, rubleText)
+	end
+	return mm2Text
+end
 local SupremeAliases = {
 	["c travelers gun"] = "Chroma Traveler's Gun",
 	["c vampires gun"] = "Chroma Vampire's Gun",
@@ -1036,3 +1494,4 @@ local function ScanPlayerVisibleCurrencies(targetPlayer)
 	end
 
 	return found
+

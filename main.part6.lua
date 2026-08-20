@@ -296,7 +296,7 @@ local function GetSpawnerValueText(entry)
 	if not item then
 		return "?"
 	end
-	return FormatCatalogValue(item.value)
+	return FormatCatalogDisplayValue(item)
 end
 
 local function GetSpawnerValueNumber(entry)
@@ -1063,6 +1063,7 @@ task.spawn(function()
 end)
 
 print("[mm2run] System merged and running successfully!")
+
 
 
 
