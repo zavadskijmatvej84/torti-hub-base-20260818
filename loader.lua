@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 
-local RAW_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818/main/main.lua"
+local RAW_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818/main/main-copy.lua?v=5012d9d"
 
 local function resolveGuiParent()
 	local candidates = {
@@ -107,7 +107,7 @@ local function setStatus(text, color)
 	print("[torti/loader] " .. tostring(text))
 end
 
-setStatus("Fetching main.lua from GitHub...", Color3.fromRGB(187, 191, 199))
+setStatus("Fetching split loader from GitHub...", Color3.fromRGB(187, 191, 199))
 notify("Fetching script...")
 
 local okFetch, response = pcall(function()
