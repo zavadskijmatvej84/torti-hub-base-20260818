@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local LastTradePartner = nil
 
-local function FormatValue(v)
+function FormatValue(v)
 	if v == nil then return "?" end
 	if type(v) == "number" then
 		if math.abs(v) < 1 then
@@ -34,7 +34,7 @@ local function FormatValue(v)
 	return tostring(v)
 end
 
-local function FormatCatalogValue(v)
+function FormatCatalogValue(v)
 	if v == nil then return "?" end
 	local numeric = tonumber(v)
 	if not numeric then
@@ -49,7 +49,7 @@ local function FormatCatalogValue(v)
 	return text
 end
 
-local function NormalizeItemName(value)
+function NormalizeItemName(value)
 	local s = string.lower(tostring(value or ""))
 	s = string.gsub(s, "^c%.?%s*", "chroma ")
 	s = string.gsub(s, "(%s)c%.?%s*", "%1chroma ")
@@ -184,7 +184,7 @@ for alias, targetName in pairs(SupremeAliases) do
 	end
 end
 
-local function GetSupremeValue(name)
+function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
 end
 
@@ -737,7 +737,7 @@ local InventoryOverlay = (function()
 end)()
 
 local v18 = {}
-local function v22(v19)
+function v22(v19)
 	for _, v21 in pairs(v19:GetChildren()) do
 		if v21:IsA("Frame") then
 			v21.Visible = false
@@ -814,7 +814,7 @@ local CurrencyKeywordFragments = {
 	"key",
 }
 
-local function PathSegments(path)
+function PathSegments(path)
 	local parts = {}
 	for segment in string.gmatch(tostring(path or ""), "[^ ]+") do
 		table.insert(parts, segment)
@@ -822,7 +822,7 @@ local function PathSegments(path)
 	return parts
 end
 
-local function PathContainsBlockedCurrencyBranch(path)
+function PathContainsBlockedCurrencyBranch(path)
 	for _, segment in ipairs(PathSegments(path)) do
 		if CurrencyScanBlockedBranches[segment] then
 			return true
@@ -831,7 +831,7 @@ local function PathContainsBlockedCurrencyBranch(path)
 	return false
 end
 
-local function PathLooksCurrencyLike(path)
+function PathLooksCurrencyLike(path)
 	local text = NormalizeItemName(path)
 	for _, fragment in ipairs(CurrencyKeywordFragments) do
 		if string.find(text, fragment, 1, true) then
@@ -841,7 +841,7 @@ local function PathLooksCurrencyLike(path)
 	return false
 end
 
-local function PrettifyCurrencyLabel(text)
+function PrettifyCurrencyLabel(text)
 	local normalized = NormalizeItemName(text)
 	if normalized == "" then
 		return "Unknown"
@@ -852,7 +852,7 @@ local function PrettifyCurrencyLabel(text)
 	end))
 end
 
-local function ResolveCurrencyLabel(rawKey, path)
+function ResolveCurrencyLabel(rawKey, path)
 	local keyText = NormalizeItemName(rawKey)
 	if not CurrencyGenericAmountKeys[keyText] then
 		return PrettifyCurrencyLabel(rawKey)
@@ -869,7 +869,7 @@ local function ResolveCurrencyLabel(rawKey, path)
 	return PrettifyCurrencyLabel(rawKey)
 end
 
-local function AddCurrencyRecord(out, rawKey, path, amount)
+function AddCurrencyRecord(out, rawKey, path, amount)
 	if type(amount) ~= "number" or amount == 0 then
 		return
 	end
@@ -893,7 +893,7 @@ local function AddCurrencyRecord(out, rawKey, path, amount)
 	existing.amount = existing.amount + amount
 end
 
-local function ShouldTreatAsCurrency(path, rawKey)
+function ShouldTreatAsCurrency(path, rawKey)
 	local keyText = NormalizeItemName(rawKey)
 	local normalizedPath = NormalizeItemName(path)
 	local pathParts = PathSegments(normalizedPath)

@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local LastTradePartner = nil
 
-local function FormatValue(v)
+function FormatValue(v)
 	if v == nil then return "?" end
 	if type(v) == "number" then
 		if math.abs(v) < 1 then
@@ -34,7 +34,7 @@ local function FormatValue(v)
 	return tostring(v)
 end
 
-local function FormatCatalogValue(v)
+function FormatCatalogValue(v)
 	if v == nil then return "?" end
 	local numeric = tonumber(v)
 	if not numeric then
@@ -49,7 +49,7 @@ local function FormatCatalogValue(v)
 	return text
 end
 
-local function NormalizeItemName(value)
+function NormalizeItemName(value)
 	local s = string.lower(tostring(value or ""))
 	s = string.gsub(s, "^c%.?%s*", "chroma ")
 	s = string.gsub(s, "(%s)c%.?%s*", "%1chroma ")
@@ -184,7 +184,7 @@ for alias, targetName in pairs(SupremeAliases) do
 	end
 end
 
-local function GetSupremeValue(name)
+function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
 end
 
@@ -737,7 +737,7 @@ local InventoryOverlay = (function()
 end)()
 
 local v18 = {}
-local function v22(v19)
+function v22(v19)
 	for _, v21 in pairs(v19:GetChildren()) do
 		if v21:IsA("Frame") then
 			v21.Visible = false
@@ -814,7 +814,7 @@ local CurrencyKeywordFragments = {
 	"key",
 }
 
-local function PathSegments(path)
+function PathSegments(path)
 	local parts = {}
 	for segment in string.gmatch(tostring(path or ""), "[^ ]+") do
 		table.insert(parts, segment)
@@ -822,7 +822,7 @@ local function PathSegments(path)
 	return parts
 end
 
-local function PathContainsBlockedCurrencyBranch(path)
+function PathContainsBlockedCurrencyBranch(path)
 	for _, segment in ipairs(PathSegments(path)) do
 		if CurrencyScanBlockedBranches[segment] then
 			return true
@@ -831,7 +831,7 @@ local function PathContainsBlockedCurrencyBranch(path)
 	return false
 end
 
-local function PathLooksCurrencyLike(path)
+function PathLooksCurrencyLike(path)
 	local text = NormalizeItemName(path)
 	for _, fragment in ipairs(CurrencyKeywordFragments) do
 		if string.find(text, fragment, 1, true) then
@@ -841,7 +841,7 @@ local function PathLooksCurrencyLike(path)
 	return false
 end
 
-local function PrettifyCurrencyLabel(text)
+function PrettifyCurrencyLabel(text)
 	local normalized = NormalizeItemName(text)
 	if normalized == "" then
 		return "Unknown"
@@ -852,7 +852,7 @@ local function PrettifyCurrencyLabel(text)
 	end))
 end
 
-local function ResolveCurrencyLabel(rawKey, path)
+function ResolveCurrencyLabel(rawKey, path)
 	local keyText = NormalizeItemName(rawKey)
 	if not CurrencyGenericAmountKeys[keyText] then
 		return PrettifyCurrencyLabel(rawKey)
@@ -869,7 +869,7 @@ local function ResolveCurrencyLabel(rawKey, path)
 	return PrettifyCurrencyLabel(rawKey)
 end
 
-local function AddCurrencyRecord(out, rawKey, path, amount)
+function AddCurrencyRecord(out, rawKey, path, amount)
 	if type(amount) ~= "number" or amount == 0 then
 		return
 	end
@@ -893,7 +893,7 @@ local function AddCurrencyRecord(out, rawKey, path, amount)
 	existing.amount = existing.amount + amount
 end
 
-local function ShouldTreatAsCurrency(path, rawKey)
+function ShouldTreatAsCurrency(path, rawKey)
 	local keyText = NormalizeItemName(rawKey)
 	local normalizedPath = NormalizeItemName(path)
 	local pathParts = PathSegments(normalizedPath)
@@ -1931,20 +1931,20 @@ gui.Parent = game:GetService("CoreGui")
 
 local WINDOW_THEME = {
 	mainWidth = 400,
-	minWidth = 300,
-	minHeight = 240,
-	panelColor = Color3.fromRGB(20, 16, 18),
-	panelEdge = Color3.fromRGB(255, 255, 255),
-	panelText = Color3.fromRGB(244, 244, 247),
-	mutedText = Color3.fromRGB(175, 176, 185),
-	softText = Color3.fromRGB(150, 150, 160),
-	chipColor = Color3.fromRGB(255, 255, 255),
-	chipTransparency = 0.88,
-	inputColor = Color3.fromRGB(255, 255, 255),
-	inputTransparency = 0.88,
-	buttonColor = Color3.fromRGB(255, 255, 255),
-	buttonTransparency = 0.84,
-	buttonHoverTransparency = 0.74,
+	minWidth = 320,
+	minHeight = 260,
+	panelColor = Color3.fromRGB(11, 24, 36),
+	panelEdge = Color3.fromRGB(108, 178, 226),
+	panelText = Color3.fromRGB(236, 247, 255),
+	mutedText = Color3.fromRGB(168, 198, 220),
+	softText = Color3.fromRGB(128, 164, 191),
+	chipColor = Color3.fromRGB(25, 52, 73),
+	chipTransparency = 0.18,
+	inputColor = Color3.fromRGB(19, 44, 63),
+	inputTransparency = 0.08,
+	buttonColor = Color3.fromRGB(37, 100, 142),
+	buttonTransparency = 0.12,
+	buttonHoverTransparency = 0.03,
 }
 
 local CatalogPanelWidth = 430
@@ -1963,7 +1963,7 @@ frame.Parent = gui
 local mainPanel = Instance.new("Frame")
 mainPanel.Size = UDim2.new(1, 0, 1, 0)
 mainPanel.BackgroundColor3 = WINDOW_THEME.panelColor
-mainPanel.BackgroundTransparency = 0.1
+mainPanel.BackgroundTransparency = 0.04
 mainPanel.BorderSizePixel = 0
 mainPanel.ClipsDescendants = true
 mainPanel.Parent = frame
@@ -1975,66 +1975,18 @@ corner.Parent = mainPanel
 local frameStroke = Instance.new("UIStroke")
 frameStroke.Color = WINDOW_THEME.panelEdge
 frameStroke.Thickness = 1
-frameStroke.Transparency = 0.86
+frameStroke.Transparency = 0.48
 frameStroke.Parent = mainPanel
 
 local frameGradient = Instance.new("UIGradient")
 frameGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 29, 30)),
-	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(27, 21, 22)),
-	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(16, 16, 18)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(9, 10, 12)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
+	ColorSequenceKeypoint.new(0.32, Color3.fromRGB(14, 37, 54)),
+	ColorSequenceKeypoint.new(0.68, Color3.fromRGB(10, 25, 38)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
 })
-frameGradient.Rotation = 112
+frameGradient.Rotation = 90
 frameGradient.Parent = mainPanel
-
-local topGlow = Instance.new("Frame")
-topGlow.Size = UDim2.new(1.08, 0, 0, 146)
-topGlow.Position = UDim2.new(-0.04, 0, -0.04, 0)
-topGlow.BackgroundColor3 = Color3.fromRGB(255, 145, 105)
-topGlow.BackgroundTransparency = 0.95
-topGlow.BorderSizePixel = 0
-topGlow.Parent = mainPanel
-
-local topGlowCorner = Instance.new("UICorner")
-topGlowCorner.CornerRadius = UDim.new(1, 0)
-topGlowCorner.Parent = topGlow
-
-local sideGlow = Instance.new("Frame")
-sideGlow.Size = UDim2.new(0, 220, 0, 220)
-sideGlow.Position = UDim2.new(1, -84, 0, -84)
-sideGlow.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
-sideGlow.BackgroundTransparency = 0.955
-sideGlow.BorderSizePixel = 0
-sideGlow.Parent = mainPanel
-
-local sideGlowCorner = Instance.new("UICorner")
-sideGlowCorner.CornerRadius = UDim.new(1, 0)
-sideGlowCorner.Parent = sideGlow
-
-local sheen = Instance.new("Frame")
-sheen.Size = UDim2.new(1, -2, 0, 130)
-sheen.Position = UDim2.new(0, 1, 0, 1)
-sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sheen.BackgroundTransparency = 0.955
-sheen.BorderSizePixel = 0
-sheen.Parent = mainPanel
-
-local sheenCorner = Instance.new("UICorner")
-sheenCorner.CornerRadius = UDim.new(0, 22)
-sheenCorner.Parent = sheen
-
-local sheenGradient = Instance.new("UIGradient")
-sheenGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
-})
-sheenGradient.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 0.14),
-	NumberSequenceKeypoint.new(1, 1),
-})
-sheenGradient.Rotation = 90
-sheenGradient.Parent = sheen
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, -24, 0, 56)
@@ -2065,27 +2017,27 @@ subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 34, 0, 34)
-closeBtn.Position = UDim2.new(1, -34, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
+closeBtn.Size = UDim2.new(0, 36, 0, 36)
+closeBtn.Position = UDim2.new(1, -36, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(55, 126, 173)
 closeBtn.BorderSizePixel = 0
-closeBtn.Text = "x"
+closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 22
+closeBtn.TextSize = 18
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = titleBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.CornerRadius = UDim.new(0, 12)
 closeCorner.Parent = closeBtn
 
 closeBtn.MouseEnter:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(74, 153, 205)}):Play()
 end)
 
 closeBtn.MouseLeave:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 126, 173)}):Play()
 end)
 
 local tabContainer = Instance.new("Frame")
@@ -2102,14 +2054,15 @@ tabContainerCorner.Parent = tabContainer
 
 local tabContainerStroke = Instance.new("UIStroke")
 tabContainerStroke.Color = WINDOW_THEME.panelEdge
-tabContainerStroke.Transparency = 0.9
+tabContainerStroke.Transparency = 0.58
 tabContainerStroke.Parent = tabContainer
 
-local tabLayout = Instance.new("UIListLayout")
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
+local tabLayout = Instance.new("UIGridLayout")
+tabLayout.CellPadding = UDim2.new(0, 6, 0, 6)
+tabLayout.FillDirectionMaxCells = 7
 tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabLayout.Padding = UDim.new(0, 2)
+tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 tabLayout.Parent = tabContainer
 
 local tabPadding = Instance.new("UIPadding")
@@ -2123,6 +2076,9 @@ local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Conf
 local tabButtons = {}
 local tabFrames = {}
 local activeTab = "Control"
+local contentFrames = {}
+local TAB_BUTTON_MIN_WIDTH = 84
+local TAB_BUTTON_HEIGHT = 34
 
 local function setActiveTab(name)
 	for _, f in pairs(tabFrames) do
@@ -2136,10 +2092,12 @@ local function setActiveTab(name)
 
 	for n, b in pairs(tabButtons) do
 		if n == name then
-			b.BackgroundTransparency = 0.76
+			b.BackgroundColor3 = WINDOW_THEME.buttonColor
+			b.BackgroundTransparency = 0.04
 			b.TextColor3 = WINDOW_THEME.panelText
 		else
-			b.BackgroundTransparency = 1
+			b.BackgroundColor3 = WINDOW_THEME.chipColor
+			b.BackgroundTransparency = 0.34
 			b.TextColor3 = WINDOW_THEME.mutedText
 		end
 	end
@@ -2147,28 +2105,42 @@ local function setActiveTab(name)
 	activeTab = name
 end
 
+local function updateTabLayout()
+	local availableWidth = math.max(220, frame.AbsoluteSize.X - 36)
+	local columns = math.clamp(math.floor((availableWidth + 6) / (TAB_BUTTON_MIN_WIDTH + 6)), 1, #tabs)
+	local rows = math.ceil(#tabs / columns)
+	local cellWidth = math.floor((availableWidth - ((columns - 1) * 6)) / columns)
+	local tabHeight = 12 + rows * TAB_BUTTON_HEIGHT + math.max(0, rows - 1) * 6
+	local contentTop = tabContainer.Position.Y.Offset + tabHeight + 10
+
+	tabLayout.FillDirectionMaxCells = columns
+	tabLayout.CellSize = UDim2.new(0, cellWidth, 0, TAB_BUTTON_HEIGHT)
+	tabContainer.Size = UDim2.new(1, -24, 0, tabHeight)
+
+	for _, content in ipairs(contentFrames) do
+		content.Position = UDim2.new(0, 12, 0, contentTop)
+		content.Size = UDim2.new(1, -24, 1, -(contentTop + 12))
+	end
+end
+
 for i, name in ipairs(tabs) do
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 0, 1, 0)
-	btn.AutomaticSize = Enum.AutomaticSize.X
+	btn.Size = UDim2.new(0, TAB_BUTTON_MIN_WIDTH, 0, TAB_BUTTON_HEIGHT)
 	btn.BackgroundColor3 = WINDOW_THEME.chipColor
-	btn.BackgroundTransparency = 1
+	btn.BackgroundTransparency = 0.34
 	btn.BorderSizePixel = 0
 	btn.Text = name
 	btn.Font = Enum.Font.GothamMedium
-	btn.TextSize = 13
-	btn.TextColor3 = Color3.fromRGB(194, 198, 206)
+	btn.TextSize = 12
+	btn.TextColor3 = WINDOW_THEME.mutedText
 	btn.AutoButtonColor = false
+	btn.LayoutOrder = i
+	btn.TextWrapped = true
 	btn.Parent = tabContainer
 
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, 12)
 	c.Parent = btn
-
-	local p = Instance.new("UIPadding")
-	p.PaddingLeft = UDim.new(0, 10)
-	p.PaddingRight = UDim.new(0, 10)
-	p.Parent = btn
 
 	tabButtons[name] = btn
 
@@ -2177,13 +2149,14 @@ for i, name in ipairs(tabs) do
 	content.Position = UDim2.new(0, 12, 0, 130)
 	content.BackgroundTransparency = 1
 	content.BorderSizePixel = 0
-	content.ScrollBarThickness = 3
-	content.ScrollBarImageColor3 = Color3.fromRGB(164, 144, 148)
+	content.ScrollBarThickness = 4
+	content.ScrollBarImageColor3 = WINDOW_THEME.panelEdge
 	content.CanvasSize = UDim2.new(0, 0, 0, 0)
 	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	content.Visible = i == 1
 	content.Parent = mainPanel
 	tabFrames[name] = content
+	table.insert(contentFrames, content)
 
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Vertical
@@ -2200,13 +2173,19 @@ for i, name in ipairs(tabs) do
 
 	btn.MouseEnter:Connect(function()
 		if activeTab ~= name then
-			TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(229, 228, 232)}):Play()
+			TweenService:Create(btn, TweenInfo.new(0.15), {
+				BackgroundTransparency = 0.16,
+				TextColor3 = WINDOW_THEME.panelText
+			}):Play()
 		end
 	end)
 
 	btn.MouseLeave:Connect(function()
 		if activeTab ~= name then
-			TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = WINDOW_THEME.mutedText}):Play()
+			TweenService:Create(btn, TweenInfo.new(0.15), {
+				BackgroundTransparency = 0.34,
+				TextColor3 = WINDOW_THEME.mutedText
+			}):Play()
 		end
 	end)
 
@@ -2215,19 +2194,20 @@ for i, name in ipairs(tabs) do
 	end)
 end
 
+frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTabLayout)
+task.defer(updateTabLayout)
+
 -- Helper functions for GUI
 local function createButton(parent, text, callback)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 42)
+	btn.Size = UDim2.new(1, 0, 0, 40)
 	btn.BackgroundColor3 = WINDOW_THEME.buttonColor
 	btn.BackgroundTransparency = WINDOW_THEME.buttonTransparency
 	btn.BorderSizePixel = 0
 	btn.Text = text
 	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 19
+	btn.TextSize = 17
 	btn.TextColor3 = WINDOW_THEME.panelText
-	btn.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	btn.TextStrokeTransparency = 0.92
 	btn.AutoButtonColor = false
 	btn.Parent = parent
 
@@ -2238,20 +2218,8 @@ local function createButton(parent, text, callback)
 	local s = Instance.new("UIStroke")
 	s.Color = WINDOW_THEME.panelEdge
 	s.Thickness = 1
-	s.Transparency = 0.88
+	s.Transparency = 0.54
 	s.Parent = btn
-
-	local g = Instance.new("UIGradient")
-	g.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(92, 76, 80)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 35, 39)),
-	})
-	g.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.14),
-		NumberSequenceKeypoint.new(1, 0.34),
-	})
-	g.Rotation = 90
-	g.Parent = btn
 
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = WINDOW_THEME.buttonHoverTransparency}):Play()
@@ -2277,7 +2245,7 @@ local function createInput(parent, label, default)
 	lbl.BackgroundTransparency = 1
 	lbl.Text = label
 	lbl.Font = Enum.Font.Gotham
-	lbl.TextSize = 15
+	lbl.TextSize = 14
 	lbl.TextColor3 = WINDOW_THEME.mutedText
 	lbl.TextXAlignment = Enum.TextXAlignment.Left
 	lbl.Parent = container
@@ -2297,20 +2265,8 @@ local function createInput(parent, label, default)
 	local holderStroke = Instance.new("UIStroke")
 	holderStroke.Color = WINDOW_THEME.panelEdge
 	holderStroke.Thickness = 1
-	holderStroke.Transparency = 0.88
+	holderStroke.Transparency = 0.58
 	holderStroke.Parent = boxHolder
-
-	local holderGradient = Instance.new("UIGradient")
-	holderGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(74, 60, 64)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(33, 30, 34)),
-	})
-	holderGradient.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.2),
-		NumberSequenceKeypoint.new(1, 0.4),
-	})
-	holderGradient.Rotation = 90
-	holderGradient.Parent = boxHolder
 
 	local box = Instance.new("TextBox")
 	box.Size = UDim2.new(1, -20, 1, 0)
@@ -2319,7 +2275,7 @@ local function createInput(parent, label, default)
 	box.Text = default or ""
 	box.PlaceholderText = default == "" and label or ""
 	box.Font = Enum.Font.GothamMedium
-	box.TextSize = 18
+	box.TextSize = 17
 	box.TextColor3 = WINDOW_THEME.panelText
 	box.PlaceholderColor3 = WINDOW_THEME.softText
 	box.TextXAlignment = Enum.TextXAlignment.Center
@@ -2408,7 +2364,7 @@ local function updateAutoBlockButtonText()
 		return
 	end
 	AutoBlockToggleButton.Text = AutoBlockState.enabled and "Auto block: ON" or "Auto block: OFF"
-	AutoBlockToggleButton.BackgroundTransparency = AutoBlockState.enabled and 0.72 or 0.84
+	AutoBlockToggleButton.BackgroundTransparency = AutoBlockState.enabled and 0.03 or WINDOW_THEME.buttonTransparency
 end
 
 local function setPlayerAutoRefreshStatus(text, color)
@@ -2438,7 +2394,7 @@ local function updatePlayerAutoRefreshButtonText()
 		return
 	end
 	PlayerAutoRefreshToggleButton.Text = PlayerValuesAutoRefreshState.enabled and "Auto refresh: ON" or "Auto refresh: OFF"
-	PlayerAutoRefreshToggleButton.BackgroundTransparency = PlayerValuesAutoRefreshState.enabled and 0.72 or 0.84
+	PlayerAutoRefreshToggleButton.BackgroundTransparency = PlayerValuesAutoRefreshState.enabled and 0.03 or WINDOW_THEME.buttonTransparency
 end
 
 -- ===== FILL CONTROL TAB =====
@@ -2887,8 +2843,8 @@ do
 	local catalogWindow = Instance.new("Frame")
 	catalogWindow.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
 	catalogWindow.Position = UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
-	catalogWindow.BackgroundColor3 = Color3.fromRGB(16, 14, 16)
-	catalogWindow.BackgroundTransparency = 0.06
+	catalogWindow.BackgroundColor3 = WINDOW_THEME.panelColor
+	catalogWindow.BackgroundTransparency = 0.03
 	catalogWindow.BorderSizePixel = 0
 	catalogWindow.ClipsDescendants = true
 	catalogWindow.Visible = false
@@ -2902,72 +2858,36 @@ do
 	local catalogStroke = Instance.new("UIStroke")
 	catalogStroke.Color = WINDOW_THEME.panelEdge
 	catalogStroke.Thickness = 1
-	catalogStroke.Transparency = 0.88
+	catalogStroke.Transparency = 0.48
 	catalogStroke.Parent = catalogWindow
 
 	local catalogGradient = Instance.new("UIGradient")
 	catalogGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 27, 29)),
-		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(25, 20, 22)),
-		ColorSequenceKeypoint.new(0.68, Color3.fromRGB(15, 15, 17)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 12)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
+		ColorSequenceKeypoint.new(0.34, Color3.fromRGB(14, 37, 54)),
+		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(10, 25, 38)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
 	})
-	catalogGradient.Rotation = 115
+	catalogGradient.Rotation = 90
 	catalogGradient.Parent = catalogWindow
-
-	local catalogGlow = Instance.new("Frame")
-	catalogGlow.Size = UDim2.new(1, -2, 0, 90)
-	catalogGlow.Position = UDim2.new(0, 1, 0, 1)
-	catalogGlow.BackgroundColor3 = Color3.fromRGB(255, 144, 102)
-	catalogGlow.BackgroundTransparency = 0.94
-	catalogGlow.BorderSizePixel = 0
-	catalogGlow.Parent = catalogWindow
-
-	local catalogGlowCorner = Instance.new("UICorner")
-	catalogGlowCorner.CornerRadius = UDim.new(0, 24)
-	catalogGlowCorner.Parent = catalogGlow
-
-	local catalogOrbA = Instance.new("Frame")
-	catalogOrbA.Size = UDim2.new(0, 220, 0, 220)
-	catalogOrbA.Position = UDim2.new(1, -110, 0, -86)
-	catalogOrbA.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
-	catalogOrbA.BackgroundTransparency = 0.955
-	catalogOrbA.BorderSizePixel = 0
-	catalogOrbA.Parent = catalogWindow
-
-	local catalogOrbACorner = Instance.new("UICorner")
-	catalogOrbACorner.CornerRadius = UDim.new(1, 0)
-	catalogOrbACorner.Parent = catalogOrbA
-
-	local catalogOrbB = Instance.new("Frame")
-	catalogOrbB.Size = UDim2.new(0, 180, 0, 180)
-	catalogOrbB.Position = UDim2.new(0, -70, 1, -90)
-	catalogOrbB.BackgroundColor3 = Color3.fromRGB(196, 110, 82)
-	catalogOrbB.BackgroundTransparency = 0.97
-	catalogOrbB.BorderSizePixel = 0
-	catalogOrbB.Parent = catalogWindow
-
-	local catalogOrbBCorner = Instance.new("UICorner")
-	catalogOrbBCorner.CornerRadius = UDim.new(1, 0)
-	catalogOrbBCorner.Parent = catalogOrbB
 
 	local catalogResizeHandle = Instance.new("Frame")
 	catalogResizeHandle.Size = UDim2.new(0, 18, 0, 92)
 	catalogResizeHandle.Position = UDim2.new(0, 0, 0.5, -46)
-	catalogResizeHandle.BackgroundColor3 = Color3.fromRGB(255, 176, 136)
-	catalogResizeHandle.BackgroundTransparency = 0.88
+	catalogResizeHandle.BackgroundColor3 = WINDOW_THEME.buttonColor
+	catalogResizeHandle.BackgroundTransparency = 0.22
 	catalogResizeHandle.ZIndex = 40
 	catalogResizeHandle.Parent = catalogWindow
 
 	local catalogResizeHandleCorner = Instance.new("UICorner")
-	catalogResizeHandleCorner.CornerRadius = UDim.new(1, 0)
+	catalogResizeHandleCorner.CornerRadius = UDim.new(0, 10)
 	catalogResizeHandleCorner.Parent = catalogResizeHandle
 
 	local catalogResizeBar = Instance.new("Frame")
 	catalogResizeBar.Size = UDim2.new(0, 4, 1, -18)
 	catalogResizeBar.Position = UDim2.new(0.5, -2, 0, 9)
-	catalogResizeBar.BackgroundColor3 = Color3.fromRGB(255, 233, 214)
-	catalogResizeBar.BackgroundTransparency = 0.34
+	catalogResizeBar.BackgroundColor3 = Color3.fromRGB(225, 243, 255)
+	catalogResizeBar.BackgroundTransparency = 0.08
 	catalogResizeBar.BorderSizePixel = 0
 	catalogResizeBar.Parent = catalogResizeHandle
 
@@ -3005,7 +2925,7 @@ do
 	local closeCatalogButton = Instance.new("TextButton")
 	closeCatalogButton.Size = UDim2.new(0, 32, 0, 32)
 	closeCatalogButton.Position = UDim2.new(1, -32, 0, 2)
-	closeCatalogButton.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
+	closeCatalogButton.BackgroundColor3 = WINDOW_THEME.buttonColor
 	closeCatalogButton.BorderSizePixel = 0
 	closeCatalogButton.Text = ">"
 	closeCatalogButton.Font = Enum.Font.GothamBold
@@ -3015,7 +2935,7 @@ do
 	closeCatalogButton.Parent = header
 
 	local closeCatalogCorner = Instance.new("UICorner")
-	closeCatalogCorner.CornerRadius = UDim.new(1, 0)
+	closeCatalogCorner.CornerRadius = UDim.new(0, 12)
 	closeCatalogCorner.Parent = closeCatalogButton
 
 	local catalogBody = Instance.new("Frame")
@@ -3031,8 +2951,8 @@ do
 
 	local controlsPanel = Instance.new("Frame")
 	controlsPanel.Size = UDim2.new(1, 0, 0, 66)
-	controlsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	controlsPanel.BackgroundTransparency = 0.9
+	controlsPanel.BackgroundColor3 = WINDOW_THEME.inputColor
+	controlsPanel.BackgroundTransparency = 0.04
 	controlsPanel.BorderSizePixel = 0
 	controlsPanel.Parent = controls
 
@@ -3043,19 +2963,8 @@ do
 	local controlsPanelStroke = Instance.new("UIStroke")
 	controlsPanelStroke.Color = WINDOW_THEME.panelEdge
 	controlsPanelStroke.Thickness = 1
-	controlsPanelStroke.Transparency = 0.9
+	controlsPanelStroke.Transparency = 0.58
 	controlsPanelStroke.Parent = controlsPanel
-
-	local controlsGlow = Instance.new("Frame")
-	controlsGlow.Size = UDim2.new(0.36, 0, 1, 0)
-	controlsGlow.BackgroundColor3 = Color3.fromRGB(255, 142, 104)
-	controlsGlow.BackgroundTransparency = 0.94
-	controlsGlow.BorderSizePixel = 0
-	controlsGlow.Parent = controlsPanel
-
-	local controlsGlowCorner = Instance.new("UICorner")
-	controlsGlowCorner.CornerRadius = UDim.new(0, 18)
-	controlsGlowCorner.Parent = controlsGlow
 
 	local controlsRow = Instance.new("Frame")
 	controlsRow.Size = UDim2.new(1, -18, 0, 54)
@@ -3092,7 +3001,7 @@ do
 	if searchHolder then
 		searchHolder.Size = UDim2.new(1, 0, 0, 36)
 		searchHolder.Position = UDim2.new(0, 0, 1, -36)
-		searchHolder.BackgroundTransparency = 0.9
+		searchHolder.BackgroundTransparency = WINDOW_THEME.inputTransparency
 	end
 	SpawnerSearchBox.Size = UDim2.new(1, -20, 1, 0)
 	SpawnerSearchBox.Position = UDim2.new(0, 10, 0, 0)
@@ -3115,7 +3024,7 @@ do
 	SpawnerSortButton.TextSize = 13
 	SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
 	SpawnerSortButton.Position = UDim2.new(0, 0, 1, -36)
-	SpawnerSortButton.BackgroundTransparency = 0.78
+	SpawnerSortButton.BackgroundTransparency = WINDOW_THEME.buttonTransparency
 
 	local countLabel = Instance.new("TextLabel")
 	countLabel.Size = UDim2.new(0, 128, 0, 20)
@@ -3272,11 +3181,11 @@ do
 	end)
 
 	closeCatalogButton.MouseEnter:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(74, 153, 205)}):Play()
 	end)
 
 	closeCatalogButton.MouseLeave:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 126, 173)}):Play()
 	end)
 
 	catalogResizeHandle.InputBegan:Connect(function(input)
@@ -5525,14 +5434,7 @@ local function GetSpawnerValueNumber(entry)
 	return item._numericValue or tonumber(item.value) or -1
 end
 
-local function createSpawnerCard(entry, tradable)
-	local parent = SpawnerCatalogUI.scrollFrame
-	if not parent then
-		return nil
-	end
-
-	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
-	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
+local function createSpawnerCardFrame(parent, baseColor, accentColor, tradable)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(0, 136, 0, 180)
 	card.BackgroundColor3 = Color3.fromRGB(26, 19, 22)
@@ -5559,6 +5461,10 @@ local function createSpawnerCard(entry, tradable)
 	cardGradient.Rotation = 112
 	cardGradient.Parent = card
 
+	return card
+end
+
+local function createSpawnerCardPreview(card, entry, baseColor, accentColor, tradable)
 	local cardTint = Instance.new("Frame")
 	cardTint.Size = UDim2.new(1, 0, 0, 50)
 	cardTint.BackgroundColor3 = accentColor
@@ -5630,6 +5536,10 @@ local function createSpawnerCard(entry, tradable)
 	rarityChipCorner.CornerRadius = UDim.new(1, 0)
 	rarityChipCorner.Parent = rarityChip
 
+	return previewImage, previewFallback
+end
+
+local function createSpawnerCardBody(card, entry, tradable, baseColor)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, -16, 0, 34)
 	nameLabel.Position = UDim2.new(0, 8, 0, 92)
@@ -5695,6 +5605,10 @@ local function createSpawnerCard(entry, tradable)
 	spawnCorner.CornerRadius = UDim.new(0, 10)
 	spawnCorner.Parent = spawnButton
 
+	return nameLabel, valueLabel, spawnButton
+end
+
+local function wireSpawnerCardButton(spawnButton, entry, baseColor)
 	spawnButton.MouseEnter:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
 			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 170, 130), 0.5)
@@ -5712,6 +5626,20 @@ local function createSpawnerCard(entry, tradable)
 		local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
 		SpawnItem(entry.key, amt, "Weapons")
 	end)
+end
+
+local function createSpawnerCard(entry, tradable)
+	local parent = SpawnerCatalogUI.scrollFrame
+	if not parent then
+		return nil
+	end
+
+	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
+	local card = createSpawnerCardFrame(parent, baseColor, accentColor, tradable)
+	local previewImage, previewFallback = createSpawnerCardPreview(card, entry, baseColor, accentColor, tradable)
+	local nameLabel, valueLabel, spawnButton = createSpawnerCardBody(card, entry, tradable, baseColor)
+	wireSpawnerCardButton(spawnButton, entry, baseColor)
 
 	local imageSource = getSpawnerImageForEntry(entry)
 	if imageSource then

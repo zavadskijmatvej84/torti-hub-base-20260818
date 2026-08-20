@@ -140,11 +140,11 @@
 	end)
 
 	closeCatalogButton.MouseEnter:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(74, 153, 205)}):Play()
 	end)
 
 	closeCatalogButton.MouseLeave:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 126, 173)}):Play()
 	end)
 
 	catalogResizeHandle.InputBegan:Connect(function(input)

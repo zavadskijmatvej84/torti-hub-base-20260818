@@ -71,10 +71,10 @@ panelGradient.Rotation = 112
 panelGradient.Parent = panel
 
 local topGlow = Instance.new("Frame")
-topGlow.Size = UDim2.new(1.08, 0, 0, 136)
-topGlow.Position = UDim2.new(-0.04, 0, -0.05, 0)
+topGlow.Size = UDim2.new(1.02, 0, 0, 88)
+topGlow.Position = UDim2.new(-0.01, 0, -0.03, 0)
 topGlow.BackgroundColor3 = Color3.fromRGB(255, 145, 105)
-topGlow.BackgroundTransparency = 0.95
+topGlow.BackgroundTransparency = 0.985
 topGlow.BorderSizePixel = 0
 topGlow.ZIndex = 20
 topGlow.Parent = panel
@@ -84,10 +84,10 @@ topGlowCorner.CornerRadius = UDim.new(1, 0)
 topGlowCorner.Parent = topGlow
 
 local sideGlow = Instance.new("Frame")
-sideGlow.Size = UDim2.new(0, 180, 0, 180)
-sideGlow.Position = UDim2.new(1, -70, 0, -78)
+sideGlow.Size = UDim2.new(0, 126, 0, 126)
+sideGlow.Position = UDim2.new(1, -56, 0, -54)
 sideGlow.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
-sideGlow.BackgroundTransparency = 0.955
+sideGlow.BackgroundTransparency = 0.99
 sideGlow.BorderSizePixel = 0
 sideGlow.ZIndex = 20
 sideGlow.Parent = panel

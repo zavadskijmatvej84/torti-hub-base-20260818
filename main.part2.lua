@@ -887,20 +887,20 @@ gui.Parent = game:GetService("CoreGui")
 
 local WINDOW_THEME = {
 	mainWidth = 400,
-	minWidth = 300,
-	minHeight = 240,
-	panelColor = Color3.fromRGB(20, 16, 18),
-	panelEdge = Color3.fromRGB(255, 255, 255),
-	panelText = Color3.fromRGB(244, 244, 247),
-	mutedText = Color3.fromRGB(175, 176, 185),
-	softText = Color3.fromRGB(150, 150, 160),
-	chipColor = Color3.fromRGB(255, 255, 255),
-	chipTransparency = 0.88,
-	inputColor = Color3.fromRGB(255, 255, 255),
-	inputTransparency = 0.88,
-	buttonColor = Color3.fromRGB(255, 255, 255),
-	buttonTransparency = 0.84,
-	buttonHoverTransparency = 0.74,
+	minWidth = 320,
+	minHeight = 260,
+	panelColor = Color3.fromRGB(11, 24, 36),
+	panelEdge = Color3.fromRGB(108, 178, 226),
+	panelText = Color3.fromRGB(236, 247, 255),
+	mutedText = Color3.fromRGB(168, 198, 220),
+	softText = Color3.fromRGB(128, 164, 191),
+	chipColor = Color3.fromRGB(25, 52, 73),
+	chipTransparency = 0.18,
+	inputColor = Color3.fromRGB(19, 44, 63),
+	inputTransparency = 0.08,
+	buttonColor = Color3.fromRGB(37, 100, 142),
+	buttonTransparency = 0.12,
+	buttonHoverTransparency = 0.03,
 }
 
 local CatalogPanelWidth = 430
@@ -919,11 +919,15 @@ frame.Parent = gui
 local mainPanel = Instance.new("Frame")
 mainPanel.Size = UDim2.new(1, 0, 1, 0)
 mainPanel.BackgroundColor3 = WINDOW_THEME.panelColor
-mainPanel.BackgroundTransparency = 0.1
+mainPanel.BackgroundTransparency = 0.04
 mainPanel.BorderSizePixel = 0
 mainPanel.ClipsDescendants = true
 mainPanel.Parent = frame
 
+local titleBar = nil
+local closeBtn = nil
+
+do
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 22)
 corner.Parent = mainPanel
@@ -931,66 +935,18 @@ corner.Parent = mainPanel
 local frameStroke = Instance.new("UIStroke")
 frameStroke.Color = WINDOW_THEME.panelEdge
 frameStroke.Thickness = 1
-frameStroke.Transparency = 0.86
+frameStroke.Transparency = 0.48
 frameStroke.Parent = mainPanel
 
 local frameGradient = Instance.new("UIGradient")
 frameGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 29, 30)),
-	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(27, 21, 22)),
-	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(16, 16, 18)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(9, 10, 12)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
+	ColorSequenceKeypoint.new(0.32, Color3.fromRGB(14, 37, 54)),
+	ColorSequenceKeypoint.new(0.68, Color3.fromRGB(10, 25, 38)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
 })
-frameGradient.Rotation = 112
+frameGradient.Rotation = 90
 frameGradient.Parent = mainPanel
-
-local topGlow = Instance.new("Frame")
-topGlow.Size = UDim2.new(1.08, 0, 0, 146)
-topGlow.Position = UDim2.new(-0.04, 0, -0.04, 0)
-topGlow.BackgroundColor3 = Color3.fromRGB(255, 145, 105)
-topGlow.BackgroundTransparency = 0.95
-topGlow.BorderSizePixel = 0
-topGlow.Parent = mainPanel
-
-local topGlowCorner = Instance.new("UICorner")
-topGlowCorner.CornerRadius = UDim.new(1, 0)
-topGlowCorner.Parent = topGlow
-
-local sideGlow = Instance.new("Frame")
-sideGlow.Size = UDim2.new(0, 220, 0, 220)
-sideGlow.Position = UDim2.new(1, -84, 0, -84)
-sideGlow.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
-sideGlow.BackgroundTransparency = 0.955
-sideGlow.BorderSizePixel = 0
-sideGlow.Parent = mainPanel
-
-local sideGlowCorner = Instance.new("UICorner")
-sideGlowCorner.CornerRadius = UDim.new(1, 0)
-sideGlowCorner.Parent = sideGlow
-
-local sheen = Instance.new("Frame")
-sheen.Size = UDim2.new(1, -2, 0, 130)
-sheen.Position = UDim2.new(0, 1, 0, 1)
-sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sheen.BackgroundTransparency = 0.955
-sheen.BorderSizePixel = 0
-sheen.Parent = mainPanel
-
-local sheenCorner = Instance.new("UICorner")
-sheenCorner.CornerRadius = UDim.new(0, 22)
-sheenCorner.Parent = sheen
-
-local sheenGradient = Instance.new("UIGradient")
-sheenGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
-})
-sheenGradient.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 0.14),
-	NumberSequenceKeypoint.new(1, 1),
-})
-sheenGradient.Rotation = 90
-sheenGradient.Parent = sheen
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, -24, 0, 56)
@@ -1021,24 +977,24 @@ subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 34, 0, 34)
-closeBtn.Position = UDim2.new(1, -34, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
+closeBtn.Size = UDim2.new(0, 36, 0, 36)
+closeBtn.Position = UDim2.new(1, -36, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(55, 126, 173)
 closeBtn.BorderSizePixel = 0
-closeBtn.Text = "x"
+closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 22
+closeBtn.TextSize = 18
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = titleBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.CornerRadius = UDim.new(0, 12)
 closeCorner.Parent = closeBtn
 
 closeBtn.MouseEnter:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(74, 153, 205)}):Play()
 end)
 
 closeBtn.MouseLeave:Connect(function()
-	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(55, 126, 173)}):Play()
