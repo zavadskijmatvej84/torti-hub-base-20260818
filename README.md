@@ -11,3 +11,6 @@ What changed:
 
 Main script:
 - `main.lua`
+
+Alternative loader for the protected entry:
+- `key-loader.lua`
