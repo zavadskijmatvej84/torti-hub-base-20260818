@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local WINDOW_THEME
 local LastTradePartner = nil
 
 function FormatValue(v)
@@ -2739,7 +2740,7 @@ gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = game:GetService("CoreGui")
 
-local WINDOW_THEME = {
+WINDOW_THEME = {
 	mainWidth = 400,
 	minWidth = 320,
 	minHeight = 260,
