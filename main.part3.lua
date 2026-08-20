@@ -6,7 +6,6 @@ local setActiveTab = nil
 local playersFrame = nil
 local weaponScrollFrame = nil
 
-do
 local tabContainer = Instance.new("Frame")
 tabContainer.Size = UDim2.new(1, -24, 0, 48)
 tabContainer.Position = UDim2.new(0, 12, 0, 76)
