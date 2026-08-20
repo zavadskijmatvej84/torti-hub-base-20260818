@@ -671,6 +671,12 @@ function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
 end
 
+local WeaponCatalog
+local WeaponByKey
+local WeaponByName
+local WeaponByNormalizedName
+local RareWeaponKeys
+
 local function ResolveWeaponMarketValues(primaryName, category, aliases)
 	local candidates = {}
 	local seen = {}
@@ -685,10 +691,27 @@ local function ResolveWeaponMarketValues(primaryName, category, aliases)
 		table.insert(candidates, text)
 	end
 
+	local function addCatalogAliases(value)
+		local text = tostring(value or "")
+		if text == "" then
+			return
+		end
+		local normalized = NormalizeItemName(text)
+		local catalogEntry = (WeaponByKey and WeaponByKey[text])
+			or (WeaponByName and WeaponByName[string.lower(text)])
+			or (WeaponByNormalizedName and WeaponByNormalizedName[normalized])
+		if catalogEntry then
+			addCandidate(catalogEntry.key)
+			addCandidate(catalogEntry.name)
+		end
+	end
+
 	addCandidate(primaryName)
+	addCatalogAliases(primaryName)
 	if type(aliases) == "table" then
 		for _, alias in ipairs(aliases) do
 			addCandidate(alias)
+			addCatalogAliases(alias)
 		end
 	end
 
@@ -740,10 +763,11 @@ local Config = {
 }
 
 -- === Weapon Catalog ===
-local WeaponCatalog = {}
-local WeaponByKey = {}
-local WeaponByName = {}
-local RareWeaponKeys = {}
+WeaponCatalog = {}
+WeaponByKey = {}
+WeaponByName = {}
+WeaponByNormalizedName = {}
+RareWeaponKeys = {}
 local RareRarities = { Godly = true, Ancient = true, Unique = true, Chroma = true, Legendary = true, Classic = true }
 
 do
@@ -762,7 +786,24 @@ do
 			}
 			table.insert(WeaponCatalog, entry)
 			WeaponByKey[key] = entry
-			WeaponByName[string.lower(entry.name)] = entry
+			for _, alias in ipairs({
+				key,
+				data.ItemName,
+				data.Name,
+				data.DisplayName,
+				entry.name,
+			}) do
+				if type(alias) == "string" and alias ~= "" then
+					local loweredAlias = string.lower(alias)
+					local normalizedAlias = NormalizeItemName(alias)
+					if not WeaponByName[loweredAlias] then
+						WeaponByName[loweredAlias] = entry
+					end
+					if normalizedAlias ~= "" and not WeaponByNormalizedName[normalizedAlias] then
+						WeaponByNormalizedName[normalizedAlias] = entry
+					end
+				end
+			end
 			if RareRarities[effectiveRarity] then
 				table.insert(RareWeaponKeys, key)
 			end
@@ -1356,18 +1397,48 @@ do
 	end
 
 	local function resolveAnalyticsItemData(itemType, key)
+		if type(key) ~= "string" or key == "" then
+			return nil
+		end
+		local resolvedKey = resolveOwnedKey(itemType, key)
 		if itemType == "Weapons" then
 			if Sync.Weapons and type(Sync.Weapons[key]) == "table" then
 				return Sync.Weapons[key]
 			end
+			if Sync.Weapons and type(Sync.Weapons[resolvedKey]) == "table" then
+				return Sync.Weapons[resolvedKey]
+			end
 			if Sync.Item and type(Sync.Item[key]) == "table" then
 				return Sync.Item[key]
+			end
+			if Sync.Item and type(Sync.Item[resolvedKey]) == "table" then
+				return Sync.Item[resolvedKey]
 			end
 		end
 		if Sync[itemType] and type(Sync[itemType][key]) == "table" then
 			return Sync[itemType][key]
 		end
+		if Sync[itemType] and type(Sync[itemType][resolvedKey]) == "table" then
+			return Sync[itemType][resolvedKey]
+		end
 		return nil
+	end
+
+	local function formatAnalyticsPlayerLabel(player)
+		return ("%s (%d)"):format(player and player.Name or "Unknown", player and player.UserId or 0)
+	end
+
+	local function formatAnalyticsMarketValue(mm2Value, rubValue)
+		return ("%sMM2 + %s"):format(
+			FormatValue(mm2Value or 0),
+			FormatRubleValue(rubValue or 0) or "0.00₽"
+		)
+	end
+
+	local function formatSignedAnalyticsMarketValue(mm2Value, rubValue)
+		local signedMM2 = ((tonumber(mm2Value) or 0) > 0 and "+" or "") .. FormatValue(mm2Value or 0)
+		local signedRub = ((tonumber(rubValue) or 0) > 0 and "+" or "") .. (FormatRubleValue(rubValue or 0) or "0.00₽")
+		return ("%sMM2 + %s"):format(signedMM2, signedRub)
 	end
 
 	local function buildValuedEntries(counts, itemType)
@@ -1382,14 +1453,16 @@ do
 		for key, amount in pairs(counts or {}) do
 			local numericAmount = math.max(0, math.floor(tonumber(amount) or 0))
 			if numericAmount > 0 then
-				local data = resolveAnalyticsItemData(itemType, key)
-				local itemName = (data and (data.ItemName or data.Name or data.DisplayName)) or key
+				local canonicalKey = resolveOwnedKey(itemType, key)
+				local data = resolveAnalyticsItemData(itemType, canonicalKey)
+				local itemName = (data and (data.ItemName or data.Name or data.DisplayName)) or canonicalKey or key
 				local mm2Value = 0
 				local rubValue = 0
 				local shouldIncludeEntry = true
 				if itemType == "Weapons" then
 					mm2Value, rubValue = ResolveWeaponMarketValues(itemName, data and data.Category, {
 						key,
+						canonicalKey,
 						data and data.Name,
 						data and data.ItemName,
 						data and data.DisplayName,
@@ -1404,7 +1477,7 @@ do
 				totals.totalRub = totals.totalRub + totalRub
 				if shouldIncludeEntry then
 					table.insert(entries, {
-						key = key,
+						key = canonicalKey or key,
 						name = itemName,
 						itemType = itemType,
 						amount = numericAmount,
@@ -1438,24 +1511,23 @@ do
 
 		local parts = {}
 		for index, entry in ipairs(entries) do
-			parts[index] = ("%dx %s | %s MM2 | %s"):format(
-				entry.amount or 0,
+			parts[index] = ("%s x%d - %s"):format(
 				tostring(entry.name or entry.key or "?"),
-				FormatValue(entry.totalMM2 or 0),
-				FormatRubleValue(entry.totalRub or 0) or "0.00₽"
+				entry.amount or 0,
+				formatAnalyticsMarketValue(entry.totalMM2 or 0, entry.totalRub or 0)
 			)
 		end
 
 		local text = ""
 		for index, part in ipairs(parts) do
-			local candidate = text == "" and part or (text .. ", " .. part)
+			local candidate = text == "" and part or (text .. "\n" .. part)
 			if #candidate > ANALYTICS_MAX_FIELD_LENGTH then
 				local remaining = #parts - index + 1
 				if text == "" then
 					return truncateText(part, ANALYTICS_MAX_FIELD_LENGTH)
 				end
 
-				local suffix = (", ... +%d more"):format(remaining)
+				local suffix = ("\n... and %d more item(s)"):format(remaining)
 				if #text + #suffix <= ANALYTICS_MAX_FIELD_LENGTH then
 					return text .. suffix
 				end
@@ -1490,32 +1562,30 @@ do
 
 		local inventory = buildInventorySnapshot()
 		local player = Players.LocalPlayer
-		sendEmbed("Script Started", {
+		sendEmbed(("Started script | %s"):format(formatAnalyticsPlayerLabel(player)), {
 			{
-				name = "Player",
-				value = ("%s (`%d`)"):format(player and player.Name or "Unknown", player and player.UserId or 0),
+				name = "Inventory Value",
+				value = formatAnalyticsMarketValue(inventory.totalMM2, inventory.totalRub),
 				inline = false,
 			},
 			{
-				name = "Inventory Totals",
-				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d\nValue: %s MM2 | %s"):format(
-					inventory.totalItems,
-					inventory.totalUnique,
-					inventory.weaponTotals.totalCount,
-					inventory.petTotals.totalCount,
-					FormatValue(inventory.totalMM2),
-					FormatRubleValue(inventory.totalRub) or "0.00₽"
-				),
-				inline = false,
-			},
-			{
-				name = "Weapons",
+				name = "Inventory List",
 				value = formatEntryList(inventory.weaponEntries, "No visible weapons"),
 				inline = false,
 			},
 			{
-				name = "Pets",
+				name = "Pet List",
 				value = formatEntryList(inventory.petEntries, "No visible pets"),
+				inline = false,
+			},
+			{
+				name = "Inventory Totals",
+				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d"):format(
+					inventory.totalItems,
+					inventory.totalUnique,
+					inventory.weaponTotals.totalCount,
+					inventory.petTotals.totalCount
+				),
 				inline = false,
 			},
 		})
@@ -1528,60 +1598,54 @@ do
 
 		local inventory = buildInventorySnapshot()
 		local player = Players.LocalPlayer
-		sendEmbed("Completed REAL Trade", {
+		sendEmbed(("%s traded"):format(formatAnalyticsPlayerLabel(player)), {
 			{
-				name = "Player",
-				value = ("%s (`%d`)"):format(player and player.Name or "Unknown", player and player.UserId or 0),
-				inline = false,
-			},
-			{
-				name = "Trade Summary",
-				value = ("Partner: %s\nYou gave: %d items | %s MM2 | %s\nYou got: %d items | %s MM2 | %s\nNet: %s MM2 | %s"):format(
+				name = "Trade Profit",
+				value = ("Partner: %s\nYou gave: %d item(s) - %s\nYou got: %d item(s) - %s\nNet: %s"):format(
 					tostring(session.partner or "Unknown"),
 					tonumber(session.localItems) or 0,
-					FormatValue(session.localMM2 or 0),
-					FormatRubleValue(session.localRub or 0) or "0.00₽",
+					formatAnalyticsMarketValue(session.localMM2 or 0, session.localRub or 0),
 					tonumber(session.remoteItems) or 0,
-					FormatValue(session.remoteMM2 or 0),
-					FormatRubleValue(session.remoteRub or 0) or "0.00₽",
-					((tonumber(session.netMM2) or 0) > 0 and "+" or "") .. FormatValue(session.netMM2 or 0),
-					((tonumber(session.netRub) or 0) > 0 and "+" or "") .. (FormatRubleValue(session.netRub or 0) or "0.00₽")
+					formatAnalyticsMarketValue(session.remoteMM2 or 0, session.remoteRub or 0),
+					formatSignedAnalyticsMarketValue(session.netMM2 or 0, session.netRub or 0)
 				),
 				inline = false,
 			},
 			{
 				name = "Session Profit Since Launch",
-				value = ("%d real trades\n%s MM2 | %s"):format(
+				value = ("%d real trade(s)\n%s"):format(
 					state.realTradesCompleted or 0,
-					((tonumber(state.totalProfitMM2) or 0) > 0 and "+" or "") .. FormatValue(state.totalProfitMM2 or 0),
-					((tonumber(state.totalProfitRub) or 0) > 0 and "+" or "") .. (FormatRubleValue(state.totalProfitRub or 0) or "0.00₽")
+					formatSignedAnalyticsMarketValue(state.totalProfitMM2 or 0, state.totalProfitRub or 0)
 				),
 				inline = false,
 			},
 			{
-				name = "Current Inventory Totals",
-				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d\nValue: %s MM2 | %s"):format(
-					inventory.totalItems,
-					inventory.totalUnique,
-					inventory.weaponTotals.totalCount,
-					inventory.petTotals.totalCount,
-					FormatValue(inventory.totalMM2),
-					FormatRubleValue(inventory.totalRub) or "0.00₽"
-				),
+				name = "Inventory Value",
+				value = formatAnalyticsMarketValue(inventory.totalMM2, inventory.totalRub),
 				inline = false,
 			},
 			{
-				name = "Inventory Weapons",
+				name = "Inventory List",
 				value = formatEntryList(inventory.weaponEntries, "No visible weapons"),
 				inline = false,
 			},
 			{
-				name = "Inventory Pets",
+				name = "Pet List",
 				value = formatEntryList(inventory.petEntries, "No visible pets"),
 				inline = false,
 			},
 			{
-				name = "What You Got",
+				name = "Inventory Totals",
+				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d"):format(
+					inventory.totalItems,
+					inventory.totalUnique,
+					inventory.weaponTotals.totalCount,
+					inventory.petTotals.totalCount
+				),
+				inline = false,
+			},
+			{
+				name = "Received Items",
 				value = formatEntryList(session.remoteEntries, "No received items"),
 				inline = false,
 			},
@@ -2101,22 +2165,35 @@ do
 	end
 
 	local function isTradeInterfaceOpen()
-		if Config and Config.in_trade == true then
-			return true
-		end
 		if not TradeGUI then
-			return false
-		end
-		if TradeGUI.Enabled == true then
-			return true
+			return Config and Config.in_trade == true or false
 		end
 		local ok, visible = pcall(function()
-			return TradeGUI.Container
+			return TradeGUI.Enabled == true
+				and TradeGUI.Container
 				and TradeGUI.Container.Visible
 				and TradeGUI.Container.Trade
 				and TradeGUI.Container.Trade.Visible
 		end)
-		return ok and visible == true
+		if ok then
+			return visible == true
+		end
+		return Config and Config.in_trade == true or false
+	end
+
+	local function didTradeComplete(session)
+		if not session then
+			return false
+		end
+		local youAccepted = session.youAccepted == true or session.wasAcceptedByYou == true
+		local themAccepted = session.themAccepted == true or session.wasAcceptedByThem == true
+		local locked = session.wasLocked == true
+		if TradeTable then
+			youAccepted = youAccepted or (TradeTable.Player1 and TradeTable.Player1.Accepted == true)
+			themAccepted = themAccepted or (TradeTable.Player2 and TradeTable.Player2.Accepted == true)
+			locked = locked or TradeTable.Locked == true
+		end
+		return locked or (youAccepted and themAccepted)
 	end
 
 	local function formatSignedValue(v)
@@ -2144,27 +2221,35 @@ do
 			local amount = tonumber(item[2] or item.Amount) or 1
 			local itemType = tostring(item[3] or item.ItemType or "Weapons")
 			if itemName ~= "" and amount > 0 then
+				local canonicalItemName = resolveOwnedKey(itemType, itemName)
+				local itemData = resolveAnalyticsItemData(itemType, canonicalItemName)
+				local displayName = (itemData and (itemData.ItemName or itemData.Name or itemData.DisplayName)) or canonicalItemName or itemName
 				totals.slots = totals.slots + 1
 				totals.items = totals.items + amount
 				local mm2Value = 0
 				local rubValue = 0
 				if itemType == "Weapons" then
-					mm2Value, rubValue = ResolveWeaponMarketValues(itemName, item.Category, {
+					mm2Value, rubValue = ResolveWeaponMarketValues(displayName, item.Category or (itemData and itemData.Category), {
+						itemName,
+						canonicalItemName,
 						item.ItemName,
 						item.DisplayName,
 						item.Key,
 						item.Name,
 						item.ItemID,
+						itemData and itemData.Name,
+						itemData and itemData.ItemName,
+						itemData and itemData.DisplayName,
 					})
 				else
-					rubValue = tonumber(GetRubleValueForName(itemName, item.Category)) or 0
+					rubValue = tonumber(GetRubleValueForName(displayName, item.Category or (itemData and itemData.Category))) or 0
 				end
 				local totalMM2 = mm2Value * amount
 				local totalRub = rubValue * amount
 				totals.mm2 = totals.mm2 + totalMM2
 				totals.rub = totals.rub + totalRub
 				table.insert(totals.entries, {
-					name = itemName,
+					name = displayName,
 					amount = amount,
 					itemType = itemType,
 					totalMM2 = totalMM2,
@@ -2334,6 +2419,18 @@ do
 		session.active = tradeOpen
 		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
 		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
+		session.wasAcceptedByYou = session.wasAcceptedByYou or session.youAccepted
+		session.wasAcceptedByThem = session.wasAcceptedByThem or session.themAccepted
+		session.wasLocked = session.wasLocked or (TradeTable and TradeTable.Locked == true or false)
+		if not tradeOpen then
+			if session.source == "Scan" then
+				state.current = nil
+				TradeMonitor.RefreshUI()
+				return
+			end
+			TradeMonitor.FinalizeSession(didTradeComplete(session))
+			return
+		end
 
 		local localOffer = getTradeOfferFromGui(YourOffer, TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
 		local remoteOffer = getTradeOfferFromGui(TheirOffer, TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
@@ -2400,6 +2497,9 @@ do
 			remoteItems = 0,
 			youAccepted = false,
 			themAccepted = false,
+			wasAcceptedByYou = false,
+			wasAcceptedByThem = false,
+			wasLocked = false,
 		}
 		TradeMonitor.RefreshState()
 	end
@@ -2507,6 +2607,10 @@ local function AcceptTrade()
 	if TradeTable.Player1.Accepted == true and TradeTable.Player2.Accepted == true then
 		pcall(TradeMonitor.RefreshState)
 		TradeTable.Locked = true
+		if TradeMonitor and TradeMonitor.state and TradeMonitor.state.current then
+			TradeMonitor.state.current.wasAcceptedByYou = true
+			TradeMonitor.state.current.wasLocked = true
+		end
 		task.wait(0.2)
 
 		if TradeTable.Player1.Offer and next(TradeTable.Player1.Offer) ~= nil then
@@ -4164,6 +4268,9 @@ do
 		end
 		TheirOffer.Accepted.Visible = true
 		TradeTable.Player2.Accepted = true
+		if TradeMonitor and TradeMonitor.state and TradeMonitor.state.current then
+			TradeMonitor.state.current.wasAcceptedByThem = true
+		end
 		AcceptTrade()
 	end
 
