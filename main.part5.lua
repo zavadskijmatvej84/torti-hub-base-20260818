@@ -1,0 +1,867 @@
+    {name='Moons (2024)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Mummy 2020 (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Painted (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Pumpkin (2025)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Snowflake (Gun)', rarity='Uncommon', value='0.03', trend='Stable', demand=2},
+    {name='Snowflake 2022 (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Sweater (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Treats (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Witchbrew', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Wraiths (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Stars (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=2},
+    {name='Sweater', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Tree (2017)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Checkers', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Eclipse', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Future', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=1},
+    {name='Glowy', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Lava (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Night', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Polar Bear', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Pool', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Popsicle', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Soda (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Sweater (Knife)', rarity='Uncommon', value='60', trend='Stable', demand=1},
+    {name='Ghostly', rarity='Uncommon', value='0.015', trend='Stable', demand=2},
+    {name='Ghosts (Knife)', rarity='Uncommon', value='0.015', trend='Stable', demand=2},
+    {name='Portal (Gun)', rarity='Uncommon', value='0.015', trend='Stable', demand=2},
+    {name='Pumpkin (Knife)', rarity='Uncommon', value='0.015', trend='Stable', demand=2},
+    {name='Donut', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Mistletoe (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Stockings (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Abduction', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Blossom', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Bones (Knife)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Canes (Knife)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=1},
+    {name='Jellyfish', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Lava (Gun)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Leaves', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Ornaments', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Paws', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Popsicle (Gun)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Pumpkin Patch', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Retro', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Snowman (2023)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Snowman (2024)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Soda (Knife)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Starry', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Sweater (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Treats (Knife)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Turtle', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Witch\'s Brew', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Wrapped Knife (2024)', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Wreaths', rarity='Uncommon', value='0.015', trend='Stable', demand=1},
+    {name='Doge', rarity='Uncommon', value='0.004', trend='Stable', demand=2},
+    {name='Sketch', rarity='Uncommon', value='0.004', trend='Stable', demand=2},
+    {name='Adurite (Gun)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Adurite (Knife)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Biogun', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Blue', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Bluesteel (Gun)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Bluesteel (Knife)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Brush', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Camo (Gun)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Camo (Knife)', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Caution', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Cheddar', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Cheesy', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Circuit', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Hazmat', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Hive', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Jigsaw', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Lucky', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Marina', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Melon', rarity='Uncommon', value='0.03', trend='Stable', demand=1},
+    {name='Missing', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Paper', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Pink', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Pirate', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Red', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Soda', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Stalker', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Tiger', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Wanwood', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Wooden', rarity='Uncommon', value='0.004', trend='Stable', demand=1},
+    {name='Graffiti', rarity='Uncommon', value='0.003', trend='Stable', demand=1},
+    {name='High Tech', rarity='Uncommon', value='0.003', trend='Stable', demand=1},
+    {name='Glitch1', rarity='Common', value='70', trend='Stable', demand=3},
+    {name='Glitch2', rarity='Common', value='35', trend='Stable', demand=2},
+    {name='Bats (Knife)', rarity='Common', value='240', trend='Stable', demand=3},
+    {name='Ghoulish', rarity='Common', value='100', trend='Doing Well', demand=3},
+    {name='Gifts (Knife)', rarity='Common', value='95', trend='Stable', demand=2},
+    {name='Pine (Knife)', rarity='Common', value='85', trend='Stable', demand=2},
+    {name='Sparkle9', rarity='Common', value='30', trend='Stable', demand=2},
+    {name='Snowman Gun', rarity='Common', value='22', trend='Stable', demand=2},
+    {name='Wrapped Gun', rarity='Common', value='22', trend='Stable', demand=2},
+    {name='Frosted (Knife)', rarity='Common', value='30', trend='Stable', demand=2},
+    {name='Snowflakes (Gun)', rarity='Common', value='30', trend='Stable', demand=2},
+    {name='CandyCorn 2017', rarity='Common', value='20', trend='Stable', demand=2},
+    {name='Sparkle10', rarity='Common', value='20', trend='Stable', demand=2},
+    {name='Sparkle8', rarity='Common', value='20', trend='Stable', demand=2},
+    {name='Sparkle7', rarity='Common', value='18', trend='Stable', demand=2},
+    {name='Elf (Knife)', rarity='Common', value='15', trend='Stable', demand=2},
+    {name='Coal (Knife)', rarity='Common', value='15', trend='Stable', demand=2},
+    {name='RIP', rarity='Common', value='17', trend='Stable', demand=2},
+    {name='Webbed (Gun)', rarity='Common', value='25', trend='Stable', demand=2},
+    {name='Prism', rarity='Common', value='12', trend='Stable', demand=2},
+    {name='Sparkle6', rarity='Common', value='12', trend='Stable', demand=2},
+    {name='Combat II', rarity='Common', value='10', trend='Stable', demand=2},
+    {name='Ecto', rarity='Common', value='25', trend='Stable', demand=2},
+    {name='Sparkle4', rarity='Common', value='10', trend='Stable', demand=2},
+    {name='Phantom', rarity='Common', value='10', trend='Stable', demand=1},
+    {name='Skool', rarity='Common', value='8', trend='Stable', demand=2},
+    {name='Sparkle5', rarity='Common', value='8', trend='Stable', demand=2},
+    {name='Tailslide', rarity='Common', value='7', trend='Stable', demand=2},
+    {name='Pumpkin (2019)', rarity='Common', value='12', trend='Stable', demand=2},
+    {name='Ollie', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Sidewinder', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Zombie', rarity='Common', value='10', trend='Stable', demand=1},
+    {name='Mummified', rarity='Common', value='35', trend='Stable', demand=2},
+    {name='Starry', rarity='Common', value='5', trend='Stable', demand=2},
+    {name='Euro', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Sketchy', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Grave (Gun)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Slime (Knife)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='CandyCorn (2019)', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Alex', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Corl', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Denis', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Sub', rarity='Common', value='4', trend='Stable', demand=2},
+    {name='Ghosty', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Sparkle1', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Sparkle2', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Sparkle3', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Asteroid', rarity='Common', value='2', trend='Stable', demand=1},
+    {name='Slime (Gun)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Slimy', rarity='Common', value='20', trend='Stable', demand=2},
+    {name='Grind', rarity='Common', value='2', trend='Stable', demand=1},
+    {name='Indy', rarity='Common', value='2', trend='Stable', demand=1},
+    {name='Elf (2018)', rarity='Common', value='20', trend='Stable', demand=2},
+    {name='Bats (Gun)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Grave (Knife)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Haunted (Gun)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Haunted (Knife)', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Bones', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Brains', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Witch', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Apocalypse (Gun)', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Bats (2020)', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Infected (Gun)', rarity='Common', value='3', trend='Stable', demand=2},
+    {name='Slashed', rarity='Common', value='1', trend='Stable', demand=2},
+    {name='2015', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Blossom', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Bunny', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Carrot', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Choco', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Egg', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Elf (Gun)', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Goo', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Hearts', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Ornament', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Ornament1', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Ornament2 (Gun)', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Ornament2 (Knife)', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Passion', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Patrick', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Reptile', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Roses', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Santa (Gun)', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Santa (Knife)', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Sweetheart', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Tulip', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Valentine', rarity='Common', value='0.6', trend='Stable', demand=1},
+    {name='Apocalypse (Knife)', rarity='Common', value='0.6', trend='Stable', demand=2},
+    {name='Frosted (Gun)', rarity='Common', value='0.6', trend='Stable', demand=2},
+    {name='Infected (Knife)', rarity='Common', value='0.6', trend='Stable', demand=2},
+    {name='Infected', rarity='Common', value='0.45', trend='Stable', demand=1},
+    {name='Neon', rarity='Common', value='0.45', trend='Stable', demand=1},
+    {name='TNL', rarity='Common', value='0.45', trend='Stable', demand=1},
+    {name='Gifts (Gun)', rarity='Common', value='0.3', trend='Stable', demand=2},
+    {name='Snowflakes (Knife)', rarity='Common', value='0.3', trend='Stable', demand=2},
+    {name='Webbed (Knife)', rarity='Common', value='0.6', trend='Stable', demand=2},
+    {name='Hunter', rarity='Common', value='0.45', trend='Stable', demand=2},
+    {name='RB Knife', rarity='Common', value='0.09', trend='Stable', demand=2},
+    {name='Toy (Knife)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Gift Bag (Knife)', rarity='Common', value='0.45', trend='Stable', demand=2},
+    {name='Ribbons', rarity='Common', value='0.3', trend='Stable', demand=2},
+    {name='Fragile (Gun)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Fragile (Knife)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Etched', rarity='Common', value='0.03', trend='Stable', demand=2},
+    {name='Pine (Gun)', rarity='Common', value='0.09', trend='Stable', demand=2},
+    {name='Love 2023', rarity='Common', value='0.03', trend='Stable', demand=2},
+    {name='Cane 2021 (Gun)', rarity='Common', value='0.02', trend='Stable', demand=2},
+    {name='Coal 2021 (Knife)', rarity='Common', value='0.02', trend='Stable', demand=2},
+    {name='Moon', rarity='Common', value='0.02', trend='Stable', demand=2},
+    {name='Ornaments (Gun)', rarity='Common', value='0.03', trend='Stable', demand=2},
+    {name='Scarf', rarity='Common', value='0.02', trend='Stable', demand=2},
+    {name='Candied (Knife)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Webs', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Gift Bag (Gun)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Aliens', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Coal (Gun)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Cracks (Gun)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Pumpkin (2023)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Snowman 2022 (Gun)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Vines (Knife)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Cat', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Coal 2022 (Gun)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Darkness (Knife)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Penguin', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Reindeer', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Ribbon', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Toy (Gun)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Wavy (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Ghosts (2023)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Candle', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candy Corn (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candy Corn (Knife)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Carrots', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Carved (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Carved (Knife)', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Chick', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Coal', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Coal 2021 (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Elf 2017', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Frozen (Knife)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Gifts (2024)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Hot Chocolate', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Igloo (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Ornaments (Knife)', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Present', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Present (2023)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Santa', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Santa (2023)', rarity='Common', value='0.01', trend='Stable', demand=2},
+    {name='Watcher (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Bats Gun (2024)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candles', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candy Corn (Knife)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Wavy (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Candy Corn (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Cats', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Clownfish (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Haunted (2025)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='UFOs (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Candied (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candy Corn (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Cane 2021 (Knife)', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Coal 2022 (Knife)', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Cracks (Knife)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Darkness (Gun)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Giftwrap', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Haunted', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Santa (2018)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Snowman (2018)', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Stockings', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Trees', rarity='Common', value='0.015', trend='Stable', demand=2},
+    {name='Watcher (Knife)', rarity='Common', value='0.002', trend='Stable', demand=2},
+    {name='Wrapped (Knife)', rarity='Common', value='0.003', trend='Stable', demand=2},
+    {name='Candy Corn (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Eyeball', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Leaves', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Snowman 2022 (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Spider (2023)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Striped (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Vines (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Wood', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Balloons', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Bats Knife (2024)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Bells', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Candy Corn (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Candy Corn (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Clownfish (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Coconut', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Dolphins', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Elf (2023)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Fall', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Frozen (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Ghosts (2024)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Hallows Stickers 2022', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Hearts (2026)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Igloo (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Leaves', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Lights (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Lights (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Peppermint (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Peppermint (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Plaid', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Reindeer', rarity='Common', value='0.01', trend='Stable', demand=1},
+    {name='Sandy (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Skyline', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Snowball (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Snowball (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Snowfall', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Starfish (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Starfish (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Gun)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Stickers', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Stickers', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Stockings (2024)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Strawberries (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Strawberries (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Striped (Knife)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='UFOs (Gun)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Xbox', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Clown (Gun)', rarity='Common', value='0.001', trend='Stable', demand=2},
+    {name='Clown (Knife)', rarity='Common', value='0.001', trend='Stable', demand=2},
+    {name='8Bit', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Aqua', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Big Kill', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Bit', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Bleached', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Borders', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Brown', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Cardboard', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Cherry', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Clan', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Cold', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Combat', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Copper', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Eco', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Engraved', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Fallout', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Green', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Hardened', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='HL2', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Ice', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Infiltrator', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Iron', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Juice', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Leaf', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Linked', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Log', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Love (Knife)', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Lovely', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='News', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Oily', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Orange', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Pea', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Sandy', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Shaded', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Slate', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Splat', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Splatter', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Stainless', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Star', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Static', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Whiteout', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Yellow', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Zombie Dog', rarity='Common', value='800', trend='Stable', demand=4},
+    {name='Elf (2019)', rarity='Uncommon', value='250', trend='Stable', demand=3},
+    {name='Black Cat', rarity='Common', value='250', trend='Stable', demand=3},
+    {name='Blue Pumpkin (2018)', rarity='Common', value='220', trend='Stable', demand=3},
+    {name='Dogey', rarity='Uncommon', value='130', trend='Stable', demand=3},
+    {name='Red Pumpkin (2018)', rarity='Common', value='120', trend='Stable', demand=3},
+    {name='Green Pumpkin (2018)', rarity='Common', value='60', trend='Stable', demand=3},
+    {name='Pumpkin (2017)', rarity='Common', value='45', trend='Stable', demand=3},
+    {name='Mr. Reindeer', rarity='Rare', value='45', trend='Stable', demand=3},
+    {name='Piggy', rarity='Common', value='30', trend='Stable', demand=2},
+    {name='Elf', rarity='Common', value='12', trend='Stable', demand=2},
+    {name='Red Pumpkin (2020)', rarity='Legendary', value='12', trend='Stable', demand=2},
+    {name='Green Pumpkin (2020)', rarity='Rare', value='10', trend='Stable', demand=2},
+    {name='Red Pumpkin (2021)', rarity='Legendary', value='10', trend='Stable', demand=2},
+    {name='Skully', rarity='Legendary', value='10', trend='Stable', demand=2},
+    {name='<3', rarity='Common', value='10', trend='Stable', demand=1},
+    {name='Green Pumpkin (2021)', rarity='Rare', value='8', trend='Stable', demand=2},
+    {name='Fairy', rarity='Uncommon', value='8', trend='Underpaid For', demand=1},
+    {name='Nobledragon', rarity='Legendary', value='8', trend='Underpaid For', demand=1},
+    {name='Seahorsey', rarity='Uncommon', value='8', trend='Underpaid For', demand=1},
+    {name='Mr. Snowman', rarity='Common', value='7', trend='Stable', demand=2},
+    {name='Chilly', rarity='Uncommon', value='7', trend='Underpaid For', demand=1},
+    {name='Eyeball', rarity='Rare', value='7', trend='Underpaid For', demand=1},
+    {name='Green Pumpkin (2019)', rarity='Rare', value='7', trend='Underpaid For', demand=1},
+    {name='Jetstream', rarity='Rare', value='7', trend='Underpaid For', demand=1},
+    {name='Overseer Eye', rarity='Legendary', value='7', trend='Underpaid For', demand=1},
+    {name='Pengy', rarity='Common', value='7', trend='Underpaid For', demand=1},
+    {name='Purple Pumpkin (2018)', rarity='Common', value='7', trend='Underpaid For', demand=1},
+    {name='Red Pumpkin (2019)', rarity='Rare', value='7', trend='Underpaid For', demand=1},
+    {name='Reindeer', rarity='Common', value='0.01', trend='Underpaid For', demand=1},
+    {name='Rudolph', rarity='Legendary', value='7', trend='Underpaid For', demand=1},
+    {name='Tankie', rarity='Rare', value='7', trend='Underpaid For', demand=1},
+    {name='Vampire Bat', rarity='Legendary', value='7', trend='Underpaid For', demand=1},
+    {name='Blue Pumpkin (2020)', rarity='Uncommon', value='5', trend='Stable', demand=2},
+    {name='Mechbug', rarity='Rare', value='5', trend='Underpaid For', demand=1},
+    {name='UFO', rarity='Common', value='4', trend='Underpaid For', demand=1},
+    {name='Shadow Pumpkin', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Blue Pumpkin (2019)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Badger', rarity='Common', value='1', trend='Stable', demand=1},
+    {name='Deathspeaker', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Electro', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Frostbird', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Ice Phoenix', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Phoenix', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Sammy', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Skelly', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Steambird', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Traveller', rarity='Godly', value='1', trend='Underpaid For', demand=1},
+    {name='Snowbear', rarity='Common', value='0.6', trend='Stable', demand=2},
+    {name='Fire Bat', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Bear', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Bunny', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Cat', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Dog', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Fox', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Fire Pig', rarity='Godly', value='0.6', trend='Underpaid For', demand=1},
+    {name='Icey', rarity='Godly', value='0.45', trend='Underpaid For', demand=1},
+    {name='Carrot Bunny', rarity='Common', value='0.3', trend='Stable', demand=2},
+    {name='Lil\' Alien', rarity='Common', value='0.3', trend='Stable', demand=2},
+    {name='Scarecrow', rarity='Rare', value='0.15', trend='Stable', demand=2},
+    {name='Teddy', rarity='Common', value='0.15', trend='Stable', demand=2},
+    {name='Pumpkin (2018)', rarity='Common', value='0.06', trend='Stable', demand=2},
+    {name='Bat', rarity='Legendary', value='0.02', trend='Stable', demand=1},
+    {name='Pumpkin (2019)', rarity='Common', value='12', trend='Stable', demand=1},
+    {name='Elitey', rarity='Legendary', value='0.01', trend='Stable', demand=1},
+    {name='Bear', rarity='Rare', value='0.003', trend='Stable', demand=1},
+    {name='Santa Dog', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Fox', rarity='Uncommon', value='0.002', trend='Stable', demand=1},
+    {name='Pig', rarity='Uncommon', value='0.002', trend='Stable', demand=1},
+    {name='Pumpkin (2020)', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Cat', rarity='Common', value='0.01', trend='Stable', demand=1},
+    {name='Dog', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Pumpkin (2021)', rarity='Common', value='0.001', trend='Stable', demand=1},
+    {name='Mystery Key', rarity='Misc', value='1', trend='Stable', demand=2},
+    {name='Box of Blue Papers', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Fertilizer', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Gold Papers', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Green Papers', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Purple Papers', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Red Papers', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Box of Ultra Wrap', rarity='Misc', value='2', trend='Stable', demand=1},
+    {name='Gifts 2015', rarity='Misc', value='0.3', trend='Stable', demand=1},
+    {name='Snowflake Key', rarity='Misc', value='0.3', trend='Stable', demand=1},
+    {name='Skeleton Key', rarity='Misc', value='5', trend='Stable', demand=1},
+    {name='Candies (2016)', rarity='Misc', value='0.002', trend='Stable', demand=1},
+    {name='Candies (2017)', rarity='Misc', value='0.001', trend='Stable', demand=1},
+
+    {name='Chroma Icecream', rarity='Chroma', value='1800', trend='Stable', demand=1},
+    {name='Chroma Sands', rarity='Chroma', value='1750', trend='Stable', demand=1},
+    {name='Chroma Beachy', rarity='Chroma', value='1650', trend='Stable', demand=1},
+    {name='Beachy', rarity='Godly', value='135', trend='Stable', demand=1},
+    {name='Sands', rarity='Godly', value='135', trend='Stable', demand=1},
+    {name='Icecream', rarity='Godly', value='130', trend='Stable', demand=1},
+    {name='Bubbles', rarity='Legendary', value='0.45', trend='Stable', demand=1},
+    {name='Pier', rarity='Rare', value='0.09', trend='Stable', demand=1},
+    {name='Sunset', rarity='Rare', value='0.09', trend='Stable', demand=1},
+    {name='Snowflake (Knife)', rarity='Uncommon', value='55', trend='Stable', demand=1},
+    {name='Mummy (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Mummy (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Brains (2022)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Clown (Gun)', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Floral', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Neopolitan', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Turtles', rarity='Uncommon', value='0.02', trend='Stable', demand=1},
+    {name='Wrapped (Gun)', rarity='Common', value='30', trend='Stable', demand=1},
+    {name='CandyCorn (2017)', rarity='Common', value='25', trend='Stable', demand=1},
+    {name='Snowman (Gun)', rarity='Common', value='25', trend='Stable', demand=1},
+    {name='Candy Corn (2019)', rarity='Common', value='12', trend='Stable', demand=1},
+    {name='Cane (Gun)', rarity='Common', value='0.06', trend='Stable', demand=1},
+    {name='Love (2023)', rarity='Common', value='0.02', trend='Stable', demand=1},
+    {name='Cane (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Elf (2017)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Snowman (Knife)', rarity='Common', value='0.003', trend='Stable', demand=1},
+    {name='Cherries', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Duckies', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Sand', rarity='Common', value='0.002', trend='Stable', demand=1},
+    {name='Tourist', rarity='Common', value='0.002', trend='Stable', demand=1},
+}
+
+local function FetchAllValues(onProgress)
+    local all = {}
+    for i, item in ipairs(BuiltInValuesCatalog) do
+        item._numericValue = tonumber(item.value) or 0
+        all[i] = item
+        if onProgress and (i % 100 == 0 or i == #BuiltInValuesCatalog) then
+            onProgress(i, i < #BuiltInValuesCatalog)
+        end
+    end
+    return all, true
+end
+
+local valuesFrame = tabFrames["Values"]
+local function RebuildValuesIndex()
+	Values.byName = {}
+	if not Values.cache then return end
+	for _, item in ipairs(Values.cache) do
+		item._numericValue = tonumber(item.value) or 0
+		indexValueAlias(Values.byName, item.name, item)
+		if type(item.aliases) == "table" then
+			for _, alias in ipairs(item.aliases) do
+				indexValueAlias(Values.byName, alias, item)
+			end
+		end
+		if type(item.metadata) == "table" and type(item.metadata.aliases) == "table" then
+			for _, alias in ipairs(item.metadata.aliases) do
+				indexValueAlias(Values.byName, alias, item)
+			end
+		end
+	end
+end
+
+valueSearchBox = createInput(valuesFrame, "Search weapon:", "")
+
+local valueStatusLabel = Instance.new("TextLabel")
+valueStatusLabel.Size = UDim2.new(1, 0, 0, 18)
+valueStatusLabel.BackgroundTransparency = 1
+valueStatusLabel.Text = "Loading values..."
+valueStatusLabel.Font = Enum.Font.SourceSans
+valueStatusLabel.TextSize = 12
+valueStatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+valueStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+valueStatusLabel.Parent = valuesFrame
+
+local resultsScroll = Instance.new("ScrollingFrame")
+resultsScroll.Size = UDim2.new(1, 0, 0, 200)
+resultsScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+resultsScroll.BackgroundTransparency = 0.3
+resultsScroll.BorderSizePixel = 0
+resultsScroll.ScrollBarThickness = 6
+resultsScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+resultsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+resultsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+resultsScroll.Parent = valuesFrame
+
+do
+	local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 5) c.Parent = resultsScroll
+	local lay = Instance.new("UIListLayout") lay.FillDirection = Enum.FillDirection.Vertical
+	lay.SortOrder = Enum.SortOrder.LayoutOrder lay.Padding = UDim.new(0, 2) lay.Parent = resultsScroll
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 3) pad.PaddingBottom = UDim.new(0, 3)
+	pad.PaddingLeft = UDim.new(0, 3) pad.PaddingRight = UDim.new(0, 3)
+	pad.Parent = resultsScroll
+end
+
+local function _updateValuesScrollHeight()
+	local offsetY = resultsScroll.AbsolutePosition.Y - valuesFrame.AbsolutePosition.Y
+	local available = valuesFrame.AbsoluteSize.Y - offsetY - 40
+	resultsScroll.Size = UDim2.new(1, 0, 0, math.max(80, available))
+end
+valuesFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateValuesScrollHeight)
+task.defer(_updateValuesScrollHeight)
+
+
+local function RenderValueResults(items)
+	for _, c in ipairs(resultsScroll:GetChildren()) do
+		if c:IsA("Frame") then c:Destroy() end
+	end
+	if not items then return end
+	for _, item in ipairs(items) do
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, -6, 0, 40)
+		row.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+		row.BackgroundTransparency = 0.2
+		row.Parent = resultsScroll
+
+		local rowCorner = Instance.new("UICorner")
+		rowCorner.CornerRadius = UDim.new(0, 4)
+		rowCorner.Parent = row
+
+		local nameLbl = Instance.new("TextLabel")
+		nameLbl.Size = UDim2.new(0.62, -8, 0, 20)
+		nameLbl.Position = UDim2.new(0, 8, 0, 2)
+		nameLbl.BackgroundTransparency = 1
+		nameLbl.Text = tostring(item.name)
+		nameLbl.Font = Enum.Font.SourceSansSemibold
+		nameLbl.TextSize = 13
+		nameLbl.TextColor3 = Color3.fromRGB(240, 240, 255)
+		nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+		nameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+		nameLbl.Parent = row
+
+		local metaParts = {}
+		if item.rarity then table.insert(metaParts, tostring(item.rarity)) end
+		if item.demand then table.insert(metaParts, "Demand " .. tostring(item.demand)) end
+		if item.trend then table.insert(metaParts, tostring(item.trend)) end
+		local metaLbl = Instance.new("TextLabel")
+		metaLbl.Size = UDim2.new(0.62, -8, 0, 16)
+		metaLbl.Position = UDim2.new(0, 8, 0, 22)
+		metaLbl.BackgroundTransparency = 1
+		metaLbl.Text = table.concat(metaParts, " | ")
+		metaLbl.Font = Enum.Font.SourceSans
+		metaLbl.TextSize = 11
+		metaLbl.TextColor3 = Color3.fromRGB(160, 160, 200)
+		metaLbl.TextXAlignment = Enum.TextXAlignment.Left
+		metaLbl.TextTruncate = Enum.TextTruncate.AtEnd
+		metaLbl.Parent = row
+
+		local valLbl = Instance.new("TextLabel")
+		valLbl.Size = UDim2.new(0.38, -8, 1, 0)
+		valLbl.Position = UDim2.new(0.62, 0, 0, 0)
+		valLbl.BackgroundTransparency = 1
+		valLbl.Text = FormatValue(item.value)
+		valLbl.Font = Enum.Font.FredokaOne
+		valLbl.TextSize = 14
+		valLbl.TextColor3 = Color3.fromRGB(120, 255, 160)
+		valLbl.TextXAlignment = Enum.TextXAlignment.Right
+		valLbl.Parent = row
+	end
+end
+
+local function FilterCachedValues(query)
+	if not Values.cache then return nil end
+	if query == nil or query == "" then return Values.cache end
+	local q = string.lower(query)
+	local out = {}
+	for _, item in ipairs(Values.cache) do
+		local name = string.lower(tostring(item.name or ""))
+		local rarity = string.lower(tostring(item.rarity or ""))
+		if string.find(name, q, 1, true) or string.find(rarity, q, 1, true) then
+			table.insert(out, item)
+		end
+	end
+	return out
+end
+
+local function RenderFilteredResults(query)
+	local items = FilterCachedValues(query)
+	if not items then
+		RenderValueResults({})
+		return 0, 0
+	end
+	local total = #items
+	RenderValueResults(items)
+	return total, total
+end
+
+local function UpdateValuesStatus(query)
+	if not Values.cache then return end
+	local shown, total = RenderFilteredResults(query)
+	if total == 0 then
+		valueStatusLabel.Text = "No matches in " .. #Values.cache .. " items"
+		valueStatusLabel.TextColor3 = Color3.fromRGB(255, 150, 100)
+	elseif shown < total then
+		valueStatusLabel.Text = "Showing " .. shown .. " of " .. total .. " matches (type more to narrow)"
+		valueStatusLabel.TextColor3 = Color3.fromRGB(180, 220, 255)
+	else
+		valueStatusLabel.Text = total .. " match" .. (total == 1 and "" or "es")
+			.. " (catalog: " .. #Values.cache .. ")"
+		valueStatusLabel.TextColor3 = Color3.fromRGB(120, 255, 160)
+	end
+end
+
+local function LoadFullCatalog(force)
+	if Values.fetching then
+		valueStatusLabel.Text = "already fetching... (be patient)"
+		valueStatusLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+		return
+	end
+	if (not force) and Values.cache and (tick() - Values.fetchedAt) < 600 then
+		UpdateValuesStatus(valueSearchBox.Text)
+		return
+	end
+	Values.fetching = true
+	task.spawn(function()
+		valueStatusLabel.Text = "Loading built-in catalog..."
+		valueStatusLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+		local items, ok = FetchAllValues(function(loaded, hasMore)
+			valueStatusLabel.Text = ("Loaded %d built-in items%s"):format(loaded, hasMore and "..." or " -- ready")
+		end)
+		Values.fetching = false
+		if items and #items > 0 then
+			Values.cache = items
+			Values.fetchedAt = tick()
+			RebuildValuesIndex()
+			UpdateValuesStatus(valueSearchBox.Text)
+			if RefreshSpawnerButtons then task.defer(RefreshSpawnerButtons) end
+			if RefreshPlayerValues then task.defer(RefreshPlayerValues) end
+		else
+			valueStatusLabel.Text = "Built-in catalog failed to load"
+			valueStatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+			warn("[mm2run] built-in catalog returned nothing")
+		end
+	end)
+end
+
+createButton(valuesFrame, "Refresh catalog", function()
+	LoadFullCatalog(true)
+end)
+
+valueSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	if Values.cache then
+		UpdateValuesStatus(valueSearchBox.Text)
+	end
+end)
+
+task.spawn(function() LoadFullCatalog(false) end)
+
+-- ===== CONFIG TAB =====
+local configFrame = tabFrames["Config"]
+
+local configNameBox = createInput(configFrame, "Config name:", "")
+
+createButton(configFrame, "Save Config", function()
+    local name = configNameBox.Text
+    if name == "" then
+        print("[mm2run/config] empty name")
+        return
+    end
+
+    pcall(function()
+        if not isfolder("mm2run_configs") then
+            makefolder("mm2run_configs")
+        end
+        local snapshot = {}
+        snapshot.Weapons = InventoryOverlay.BuildVisibleCounts("Weapons")
+        snapshot.Pets = InventoryOverlay.BuildVisibleCounts("Pets")
+
+        local json = game:GetService("HttpService"):JSONEncode(snapshot)
+        writefile("mm2run_configs/" .. name .. ".json", json)
+        print("[mm2run/config] saved: " .. name)
+        RefreshConfigsList()
+    end)
+end)
+
+local clearBtn = createButton(configFrame, "Clear Inventory", function()
+    pcall(function()
+        InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", {}, false)
+        InventoryOverlay.SetVisibleOwnedSnapshot("Pets", {}, false)
+        InventoryOverlay.FireInventoryDataChanged()
+        print("[mm2run/config] inventory cleared")
+    end)
+end)
+clearBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+clearBtn.MouseEnter:Connect(function()
+    TweenService:Create(clearBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 60, 60)}):Play()
+end)
+clearBtn.MouseLeave:Connect(function()
+    TweenService:Create(clearBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 80, 80)}):Play()
+end)
+
+local configsStatus = Instance.new("TextLabel")
+configsStatus.Size = UDim2.new(1, 0, 0, 15)
+configsStatus.BackgroundTransparency = 1
+configsStatus.Text = "Saved configs:"
+configsStatus.Font = Enum.Font.SourceSansSemibold
+configsStatus.TextSize = 12
+configsStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
+configsStatus.TextXAlignment = Enum.TextXAlignment.Left
+configsStatus.Parent = configFrame
+
+local configsScroll = Instance.new("ScrollingFrame")
+configsScroll.Size = UDim2.new(1, 0, 0, 160)
+configsScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+configsScroll.BackgroundTransparency = 0.3
+configsScroll.BorderSizePixel = 0
+configsScroll.ScrollBarThickness = 6
+configsScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+configsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+configsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+configsScroll.Parent = configFrame
+
+do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 5)
+    c.Parent = configsScroll
+    local lay = Instance.new("UIListLayout")
+    lay.FillDirection = Enum.FillDirection.Vertical
+    lay.SortOrder = Enum.SortOrder.LayoutOrder
+    lay.Padding = UDim.new(0, 4)
+    lay.Parent = configsScroll
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 4)
+    pad.PaddingBottom = UDim.new(0, 4)
+    pad.PaddingLeft = UDim.new(0, 4)
+    pad.PaddingRight = UDim.new(0, 4)
+    pad.Parent = configsScroll
+end
+
+local function _updateConfigsScrollHeight()
+    local offsetY = configsScroll.AbsolutePosition.Y - configFrame.AbsolutePosition.Y
+    local available = configFrame.AbsoluteSize.Y - offsetY - 4
+    configsScroll.Size = UDim2.new(1, 0, 0, math.max(80, available))
+end
+configFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(_updateConfigsScrollHeight)
+task.defer(_updateConfigsScrollHeight)
+
+local function RefreshConfigsList()
+    for _, child in pairs(configsScroll:GetChildren()) do
+        if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
+    end
+
+    pcall(function()
+        if not isfolder("mm2run_configs") then return end
+        local files = listfiles("mm2run_configs")
+        for _, filePath in ipairs(files) do
+            if string.sub(filePath, -5) == ".json" then
+                local name = string.match(filePath, "([^/\\]+)%.json$") or "unknown"
+
+                local row = Instance.new("Frame")
+                row.Size = UDim2.new(1, -6, 0, 32)
+                row.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+                row.BackgroundTransparency = 0.3
+                row.Parent = configsScroll
+
+                local rc = Instance.new("UICorner")
+                rc.CornerRadius = UDim.new(0, 6)
+                rc.Parent = row
+
+                local nameLbl = Instance.new("TextLabel")
+                nameLbl.Size = UDim2.new(0.5, -8, 1, 0)
+                nameLbl.Position = UDim2.new(0, 8, 0, 0)
+                nameLbl.BackgroundTransparency = 1
+                nameLbl.Text = name
+                nameLbl.Font = Enum.Font.GothamSemibold
+                nameLbl.TextSize = 12
+                nameLbl.TextColor3 = Color3.fromRGB(240, 240, 250)
+                nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                nameLbl.Parent = row
+
+                local loadBtn = Instance.new("TextButton")
+                loadBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
+                loadBtn.Position = UDim2.new(0.52, 2, 0.125, 0)
+                loadBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 80)
+                loadBtn.Text = "Load"
+                loadBtn.Font = Enum.Font.Gotham
+                loadBtn.TextSize = 11
+                loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                loadBtn.Parent = row
+
+                local lc = Instance.new("UICorner")
+                lc.CornerRadius = UDim.new(0, 4)
+                lc.Parent = loadBtn
+
+                local delBtn = Instance.new("TextButton")
+                delBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
+                delBtn.Position = UDim2.new(0.76, 2, 0.125, 0)
+                delBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+                delBtn.Text = "Del"
+                delBtn.Font = Enum.Font.Gotham
+                delBtn.TextSize = 11
+                delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                delBtn.Parent = row
+
+                local dc = Instance.new("UICorner")
+                dc.CornerRadius = UDim.new(0, 4)
+                dc.Parent = delBtn
+
+                loadBtn.MouseButton1Click:Connect(function()
+                    pcall(function()
+                        local path = "mm2run_configs/" .. name .. ".json"
+                        local data = game:GetService("HttpService"):JSONDecode(readfile(path))
+
+                        InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", data.Weapons or {}, false)
+                        InventoryOverlay.SetVisibleOwnedSnapshot("Pets", data.Pets or {}, false)
+                        InventoryOverlay.FireInventoryDataChanged()
+                        print("[mm2run/config] loaded: " .. name)
+                    end)
+                end)
+
+                delBtn.MouseButton1Click:Connect(function()
+                    pcall(function()
+                        delfile("mm2run_configs/" .. name .. ".json")
+                        print("[mm2run/config] deleted: " .. name)

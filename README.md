@@ -14,3 +14,6 @@ Main script:
 
 Alternative loader for the protected entry:
 - `key-loader.lua`
+
+Split loader:
+- `main-split-loader.lua`
