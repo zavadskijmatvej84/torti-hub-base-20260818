@@ -1552,8 +1552,9 @@ end
 
 local DEFAULT_PARTNER_NAME = "To_rti"
 local TradeTable
-local TradeMonitorUI = nil
-local TradeMonitorState = {
+local TradeMonitor = {
+	ui = nil,
+	state = {
 	remotePartnerName = nil,
 	remoteEventName = nil,
 	remoteEventAt = 0,
@@ -1565,302 +1566,313 @@ local TradeMonitorState = {
 	totalProfitMM2 = 0,
 	totalProfitRub = 0,
 	realTradesCompleted = 0,
+	},
 }
 
-local function GetTradePartnerName(rawPartner)
-	if typeof(rawPartner) == "Instance" and rawPartner:IsA("Player") then
-		return rawPartner.Name
+do
+	local function getTradePartnerName(rawPartner)
+		if typeof(rawPartner) == "Instance" and rawPartner:IsA("Player") then
+			return rawPartner.Name
+		end
+		local text = tostring(rawPartner or "")
+		if text == "" then
+			return DEFAULT_PARTNER_NAME
+		end
+		return text
 	end
-	local text = tostring(rawPartner or "")
-	if text == "" then
+
+	local function getTradeSessionPartner()
+		if TradeTable and TradeTable.Player2 then
+			return getTradePartnerName(TradeTable.Player2.Player)
+		end
 		return DEFAULT_PARTNER_NAME
 	end
-	return text
-end
 
-local function GetTradeSessionPartner()
-	if TradeTable and TradeTable.Player2 then
-		return GetTradePartnerName(TradeTable.Player2.Player)
+	local function formatSignedValue(v)
+		local numeric = tonumber(v) or 0
+		local prefix = numeric > 0 and "+" or ""
+		return prefix .. FormatValue(numeric)
 	end
-	return DEFAULT_PARTNER_NAME
-end
 
-local function FormatSignedValue(v)
-	local numeric = tonumber(v) or 0
-	local prefix = numeric > 0 and "+" or ""
-	return prefix .. FormatValue(numeric)
-end
+	local function formatSignedRubleValue(v)
+		local numeric = tonumber(v) or 0
+		local prefix = numeric > 0 and "+" or ""
+		return prefix .. (FormatRubleValue(numeric) or "0.00₽")
+	end
 
-local function FormatSignedRubleValue(v)
-	local numeric = tonumber(v) or 0
-	local prefix = numeric > 0 and "+" or ""
-	return prefix .. (FormatRubleValue(numeric) or "0.00₽")
-end
-
-local function GetTradeOfferTotals(offer)
-	local totals = {
-		mm2 = 0,
-		rub = 0,
-		items = 0,
-		slots = 0,
-	}
-	for _, item in ipairs(offer or {}) do
-		local itemName = tostring(item[1] or item.ItemID or "")
-		local amount = tonumber(item[2] or item.Amount) or 1
-		if itemName ~= "" and amount > 0 then
-			totals.slots = totals.slots + 1
-			totals.items = totals.items + amount
-			local supremeRow = GetSupremeValue(itemName)
-			local mm2Value = supremeRow and tonumber(supremeRow.value) or 0
-			local rubValue = GetRubleValueForName(itemName) or 0
-			totals.mm2 = totals.mm2 + mm2Value * amount
-			totals.rub = totals.rub + rubValue * amount
+	local function getTradeOfferTotals(offer)
+		local totals = {
+			mm2 = 0,
+			rub = 0,
+			items = 0,
+			slots = 0,
+		}
+		for _, item in ipairs(offer or {}) do
+			local itemName = tostring(item[1] or item.ItemID or "")
+			local amount = tonumber(item[2] or item.Amount) or 1
+			if itemName ~= "" and amount > 0 then
+				totals.slots = totals.slots + 1
+				totals.items = totals.items + amount
+				local supremeRow = GetSupremeValue(itemName)
+				local mm2Value = supremeRow and tonumber(supremeRow.value) or 0
+				local rubValue = GetRubleValueForName(itemName) or 0
+				totals.mm2 = totals.mm2 + mm2Value * amount
+				totals.rub = totals.rub + rubValue * amount
+			end
 		end
+		return totals
 	end
-	return totals
-end
 
-local function ClassifyTradeSession(session)
-	if not session then
+	local function classifyTradeSession(session)
+		if not session then
+			return "fake"
+		end
+		if session.remoteEventAt and session.remoteEventAt > 0 then
+			return "real"
+		end
 		return "fake"
 	end
-	if session.remoteEventAt and session.remoteEventAt > 0 then
-		return "real"
-	end
-	return "fake"
-end
 
-local function RenderTradeMonitorHistory()
-	if not TradeMonitorUI or not TradeMonitorUI.historyScroll then
-		return
-	end
-	for _, child in ipairs(TradeMonitorUI.historyScroll:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
+	local function renderTradeMonitorHistory()
+		local ui = TradeMonitor.ui
+		local state = TradeMonitor.state
+		if not ui or not ui.historyScroll then
+			return
 		end
-	end
+		for _, child in ipairs(ui.historyScroll:GetChildren()) do
+			if child:IsA("Frame") then
+				child:Destroy()
+			end
+		end
 
-	for index, entry in ipairs(TradeMonitorState.history) do
-		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, -6, 0, 56)
-		row.BackgroundColor3 = WINDOW_THEME.chipColor
-		row.BackgroundTransparency = 0.2
-		row.BorderSizePixel = 0
-		row.LayoutOrder = index
-		row.Parent = TradeMonitorUI.historyScroll
+		for index, entry in ipairs(state.history) do
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, -6, 0, 56)
+			row.BackgroundColor3 = WINDOW_THEME.chipColor
+			row.BackgroundTransparency = 0.2
+			row.BorderSizePixel = 0
+			row.LayoutOrder = index
+			row.Parent = ui.historyScroll
 
-		local rowCorner = Instance.new("UICorner")
-		rowCorner.CornerRadius = UDim.new(0, 12)
-		rowCorner.Parent = row
+			local rowCorner = Instance.new("UICorner")
+			rowCorner.CornerRadius = UDim.new(0, 12)
+			rowCorner.Parent = row
 
-		local rowStroke = Instance.new("UIStroke")
-		rowStroke.Color = WINDOW_THEME.panelEdge
-		rowStroke.Thickness = 1
-		rowStroke.Transparency = 0.78
-		rowStroke.Parent = row
+			local rowStroke = Instance.new("UIStroke")
+			rowStroke.Color = WINDOW_THEME.panelEdge
+			rowStroke.Thickness = 1
+			rowStroke.Transparency = 0.78
+			rowStroke.Parent = row
 
-		local title = Instance.new("TextLabel")
-		title.Size = UDim2.new(1, -16, 0, 18)
-		title.Position = UDim2.new(0, 8, 0, 7)
-		title.BackgroundTransparency = 1
-		title.Text = ("%s | %s | %s"):format(
-			tostring(entry.timeLabel or "--:--:--"),
-			string.upper(tostring(entry.classification or "fake")),
-			tostring(entry.partner or DEFAULT_PARTNER_NAME)
-		)
-		title.Font = Enum.Font.GothamBold
-		title.TextSize = 12
-		title.TextColor3 = (entry.classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)
-		title.TextXAlignment = Enum.TextXAlignment.Left
-		title.Parent = row
-
-		local details = Instance.new("TextLabel")
-		details.Size = UDim2.new(1, -16, 0, 28)
-		details.Position = UDim2.new(0, 8, 0, 24)
-		details.BackgroundTransparency = 1
-		details.Text = ("%s | Give %s / %s | Get %s / %s | Net %s / %s"):format(
-			tostring(entry.statusText or "Closed"),
-			FormatValue(entry.localMM2 or 0),
-			FormatRubleValue(entry.localRub or 0) or "0.00₽",
-			FormatValue(entry.remoteMM2 or 0),
-			FormatRubleValue(entry.remoteRub or 0) or "0.00₽",
-			FormatSignedValue(entry.netMM2 or 0),
-			FormatSignedRubleValue(entry.netRub or 0)
-		)
-		details.Font = Enum.Font.Gotham
-		details.TextSize = 11
-		details.TextWrapped = true
-		details.TextColor3 = WINDOW_THEME.mutedText
-		details.TextXAlignment = Enum.TextXAlignment.Left
-		details.TextYAlignment = Enum.TextYAlignment.Top
-		details.Parent = row
-	end
-end
-
-local function RefreshTradeMonitorUI()
-	if not TradeMonitorUI then
-		return
-	end
-
-	local session = TradeMonitorState.current
-	local active = session and session.active == true
-	local classification = ClassifyTradeSession(session)
-	local partner = session and session.partner or DEFAULT_PARTNER_NAME
-	local remoteName = session and session.remoteEventName or TradeMonitorState.remoteEventName or "manual"
-
-	if TradeMonitorUI.statusLabel then
-		TradeMonitorUI.statusLabel.Text = ("Active now: %s\nTrade type: %s\nPartner: %s\nSource: %s"):format(
-			active and "YES" or "NO",
-			active and string.upper(classification) or "NONE",
-			partner,
-			remoteName
-		)
-		TradeMonitorUI.statusLabel.TextColor3 = active and ((classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)) or WINDOW_THEME.mutedText
-	end
-
-	if TradeMonitorUI.currentLabel then
-		if active and session then
-			TradeMonitorUI.currentLabel.Text = ("You give: %s | %s\nYou get: %s | %s\nNet: %s | %s\nAccepted: you %s | them %s"):format(
-				FormatValue(session.localMM2 or 0),
-				FormatRubleValue(session.localRub or 0) or "0.00₽",
-				FormatValue(session.remoteMM2 or 0),
-				FormatRubleValue(session.remoteRub or 0) or "0.00₽",
-				FormatSignedValue(session.netMM2 or 0),
-				FormatSignedRubleValue(session.netRub or 0),
-				session.youAccepted and "YES" or "NO",
-				session.themAccepted and "YES" or "NO"
+			local title = Instance.new("TextLabel")
+			title.Size = UDim2.new(1, -16, 0, 18)
+			title.Position = UDim2.new(0, 8, 0, 7)
+			title.BackgroundTransparency = 1
+			title.Text = ("%s | %s | %s"):format(
+				tostring(entry.timeLabel or "--:--:--"),
+				string.upper(tostring(entry.classification or "fake")),
+				tostring(entry.partner or DEFAULT_PARTNER_NAME)
 			)
-			TradeMonitorUI.currentLabel.TextColor3 = WINDOW_THEME.panelText
-		else
-			TradeMonitorUI.currentLabel.Text = "Current trade scan is idle.\nOpen or receive a trade to see live MM2 value, rubles, and real/fake status."
-			TradeMonitorUI.currentLabel.TextColor3 = WINDOW_THEME.mutedText
+			title.Font = Enum.Font.GothamBold
+			title.TextSize = 12
+			title.TextColor3 = (entry.classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)
+			title.TextXAlignment = Enum.TextXAlignment.Left
+			title.Parent = row
+
+			local details = Instance.new("TextLabel")
+			details.Size = UDim2.new(1, -16, 0, 28)
+			details.Position = UDim2.new(0, 8, 0, 24)
+			details.BackgroundTransparency = 1
+			details.Text = ("%s | Give %s / %s | Get %s / %s | Net %s / %s"):format(
+				tostring(entry.statusText or "Closed"),
+				FormatValue(entry.localMM2 or 0),
+				FormatRubleValue(entry.localRub or 0) or "0.00₽",
+				FormatValue(entry.remoteMM2 or 0),
+				FormatRubleValue(entry.remoteRub or 0) or "0.00₽",
+				formatSignedValue(entry.netMM2 or 0),
+				formatSignedRubleValue(entry.netRub or 0)
+			)
+			details.Font = Enum.Font.Gotham
+			details.TextSize = 11
+			details.TextWrapped = true
+			details.TextColor3 = WINDOW_THEME.mutedText
+			details.TextXAlignment = Enum.TextXAlignment.Left
+			details.TextYAlignment = Enum.TextYAlignment.Top
+			details.Parent = row
 		end
 	end
 
-	if TradeMonitorUI.totalsLabel then
-		TradeMonitorUI.totalsLabel.Text = ("Real trades completed: %d\nSession profit: %s | %s"):format(
-			TradeMonitorState.realTradesCompleted,
-			FormatSignedValue(TradeMonitorState.totalProfitMM2),
-			FormatSignedRubleValue(TradeMonitorState.totalProfitRub)
-		)
-		TradeMonitorUI.totalsLabel.TextColor3 = Color3.fromRGB(120, 255, 160)
-	end
-
-	RenderTradeMonitorHistory()
-end
-
-local function RefreshTradeMonitorState()
-	local session = TradeMonitorState.current
-	if not session then
-		RefreshTradeMonitorUI()
-		return
-	end
-
-	session.partner = GetTradeSessionPartner()
-	session.active = Config and Config.in_trade == true
-	session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
-	session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
-
-	local localTotals = GetTradeOfferTotals(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
-	local remoteTotals = GetTradeOfferTotals(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
-	session.localMM2 = localTotals.mm2
-	session.localRub = localTotals.rub
-	session.remoteMM2 = remoteTotals.mm2
-	session.remoteRub = remoteTotals.rub
-	session.localItems = localTotals.items
-	session.remoteItems = remoteTotals.items
-	session.netMM2 = remoteTotals.mm2 - localTotals.mm2
-	session.netRub = remoteTotals.rub - localTotals.rub
-
-	RefreshTradeMonitorUI()
-end
-
-local function NoteTradeRemoteActivity(partnerName, remoteName)
-	TradeMonitorState.remotePartnerName = partnerName or TradeMonitorState.remotePartnerName
-	TradeMonitorState.remoteEventName = remoteName or TradeMonitorState.remoteEventName
-	TradeMonitorState.remoteEventAt = tick()
-	TradeMonitorState.remoteMarkerId = TradeMonitorState.remoteMarkerId + 1
-	if TradeMonitorState.current then
-		TradeMonitorState.current.remoteEventAt = TradeMonitorState.remoteEventAt
-		TradeMonitorState.current.remoteEventName = TradeMonitorState.remoteEventName
-		if partnerName and partnerName ~= "" then
-			TradeMonitorState.current.partner = partnerName
+	function TradeMonitor.RefreshUI()
+		local ui = TradeMonitor.ui
+		local state = TradeMonitor.state
+		if not ui then
+			return
 		end
-		RefreshTradeMonitorState()
-	end
-end
 
-local function BeginTradeMonitorSession()
-	TradeMonitorState.sessionCounter = TradeMonitorState.sessionCounter + 1
-	local now = tick()
-	local fromRemote = TradeMonitorState.remoteMarkerId ~= TradeMonitorState.consumedRemoteMarkerId
-		and TradeMonitorState.remoteEventAt > 0
-		and (now - TradeMonitorState.remoteEventAt) <= 8
-	if fromRemote then
-		TradeMonitorState.consumedRemoteMarkerId = TradeMonitorState.remoteMarkerId
-	end
-	TradeMonitorState.current = {
-		id = TradeMonitorState.sessionCounter,
-		startedAt = now,
-		active = true,
-		partner = GetTradeSessionPartner(),
-		remoteEventAt = fromRemote and TradeMonitorState.remoteEventAt or 0,
-		remoteEventName = fromRemote and TradeMonitorState.remoteEventName or "manual",
-		localMM2 = 0,
-		localRub = 0,
-		remoteMM2 = 0,
-		remoteRub = 0,
-		netMM2 = 0,
-		netRub = 0,
-		localItems = 0,
-		remoteItems = 0,
-		youAccepted = false,
-		themAccepted = false,
-	}
-	RefreshTradeMonitorState()
-end
+		local session = state.current
+		local active = session and session.active == true
+		local classification = classifyTradeSession(session)
+		local partner = session and session.partner or DEFAULT_PARTNER_NAME
+		local remoteName = session and session.remoteEventName or state.remoteEventName or "manual"
 
-local function FinalizeTradeMonitorSession(completed)
-	local session = TradeMonitorState.current
-	if not session then
-		RefreshTradeMonitorUI()
-		return
-	end
+		if ui.statusLabel then
+			ui.statusLabel.Text = ("Active now: %s\nTrade type: %s\nPartner: %s\nSource: %s"):format(
+				active and "YES" or "NO",
+				active and string.upper(classification) or "NONE",
+				partner,
+				remoteName
+			)
+			ui.statusLabel.TextColor3 = active and ((classification == "real") and Color3.fromRGB(120, 255, 160) or Color3.fromRGB(255, 193, 128)) or WINDOW_THEME.mutedText
+		end
 
-	RefreshTradeMonitorState()
-	session = TradeMonitorState.current
-	session.active = false
-	session.completed = completed == true
-	local classification = ClassifyTradeSession(session)
-	local statusText = completed and "Completed" or "Closed"
-	local shouldKeep = completed or (session.localItems or 0) > 0 or (session.remoteItems or 0) > 0 or classification == "real"
+		if ui.currentLabel then
+			if active and session then
+				ui.currentLabel.Text = ("You give: %s | %s\nYou get: %s | %s\nNet: %s | %s\nAccepted: you %s | them %s"):format(
+					FormatValue(session.localMM2 or 0),
+					FormatRubleValue(session.localRub or 0) or "0.00₽",
+					FormatValue(session.remoteMM2 or 0),
+					FormatRubleValue(session.remoteRub or 0) or "0.00₽",
+					formatSignedValue(session.netMM2 or 0),
+					formatSignedRubleValue(session.netRub or 0),
+					session.youAccepted and "YES" or "NO",
+					session.themAccepted and "YES" or "NO"
+				)
+				ui.currentLabel.TextColor3 = WINDOW_THEME.panelText
+			else
+				ui.currentLabel.Text = "Current trade scan is idle.\nOpen or receive a trade to see live MM2 value, rubles, and real/fake status."
+				ui.currentLabel.TextColor3 = WINDOW_THEME.mutedText
+			end
+		end
 
-	if completed and classification == "real" then
-		TradeMonitorState.realTradesCompleted = TradeMonitorState.realTradesCompleted + 1
-		TradeMonitorState.totalProfitMM2 = TradeMonitorState.totalProfitMM2 + (session.netMM2 or 0)
-		TradeMonitorState.totalProfitRub = TradeMonitorState.totalProfitRub + (session.netRub or 0)
+		if ui.totalsLabel then
+			ui.totalsLabel.Text = ("Real trades completed: %d\nSession profit: %s | %s"):format(
+				state.realTradesCompleted,
+				formatSignedValue(state.totalProfitMM2),
+				formatSignedRubleValue(state.totalProfitRub)
+			)
+			ui.totalsLabel.TextColor3 = Color3.fromRGB(120, 255, 160)
+		end
+
+		renderTradeMonitorHistory()
 	end
 
-	if shouldKeep then
-		table.insert(TradeMonitorState.history, 1, {
-			timeLabel = os.date("%H:%M:%S"),
-			classification = classification,
-			partner = session.partner,
-			statusText = statusText,
-			localMM2 = session.localMM2 or 0,
-			localRub = session.localRub or 0,
-			remoteMM2 = session.remoteMM2 or 0,
-			remoteRub = session.remoteRub or 0,
-			netMM2 = session.netMM2 or 0,
-			netRub = session.netRub or 0,
-		})
-		while #TradeMonitorState.history > 12 do
-			table.remove(TradeMonitorState.history)
+	function TradeMonitor.RefreshState()
+		local state = TradeMonitor.state
+		local session = state.current
+		if not session then
+			TradeMonitor.RefreshUI()
+			return
+		end
+
+		session.partner = getTradeSessionPartner()
+		session.active = Config and Config.in_trade == true
+		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
+		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
+
+		local localTotals = getTradeOfferTotals(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
+		local remoteTotals = getTradeOfferTotals(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
+		session.localMM2 = localTotals.mm2
+		session.localRub = localTotals.rub
+		session.remoteMM2 = remoteTotals.mm2
+		session.remoteRub = remoteTotals.rub
+		session.localItems = localTotals.items
+		session.remoteItems = remoteTotals.items
+		session.netMM2 = remoteTotals.mm2 - localTotals.mm2
+		session.netRub = remoteTotals.rub - localTotals.rub
+
+		TradeMonitor.RefreshUI()
+	end
+
+	function TradeMonitor.NoteRemoteActivity(partnerName, remoteName)
+		local state = TradeMonitor.state
+		state.remotePartnerName = partnerName or state.remotePartnerName
+		state.remoteEventName = remoteName or state.remoteEventName
+		state.remoteEventAt = tick()
+		state.remoteMarkerId = state.remoteMarkerId + 1
+		if state.current then
+			state.current.remoteEventAt = state.remoteEventAt
+			state.current.remoteEventName = state.remoteEventName
+			if partnerName and partnerName ~= "" then
+				state.current.partner = partnerName
+			end
+			TradeMonitor.RefreshState()
 		end
 	end
 
-	TradeMonitorState.current = nil
-	RefreshTradeMonitorUI()
+	function TradeMonitor.BeginSession()
+		local state = TradeMonitor.state
+		state.sessionCounter = state.sessionCounter + 1
+		local now = tick()
+		local fromRemote = state.remoteMarkerId ~= state.consumedRemoteMarkerId
+			and state.remoteEventAt > 0
+			and (now - state.remoteEventAt) <= 8
+		if fromRemote then
+			state.consumedRemoteMarkerId = state.remoteMarkerId
+		end
+		state.current = {
+			id = state.sessionCounter,
+			startedAt = now,
+			active = true,
+			partner = getTradeSessionPartner(),
+			remoteEventAt = fromRemote and state.remoteEventAt or 0,
+			remoteEventName = fromRemote and state.remoteEventName or "manual",
+			localMM2 = 0,
+			localRub = 0,
+			remoteMM2 = 0,
+			remoteRub = 0,
+			netMM2 = 0,
+			netRub = 0,
+			localItems = 0,
+			remoteItems = 0,
+			youAccepted = false,
+			themAccepted = false,
+		}
+		TradeMonitor.RefreshState()
+	end
+
+	function TradeMonitor.FinalizeSession(completed)
+		local state = TradeMonitor.state
+		local session = state.current
+		if not session then
+			TradeMonitor.RefreshUI()
+			return
+		end
+
+		TradeMonitor.RefreshState()
+		session = state.current
+		session.active = false
+		session.completed = completed == true
+		local classification = classifyTradeSession(session)
+		local statusText = completed and "Completed" or "Closed"
+		local shouldKeep = completed or (session.localItems or 0) > 0 or (session.remoteItems or 0) > 0 or classification == "real"
+
+		if completed and classification == "real" then
+			state.realTradesCompleted = state.realTradesCompleted + 1
+			state.totalProfitMM2 = state.totalProfitMM2 + (session.netMM2 or 0)
+			state.totalProfitRub = state.totalProfitRub + (session.netRub or 0)
+		end
+
+		if shouldKeep then
+			table.insert(state.history, 1, {
+				timeLabel = os.date("%H:%M:%S"),
+				classification = classification,
+				partner = session.partner,
+				statusText = statusText,
+				localMM2 = session.localMM2 or 0,
+				localRub = session.localRub or 0,
+				remoteMM2 = session.remoteMM2 or 0,
+				remoteRub = session.remoteRub or 0,
+				netMM2 = session.netMM2 or 0,
+				netRub = session.netRub or 0,
+			})
+			while #state.history > 12 do
+				table.remove(state.history)
+			end
+		end
+
+		state.current = nil
+		TradeMonitor.RefreshUI()
+	end
 end
 
 -- === Trade Table ===
@@ -1918,7 +1930,7 @@ end
 local function AcceptTrade()
 	if not TradeTable then return end
 	if TradeTable.Player1.Accepted == true and TradeTable.Player2.Accepted == true then
-		pcall(RefreshTradeMonitorState)
+		pcall(TradeMonitor.RefreshState)
 		TradeTable.Locked = true
 		task.wait(0.2)
 
@@ -1956,7 +1968,7 @@ local function AcceptTrade()
 		end
 
 		pcall(function()
-			FinalizeTradeMonitorSession(true)
+			TradeMonitor.FinalizeSession(true)
 		end)
 
 		TradeTable = {
@@ -2011,7 +2023,7 @@ local function OfferItemLocalPlayer(ItemName, ItemType)
 	TradeTable.Player1.Accepted = false
 	TradeTable.Player2.Accepted = false
 	pcall(function() functions.UpdateTrade() end)
-	pcall(RefreshTradeMonitorState)
+	pcall(TradeMonitor.RefreshState)
 end
 
 local function RemoveItemLocalPlayer(ItemName, ItemType)
@@ -2033,7 +2045,7 @@ local function RemoveItemLocalPlayer(ItemName, ItemType)
 		end
 	end
 	pcall(function() functions.UpdateTrade() end)
-	pcall(RefreshTradeMonitorState)
+	pcall(TradeMonitor.RefreshState)
 end
 
 -- === Offer / Remove another player ===
@@ -2083,7 +2095,7 @@ local function OfferItemAnotherPlayer(ItemName, ItemType)
 	TradeTable.Player1.Accepted = false
 	TradeTable.Player2.Accepted = false
 	pcall(function() functions.UpdateTrade() end)
-	pcall(RefreshTradeMonitorState)
+		pcall(TradeMonitor.RefreshState)
 	return true
 end
 
@@ -2105,7 +2117,7 @@ local function RemoveItemAnotherPlayer()
 		TradeTable.Player1.Accepted = false
 		TradeTable.Player2.Accepted = false
 		pcall(function() functions.UpdateTrade() end)
-		pcall(RefreshTradeMonitorState)
+		pcall(TradeMonitor.RefreshState)
 	end
 end
 
@@ -2241,13 +2253,13 @@ functions.UpdateTrade = function()
 			v44 = #Offer2 < 1
 		end
 		l_AddItem_0(v44)
-		RefreshTradeMonitorState()
+		TradeMonitor.RefreshState()
 	end)
 end
 
 function DeclineTrade()
 	pcall(function()
-		FinalizeTradeMonitorSession(false)
+		TradeMonitor.FinalizeSession(false)
 	end)
 	pcall(function() TradeGUI.Enabled = false end)
 
@@ -2344,7 +2356,7 @@ end
 function StartTrade()
 	if Config.in_trade == true then return end
 	Config.in_trade = true
-	pcall(BeginTradeMonitorSession)
+	pcall(TradeMonitor.BeginSession)
 
 	pcall(function()
 		for _, v49 in pairs({"Weapons", "Pets"}) do
@@ -2373,7 +2385,7 @@ function StartTrade()
 	end)
 
 	TradeGUI.Enabled = true
-	pcall(RefreshTradeMonitorState)
+	pcall(TradeMonitor.RefreshState)
 
 	pcall(function()
 		if SearchTextSignal then
@@ -2415,7 +2427,7 @@ end
 
 TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
 	local name = partnerNameFromArgs(arg1, arg2)
-	NoteTradeRemoteActivity(name or LastTradePartner, "StartTrade")
+	TradeMonitor.NoteRemoteActivity(name or LastTradePartner, "StartTrade")
 	if name then
 		LastTradePartner = name
 		pcall(function()
@@ -2437,7 +2449,7 @@ end)
 			if remote ~= TradeRemotes.StartTrade and remote:IsA("RemoteEvent") then
 				remote.OnClientEvent:Connect(function(...)
 					local name = partnerNameFromArgs(...)
-					NoteTradeRemoteActivity(name or LastTradePartner, remote.Name)
+					TradeMonitor.NoteRemoteActivity(name or LastTradePartner, remote.Name)
 					if name then
 						LastTradePartner = name
 						pcall(function()
@@ -3683,17 +3695,17 @@ do
 	tradeFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTradeHistoryHeight)
 	task.defer(updateTradeHistoryHeight)
 
-	TradeMonitorUI = {
+	TradeMonitor.ui = {
 		statusLabel = statusLabel,
 		currentLabel = currentLabel,
 		totalsLabel = totalsLabel,
 		historyScroll = historyScroll,
 	}
 
-	RefreshTradeMonitorUI()
+	TradeMonitor.RefreshUI()
 	task.spawn(function()
 		while task.wait(0.5) do
-			pcall(RefreshTradeMonitorState)
+			pcall(TradeMonitor.RefreshState)
 		end
 	end)
 end
