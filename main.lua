@@ -2189,24 +2189,6 @@ PlayerAutoRefreshToggleButton = nil
 PlayerAutoRefreshSecondsBox = nil
 PlayerAutoRefreshStatusLabel = nil
 playerValueRows = {}
-ControlBindButtons = {}
-ControlBindStatusLabel = nil
-
-local ControlBindState = {
-	bindings = {},
-	listeningActionId = nil,
-}
-
-local ControlBindDefinitions = {
-	{ id = "recentTrade", label = "Recent trade" },
-	{ id = "randomPlayer", label = "Random player" },
-	{ id = "startTrade", label = "Start trade" },
-	{ id = "randomItems", label = "Random items" },
-	{ id = "acceptOffer", label = "Accept their offer" },
-	{ id = "blockPlayer", label = "Block player" },
-}
-
-local ControlActions = {}
 
 local AutoBlockState = {
 	enabled = false,
@@ -2303,320 +2285,337 @@ local function updatePlayerAutoRefreshButtonText()
 	PlayerAutoRefreshToggleButton.BackgroundTransparency = PlayerValuesAutoRefreshState.enabled and 0.72 or 0.84
 end
 
-local function setControlBindStatus(text, color)
-	if not ControlBindStatusLabel then
-		return
-	end
-	ControlBindStatusLabel.Text = text
-	if color then
-		ControlBindStatusLabel.TextColor3 = color
-	end
-end
-
-local function formatControlBindKey(keyCode)
-	if not keyCode then
-		return "Unbound"
-	end
-	return keyCode.Name
-end
-
-local function updateControlBindButtonText(actionId)
-	local button = ControlBindButtons[actionId]
-	if not button then
-		return
-	end
-
-	if ControlBindState.listeningActionId == actionId then
-		button.Text = "Press key..."
-		return
-	end
-
-	button.Text = formatControlBindKey(ControlBindState.bindings[actionId])
-end
-
-local function assignControlBind(actionId, keyCode)
-	for otherActionId, otherKeyCode in pairs(ControlBindState.bindings) do
-		if otherActionId ~= actionId and otherKeyCode == keyCode then
-			ControlBindState.bindings[otherActionId] = nil
-			updateControlBindButtonText(otherActionId)
-		end
-	end
-
-	ControlBindState.bindings[actionId] = keyCode
-	updateControlBindButtonText(actionId)
-	setControlBindStatus(("Bound %s to %s"):format(actionId, keyCode.Name), Color3.fromRGB(140, 220, 160))
-end
-
-local function clearControlBind(actionId)
-	ControlBindState.bindings[actionId] = nil
-	if ControlBindState.listeningActionId == actionId then
-		ControlBindState.listeningActionId = nil
-	end
-	updateControlBindButtonText(actionId)
-	setControlBindStatus(("Cleared bind for %s"):format(actionId), Color3.fromRGB(205, 183, 132))
-end
-
-local function startControlBindListening(actionId)
-	local previousActionId = ControlBindState.listeningActionId
-	ControlBindState.listeningActionId = actionId
-	if previousActionId and previousActionId ~= actionId then
-		updateControlBindButtonText(previousActionId)
-	end
-	updateControlBindButtonText(actionId)
-	setControlBindStatus("Press any key to bind. Esc cancels, Backspace clears.", Color3.fromRGB(187, 198, 213))
-end
-
-local function triggerControlAction(actionId)
-	local callback = ControlActions[actionId]
-	if not callback then
-		return
-	end
-
-	local ok, err = pcall(callback)
-	if not ok then
-		warn("[control-bind] action failed for " .. tostring(actionId) .. ": " .. tostring(err))
-		setControlBindStatus(("Action failed: %s"):format(actionId), Color3.fromRGB(255, 120, 120))
-	end
-end
-
-local function createKeybindRow(parent, label, actionId)
-	local row = Instance.new("Frame")
-	row.Size = UDim2.new(1, 0, 0, 42)
-	row.BackgroundTransparency = 1
-	row.Parent = parent
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(0.47, 0, 1, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = label
-	nameLabel.Font = Enum.Font.Gotham
-	nameLabel.TextSize = 14
-	nameLabel.TextColor3 = Color3.fromRGB(212, 220, 233)
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Parent = row
-
-	local bindButton = Instance.new("TextButton")
-	bindButton.Size = UDim2.new(0.33, -6, 1, 0)
-	bindButton.Position = UDim2.new(0.47, 6, 0, 0)
-	bindButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	bindButton.BackgroundTransparency = 0.86
-	bindButton.BorderSizePixel = 0
-	bindButton.Text = "Unbound"
-	bindButton.Font = Enum.Font.GothamBold
-	bindButton.TextSize = 13
-	bindButton.TextColor3 = Color3.fromRGB(248, 250, 255)
-	bindButton.AutoButtonColor = false
-	bindButton.Parent = row
-
-	local bindCorner = Instance.new("UICorner")
-	bindCorner.CornerRadius = UDim.new(0, 12)
-	bindCorner.Parent = bindButton
-
-	local bindStroke = Instance.new("UIStroke")
-	bindStroke.Color = Color3.fromRGB(255, 255, 255)
-	bindStroke.Thickness = 1
-	bindStroke.Transparency = 0.86
-	bindStroke.Parent = bindButton
-
-	local clearButton = Instance.new("TextButton")
-	clearButton.Size = UDim2.new(0.2, -6, 1, 0)
-	clearButton.Position = UDim2.new(0.8, 6, 0, 0)
-	clearButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	clearButton.BackgroundTransparency = 0.9
-	clearButton.BorderSizePixel = 0
-	clearButton.Text = "Clear"
-	clearButton.Font = Enum.Font.GothamBold
-	clearButton.TextSize = 13
-	clearButton.TextColor3 = Color3.fromRGB(230, 190, 190)
-	clearButton.AutoButtonColor = false
-	clearButton.Parent = row
-
-	local clearCorner = Instance.new("UICorner")
-	clearCorner.CornerRadius = UDim.new(0, 12)
-	clearCorner.Parent = clearButton
-
-	local clearStroke = Instance.new("UIStroke")
-	clearStroke.Color = Color3.fromRGB(255, 255, 255)
-	clearStroke.Thickness = 1
-	clearStroke.Transparency = 0.88
-	clearStroke.Parent = clearButton
-
-	bindButton.MouseButton1Click:Connect(function()
-		startControlBindListening(actionId)
-	end)
-
-	clearButton.MouseButton1Click:Connect(function()
-		clearControlBind(actionId)
-	end)
-
-	ControlBindButtons[actionId] = bindButton
-	updateControlBindButtonText(actionId)
-
-	return row
-end
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if input.UserInputType ~= Enum.UserInputType.Keyboard then
-		return
-	end
-
-	local keyCode = input.KeyCode
-	if keyCode == Enum.KeyCode.Unknown then
-		return
-	end
-
-	if ControlBindState.listeningActionId then
-		local actionId = ControlBindState.listeningActionId
-		ControlBindState.listeningActionId = nil
-		if keyCode == Enum.KeyCode.Escape then
-			updateControlBindButtonText(actionId)
-			setControlBindStatus("Bind cancelled.", Color3.fromRGB(205, 183, 132))
-			return
-		end
-		if keyCode == Enum.KeyCode.Backspace or keyCode == Enum.KeyCode.Delete then
-			clearControlBind(actionId)
-			return
-		end
-		assignControlBind(actionId, keyCode)
-		return
-	end
-
-	if gameProcessed or UserInputService:GetFocusedTextBox() then
-		return
-	end
-
-	for _, definition in ipairs(ControlBindDefinitions) do
-		if ControlBindState.bindings[definition.id] == keyCode then
-			triggerControlAction(definition.id)
-			break
-		end
-	end
-end)
-
 -- ===== FILL CONTROL TAB =====
-local controlFrame = tabFrames["Control"]
-PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
-PartnerUserBox.FocusLost:Connect(function()
-    TradeTable.Player2.Player = PartnerUserBox.Text
-    PartnerUserBox.Text = TradeTable.Player2.Player
-end)
+do
+	local controlBindButtons = {}
+	local controlBindStatusLabel = nil
+	local controlBindState = {
+		bindings = {},
+		listeningActionId = nil,
+	}
+	local controlBindDefinitions = {
+		{ id = "recentTrade", label = "Recent trade" },
+		{ id = "randomPlayer", label = "Random player" },
+		{ id = "startTrade", label = "Start trade" },
+		{ id = "randomItems", label = "Random items" },
+		{ id = "acceptOffer", label = "Accept their offer" },
+		{ id = "blockPlayer", label = "Block player" },
+	}
+	local controlActions = {}
+	local fakeTradePartners = {
+		"xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
+		"CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
+		"SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
+		"VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
+		"MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
+		"NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
+		"AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
+		"OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
+		"PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
+		"DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
+		"CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
+		"StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
+		"SolarFlareKid", "TwilightWisp",
+	}
+	local controlFrame = tabFrames["Control"]
 
-local FakeTradePartners = {
-	"xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
-	"CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
-	"SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
-	"VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
-	"MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
-	"NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
-	"AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
-	"OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
-	"PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
-	"DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
-	"CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
-	"StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
-	"SolarFlareKid", "TwilightWisp",
-}
-
-ControlActions.recentTrade = function()
-	if LastTradePartner and LastTradePartner ~= "" then
-		TradeTable.Player2.Player = LastTradePartner
-		PartnerUserBox.Text = LastTradePartner
+	local function setControlBindStatus(text, color)
+		if not controlBindStatusLabel then
+			return
+		end
+		controlBindStatusLabel.Text = text
+		if color then
+			controlBindStatusLabel.TextColor3 = color
+		end
 	end
-end
 
-ControlActions.randomPlayer = function()
-	local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
-	TradeTable.Player2.Player = chosen
-	PartnerUserBox.Text = chosen
-	pcall(function()
-		TheirOffer.Username.Text = "(" .. chosen .. ")"
+	local function formatControlBindKey(keyCode)
+		if not keyCode then
+			return "Unbound"
+		end
+		return keyCode.Name
+	end
+
+	local function updateControlBindButtonText(actionId)
+		local button = controlBindButtons[actionId]
+		if not button then
+			return
+		end
+
+		if controlBindState.listeningActionId == actionId then
+			button.Text = "Press key..."
+			return
+		end
+
+		button.Text = formatControlBindKey(controlBindState.bindings[actionId])
+	end
+
+	local function assignControlBind(actionId, keyCode)
+		for otherActionId, otherKeyCode in pairs(controlBindState.bindings) do
+			if otherActionId ~= actionId and otherKeyCode == keyCode then
+				controlBindState.bindings[otherActionId] = nil
+				updateControlBindButtonText(otherActionId)
+			end
+		end
+
+		controlBindState.bindings[actionId] = keyCode
+		updateControlBindButtonText(actionId)
+		setControlBindStatus(("Bound %s to %s"):format(actionId, keyCode.Name), Color3.fromRGB(140, 220, 160))
+	end
+
+	local function clearControlBind(actionId)
+		controlBindState.bindings[actionId] = nil
+		if controlBindState.listeningActionId == actionId then
+			controlBindState.listeningActionId = nil
+		end
+		updateControlBindButtonText(actionId)
+		setControlBindStatus(("Cleared bind for %s"):format(actionId), Color3.fromRGB(205, 183, 132))
+	end
+
+	local function startControlBindListening(actionId)
+		local previousActionId = controlBindState.listeningActionId
+		controlBindState.listeningActionId = actionId
+		if previousActionId and previousActionId ~= actionId then
+			updateControlBindButtonText(previousActionId)
+		end
+		updateControlBindButtonText(actionId)
+		setControlBindStatus("Press any key to bind. Esc cancels, Backspace clears.", Color3.fromRGB(187, 198, 213))
+	end
+
+	local function triggerControlAction(actionId)
+		local callback = controlActions[actionId]
+		if not callback then
+			return
+		end
+
+		local ok, err = pcall(callback)
+		if not ok then
+			warn("[control-bind] action failed for " .. tostring(actionId) .. ": " .. tostring(err))
+			setControlBindStatus(("Action failed: %s"):format(actionId), Color3.fromRGB(255, 120, 120))
+		end
+	end
+
+	local function createKeybindRow(parent, label, actionId)
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 42)
+		row.BackgroundTransparency = 1
+		row.Parent = parent
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0.47, 0, 1, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Text = label
+		nameLabel.Font = Enum.Font.Gotham
+		nameLabel.TextSize = 14
+		nameLabel.TextColor3 = Color3.fromRGB(212, 220, 233)
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Parent = row
+
+		local bindButton = Instance.new("TextButton")
+		bindButton.Size = UDim2.new(0.33, -6, 1, 0)
+		bindButton.Position = UDim2.new(0.47, 6, 0, 0)
+		bindButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		bindButton.BackgroundTransparency = 0.86
+		bindButton.BorderSizePixel = 0
+		bindButton.Text = "Unbound"
+		bindButton.Font = Enum.Font.GothamBold
+		bindButton.TextSize = 13
+		bindButton.TextColor3 = Color3.fromRGB(248, 250, 255)
+		bindButton.AutoButtonColor = false
+		bindButton.Parent = row
+
+		local bindCorner = Instance.new("UICorner")
+		bindCorner.CornerRadius = UDim.new(0, 12)
+		bindCorner.Parent = bindButton
+
+		local bindStroke = Instance.new("UIStroke")
+		bindStroke.Color = Color3.fromRGB(255, 255, 255)
+		bindStroke.Thickness = 1
+		bindStroke.Transparency = 0.86
+		bindStroke.Parent = bindButton
+
+		local clearButton = Instance.new("TextButton")
+		clearButton.Size = UDim2.new(0.2, -6, 1, 0)
+		clearButton.Position = UDim2.new(0.8, 6, 0, 0)
+		clearButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		clearButton.BackgroundTransparency = 0.9
+		clearButton.BorderSizePixel = 0
+		clearButton.Text = "Clear"
+		clearButton.Font = Enum.Font.GothamBold
+		clearButton.TextSize = 13
+		clearButton.TextColor3 = Color3.fromRGB(230, 190, 190)
+		clearButton.AutoButtonColor = false
+		clearButton.Parent = row
+
+		local clearCorner = Instance.new("UICorner")
+		clearCorner.CornerRadius = UDim.new(0, 12)
+		clearCorner.Parent = clearButton
+
+		local clearStroke = Instance.new("UIStroke")
+		clearStroke.Color = Color3.fromRGB(255, 255, 255)
+		clearStroke.Thickness = 1
+		clearStroke.Transparency = 0.88
+		clearStroke.Parent = clearButton
+
+		bindButton.MouseButton1Click:Connect(function()
+			startControlBindListening(actionId)
+		end)
+
+		clearButton.MouseButton1Click:Connect(function()
+			clearControlBind(actionId)
+		end)
+
+		controlBindButtons[actionId] = bindButton
+		updateControlBindButtonText(actionId)
+
+		return row
+	end
+
+	PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
+	PartnerUserBox.FocusLost:Connect(function()
+		TradeTable.Player2.Player = PartnerUserBox.Text
+		PartnerUserBox.Text = TradeTable.Player2.Player
 	end)
-	print("[mm2run/random] picked fake partner: " .. chosen)
-end
 
-ControlActions.startTrade = function()
-	StartTrade()
-end
+	controlActions.recentTrade = function()
+		if LastTradePartner and LastTradePartner ~= "" then
+			TradeTable.Player2.Player = LastTradePartner
+			PartnerUserBox.Text = LastTradePartner
+		end
+	end
 
-ControlActions.randomItems = function()
-	if #weaponButtons == 0 then
-		print("[mm2run/random] item list not built yet")
-		return
+	controlActions.randomPlayer = function()
+		local chosen = fakeTradePartners[math.random(1, #fakeTradePartners)]
+		TradeTable.Player2.Player = chosen
+		PartnerUserBox.Text = chosen
+		pcall(function()
+			TheirOffer.Username.Text = "(" .. chosen .. ")"
+		end)
+		print("[mm2run/random] picked fake partner: " .. chosen)
 	end
-	local info = weaponButtons[math.random(1, #weaponButtons)]
-	local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
-	if ok then
-		print("[mm2run/random] added random item: " .. info.entry.name)
-	else
-		print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
-	end
-end
 
-ControlActions.acceptOffer = function()
-	if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
-		return
+	controlActions.startTrade = function()
+		StartTrade()
 	end
-	if v84 then
-		return
-	end
-	TheirOffer.Accepted.Visible = true
-	TradeTable.Player2.Accepted = true
-	AcceptTrade()
-end
 
-ControlActions.blockPlayer = function()
-	pcall(function()
-		local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-		if Selected then
-			SilentBlockPlayer(Selected)
+	controlActions.randomItems = function()
+		if #weaponButtons == 0 then
+			print("[mm2run/random] item list not built yet")
+			return
+		end
+		local info = weaponButtons[math.random(1, #weaponButtons)]
+		local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
+		if ok then
+			print("[mm2run/random] added random item: " .. info.entry.name)
+		else
+			print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
+		end
+	end
+
+	controlActions.acceptOffer = function()
+		if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
+			return
+		end
+		if v84 then
+			return
+		end
+		TheirOffer.Accepted.Visible = true
+		TradeTable.Player2.Accepted = true
+		AcceptTrade()
+	end
+
+	controlActions.blockPlayer = function()
+		pcall(function()
+			local selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
+			if selected then
+				SilentBlockPlayer(selected)
+			end
+		end)
+	end
+
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+
+		local keyCode = input.KeyCode
+		if keyCode == Enum.KeyCode.Unknown then
+			return
+		end
+
+		if controlBindState.listeningActionId then
+			local actionId = controlBindState.listeningActionId
+			controlBindState.listeningActionId = nil
+			if keyCode == Enum.KeyCode.Escape then
+				updateControlBindButtonText(actionId)
+				setControlBindStatus("Bind cancelled.", Color3.fromRGB(205, 183, 132))
+				return
+			end
+			if keyCode == Enum.KeyCode.Backspace or keyCode == Enum.KeyCode.Delete then
+				clearControlBind(actionId)
+				return
+			end
+			assignControlBind(actionId, keyCode)
+			return
+		end
+
+		if gameProcessed or UserInputService:GetFocusedTextBox() then
+			return
+		end
+
+		for _, definition in ipairs(controlBindDefinitions) do
+			if controlBindState.bindings[definition.id] == keyCode then
+				triggerControlAction(definition.id)
+				break
+			end
 		end
 	end)
+
+	createButton(controlFrame, "Recent trade", controlActions.recentTrade)
+	createButton(controlFrame, "Random player", controlActions.randomPlayer)
+	createButton(controlFrame, "Start trade", controlActions.startTrade)
+	createButton(controlFrame, "Random items", controlActions.randomItems)
+	createButton(controlFrame, "Accept their offer", controlActions.acceptOffer)
+	createButton(controlFrame, "Block player", controlActions.blockPlayer)
+
+	local controlBindHeader = Instance.new("TextLabel")
+	controlBindHeader.Size = UDim2.new(1, 0, 0, 18)
+	controlBindHeader.BackgroundTransparency = 1
+	controlBindHeader.Text = "Keybinds"
+	controlBindHeader.Font = Enum.Font.GothamBold
+	controlBindHeader.TextSize = 15
+	controlBindHeader.TextColor3 = Color3.fromRGB(240, 244, 255)
+	controlBindHeader.TextXAlignment = Enum.TextXAlignment.Left
+	controlBindHeader.Parent = controlFrame
+
+	local controlBindHint = Instance.new("TextLabel")
+	controlBindHint.Size = UDim2.new(1, 0, 0, 28)
+	controlBindHint.BackgroundTransparency = 1
+	controlBindHint.Text = "All binds start empty. Click a bind, then press a key."
+	controlBindHint.Font = Enum.Font.Gotham
+	controlBindHint.TextSize = 12
+	controlBindHint.TextWrapped = true
+	controlBindHint.TextColor3 = Color3.fromRGB(180, 183, 192)
+	controlBindHint.TextXAlignment = Enum.TextXAlignment.Left
+	controlBindHint.TextYAlignment = Enum.TextYAlignment.Top
+	controlBindHint.Parent = controlFrame
+
+	for _, definition in ipairs(controlBindDefinitions) do
+		createKeybindRow(controlFrame, definition.label, definition.id)
+	end
+
+	controlBindStatusLabel = Instance.new("TextLabel")
+	controlBindStatusLabel.Size = UDim2.new(1, 0, 0, 30)
+	controlBindStatusLabel.BackgroundTransparency = 1
+	controlBindStatusLabel.Text = "Status: no binds yet"
+	controlBindStatusLabel.Font = Enum.Font.Gotham
+	controlBindStatusLabel.TextSize = 12
+	controlBindStatusLabel.TextWrapped = true
+	controlBindStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
+	controlBindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	controlBindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+	controlBindStatusLabel.Parent = controlFrame
 end
-
-createButton(controlFrame, "Recent trade", ControlActions.recentTrade)
-createButton(controlFrame, "Random player", ControlActions.randomPlayer)
-createButton(controlFrame, "Start trade", ControlActions.startTrade)
-createButton(controlFrame, "Random items", ControlActions.randomItems)
-createButton(controlFrame, "Accept their offer", ControlActions.acceptOffer)
-createButton(controlFrame, "Block player", ControlActions.blockPlayer)
-
-local controlBindHeader = Instance.new("TextLabel")
-controlBindHeader.Size = UDim2.new(1, 0, 0, 18)
-controlBindHeader.BackgroundTransparency = 1
-controlBindHeader.Text = "Keybinds"
-controlBindHeader.Font = Enum.Font.GothamBold
-controlBindHeader.TextSize = 15
-controlBindHeader.TextColor3 = Color3.fromRGB(240, 244, 255)
-controlBindHeader.TextXAlignment = Enum.TextXAlignment.Left
-controlBindHeader.Parent = controlFrame
-
-local controlBindHint = Instance.new("TextLabel")
-controlBindHint.Size = UDim2.new(1, 0, 0, 28)
-controlBindHint.BackgroundTransparency = 1
-controlBindHint.Text = "All binds start empty. Click a bind, then press a key."
-controlBindHint.Font = Enum.Font.Gotham
-controlBindHint.TextSize = 12
-controlBindHint.TextWrapped = true
-controlBindHint.TextColor3 = Color3.fromRGB(180, 183, 192)
-controlBindHint.TextXAlignment = Enum.TextXAlignment.Left
-controlBindHint.TextYAlignment = Enum.TextYAlignment.Top
-controlBindHint.Parent = controlFrame
-
-for _, definition in ipairs(ControlBindDefinitions) do
-	createKeybindRow(controlFrame, definition.label, definition.id)
-end
-
-ControlBindStatusLabel = Instance.new("TextLabel")
-ControlBindStatusLabel.Size = UDim2.new(1, 0, 0, 30)
-ControlBindStatusLabel.BackgroundTransparency = 1
-ControlBindStatusLabel.Text = "Status: no binds yet"
-ControlBindStatusLabel.Font = Enum.Font.Gotham
-ControlBindStatusLabel.TextSize = 12
-ControlBindStatusLabel.TextWrapped = true
-ControlBindStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
-ControlBindStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-ControlBindStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
-ControlBindStatusLabel.Parent = controlFrame
 
 -- ===== FILL PLAYERS TAB =====
 local playersFrame = tabFrames["Players"]

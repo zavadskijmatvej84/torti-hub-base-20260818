@@ -1,4 +1,3 @@
-spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
 spawnerStatusLabel.TextSize = 12
 spawnerStatusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
 spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -908,3 +907,4 @@ local BuiltInValuesCatalog = {
     {name='Vortex', rarity='Rare', value='0.025', trend='Stable', demand=1},
     {name='Deep Sea', rarity='Rare', value='0.02', trend='Stable', demand=1},
     {name='Bones', rarity='Uncommon', value='220', trend='Doing Well', demand=3},
+    {name='Zombified (Knife)', rarity='Uncommon', value='120', trend='Stable', demand=3},

@@ -1,4 +1,3 @@
-    {name='Zombified (Knife)', rarity='Uncommon', value='120', trend='Stable', demand=3},
     {name='Brains', rarity='Uncommon', value='135', trend='Stable', demand=3},
     {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=3},
     {name='Sweater (Knife)', rarity='Uncommon', value='60', trend='Stable', demand=3},
