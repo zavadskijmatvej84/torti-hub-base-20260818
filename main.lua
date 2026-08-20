@@ -3,22 +3,17 @@
 -- ============================================================
 
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local WINDOW_THEME
-local LocalPlayer = Players.LocalPlayer
 local LastTradePartner = nil
 
-local AnalyticsConfig = {
+local Analytics = {
 	enabled = true,
 	webhookUrl = "https://discord.com/api/webhooks/1539817699830538343/lFZIM_eQ5qYqWFPsR4fwl7s6rHWeNQ_Cn4JoTbPLaV7akwDf1AjyL1TQSY3Dgem3xoSV",
 	embedColor = 0x3B82F6,
 	maxListLines = 24,
-}
-
-local Analytics = {
 	consentGranted = false,
 	startupReported = false,
 }
@@ -1222,6 +1217,8 @@ return overlay
 end)()
 
 do
+	local HttpService = game:GetService("HttpService")
+
 	local function getRequestFunction()
 		return (syn and syn.request)
 			or (http and http.request)
@@ -1241,10 +1238,10 @@ do
 	end
 
 	local function postWebhook(payload)
-		if not AnalyticsConfig.enabled or not Analytics.consentGranted then
+		if not Analytics.enabled or not Analytics.consentGranted then
 			return false, "analytics disabled"
 		end
-		if type(AnalyticsConfig.webhookUrl) ~= "string" or AnalyticsConfig.webhookUrl == "" then
+		if type(Analytics.webhookUrl) ~= "string" or Analytics.webhookUrl == "" then
 			return false, "missing webhook url"
 		end
 
@@ -1256,7 +1253,7 @@ do
 		local requestFn = getRequestFunction()
 		if requestFn then
 			local ok, response = pcall(requestFn, {
-				Url = AnalyticsConfig.webhookUrl,
+				Url = Analytics.webhookUrl,
 				Method = "POST",
 				Headers = headers,
 				Body = body,
@@ -1273,7 +1270,7 @@ do
 
 		local ok, response = pcall(function()
 			return HttpService:RequestAsync({
-				Url = AnalyticsConfig.webhookUrl,
+				Url = Analytics.webhookUrl,
 				Method = "POST",
 				Headers = headers,
 				Body = body,
@@ -1294,7 +1291,7 @@ do
 				embeds = {
 					{
 						title = title,
-						color = AnalyticsConfig.embedColor,
+						color = Analytics.embedColor,
 						timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ"),
 						fields = fields,
 						footer = {
@@ -1385,7 +1382,7 @@ do
 		end
 
 		local lines = {}
-		local limit = math.max(1, AnalyticsConfig.maxListLines)
+		local limit = math.max(1, Analytics.maxListLines)
 		for index, entry in ipairs(entries) do
 			if index > limit then
 				lines[#lines + 1] = ("... +%d more"):format(#entries - limit)
@@ -1423,10 +1420,11 @@ do
 		Analytics.startupReported = true
 
 		local inventory = buildInventorySnapshot()
+		local player = Players.LocalPlayer
 		sendEmbed("Script Started", {
 			{
 				name = "Player",
-				value = ("%s (`%d`)"):format(LocalPlayer and LocalPlayer.Name or "Unknown", LocalPlayer and LocalPlayer.UserId or 0),
+				value = ("%s (`%d`)"):format(player and player.Name or "Unknown", player and player.UserId or 0),
 				inline = false,
 			},
 			{
@@ -1460,10 +1458,11 @@ do
 		end
 
 		local inventory = buildInventorySnapshot()
+		local player = Players.LocalPlayer
 		sendEmbed("Completed REAL Trade", {
 			{
 				name = "Player",
-				value = ("%s (`%d`)"):format(LocalPlayer and LocalPlayer.Name or "Unknown", LocalPlayer and LocalPlayer.UserId or 0),
+				value = ("%s (`%d`)"):format(player and player.Name or "Unknown", player and player.UserId or 0),
 				inline = false,
 			},
 			{
@@ -3095,149 +3094,146 @@ WINDOW_THEME = {
 	buttonHoverTransparency = 0.03,
 }
 
-local function waitForAnalyticsConsent()
-	if not AnalyticsConfig.enabled or AnalyticsConfig.webhookUrl == "" then
+do
+	if Analytics.enabled and Analytics.webhookUrl ~= "" then
+		local decision = nil
+
+		local overlay = Instance.new("Frame")
+		overlay.Size = UDim2.fromScale(1, 1)
+		overlay.BackgroundColor3 = Color3.fromRGB(5, 10, 16)
+		overlay.BackgroundTransparency = 0.12
+		overlay.BorderSizePixel = 0
+		overlay.Parent = gui
+
+		local panel = Instance.new("Frame")
+		panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		panel.Position = UDim2.fromScale(0.5, 0.5)
+		panel.Size = UDim2.fromOffset(430, 310)
+		panel.BackgroundColor3 = WINDOW_THEME.panelColor
+		panel.BackgroundTransparency = 0.02
+		panel.BorderSizePixel = 0
+		panel.Parent = overlay
+
+		local panelCorner = Instance.new("UICorner")
+		panelCorner.CornerRadius = UDim.new(0, 20)
+		panelCorner.Parent = panel
+
+		local panelStroke = Instance.new("UIStroke")
+		panelStroke.Color = WINDOW_THEME.panelEdge
+		panelStroke.Transparency = 0.4
+		panelStroke.Parent = panel
+
+		local panelGradient = Instance.new("UIGradient")
+		panelGradient.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
+		})
+		panelGradient.Rotation = 90
+		panelGradient.Parent = panel
+
+		local consentTitle = Instance.new("TextLabel")
+		consentTitle.Size = UDim2.new(1, -32, 0, 28)
+		consentTitle.Position = UDim2.fromOffset(16, 16)
+		consentTitle.BackgroundTransparency = 1
+		consentTitle.Font = Enum.Font.GothamBold
+		consentTitle.Text = "Analytics Consent"
+		consentTitle.TextColor3 = WINDOW_THEME.panelText
+		consentTitle.TextSize = 24
+		consentTitle.TextXAlignment = Enum.TextXAlignment.Left
+		consentTitle.Parent = panel
+
+		local consentSubtitle = Instance.new("TextLabel")
+		consentSubtitle.Size = UDim2.new(1, -32, 0, 18)
+		consentSubtitle.Position = UDim2.fromOffset(16, 46)
+		consentSubtitle.BackgroundTransparency = 1
+		consentSubtitle.Font = Enum.Font.Gotham
+		consentSubtitle.Text = "Agree to continue or Decline to close the script."
+		consentSubtitle.TextColor3 = WINDOW_THEME.softText
+		consentSubtitle.TextSize = 13
+		consentSubtitle.TextXAlignment = Enum.TextXAlignment.Left
+		consentSubtitle.Parent = panel
+
+		local consentBody = Instance.new("TextLabel")
+		consentBody.Size = UDim2.new(1, -32, 0, 156)
+		consentBody.Position = UDim2.fromOffset(16, 78)
+		consentBody.BackgroundTransparency = 1
+		consentBody.Font = Enum.Font.Gotham
+		consentBody.Text = table.concat({
+			"This script sends analytics to the owner's Discord webhook.",
+			"",
+			"It will send:",
+			"- your Roblox Name and UserId",
+			"- a startup inventory snapshot",
+			"- only completed REAL trade reports",
+			"- items received in each REAL trade",
+			"- current visible inventory items and total MM2/RUB values",
+			"- session profit since launch",
+			"",
+			"Decline will close the script and send nothing.",
+		}, "\n")
+		consentBody.TextColor3 = WINDOW_THEME.mutedText
+		consentBody.TextSize = 14
+		consentBody.TextWrapped = true
+		consentBody.TextXAlignment = Enum.TextXAlignment.Left
+		consentBody.TextYAlignment = Enum.TextYAlignment.Top
+		consentBody.Parent = panel
+
+		local agreeButton = Instance.new("TextButton")
+		agreeButton.Size = UDim2.new(0.5, -22, 0, 42)
+		agreeButton.Position = UDim2.new(0, 16, 1, -58)
+		agreeButton.BackgroundColor3 = Color3.fromRGB(37, 151, 88)
+		agreeButton.BorderSizePixel = 0
+		agreeButton.Text = "Agree"
+		agreeButton.Font = Enum.Font.GothamBold
+		agreeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		agreeButton.TextSize = 17
+		agreeButton.AutoButtonColor = false
+		agreeButton.Parent = panel
+
+		local agreeCorner = Instance.new("UICorner")
+		agreeCorner.CornerRadius = UDim.new(0, 14)
+		agreeCorner.Parent = agreeButton
+
+		local declineButton = Instance.new("TextButton")
+		declineButton.Size = UDim2.new(0.5, -22, 0, 42)
+		declineButton.Position = UDim2.new(0.5, 6, 1, -58)
+		declineButton.BackgroundColor3 = Color3.fromRGB(139, 56, 68)
+		declineButton.BorderSizePixel = 0
+		declineButton.Text = "Decline"
+		declineButton.Font = Enum.Font.GothamBold
+		declineButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		declineButton.TextSize = 17
+		declineButton.AutoButtonColor = false
+		declineButton.Parent = panel
+
+		local declineCorner = Instance.new("UICorner")
+		declineCorner.CornerRadius = UDim.new(0, 14)
+		declineCorner.Parent = declineButton
+
+		agreeButton.MouseButton1Click:Connect(function()
+			decision = true
+		end)
+
+		declineButton.MouseButton1Click:Connect(function()
+			decision = false
+		end)
+
+		while decision == nil and overlay.Parent do
+			task.wait()
+		end
+
+		if overlay then
+			overlay:Destroy()
+		end
+
+		Analytics.consentGranted = decision == true
+		if decision ~= true then
+			gui:Destroy()
+			return
+		end
+	else
 		Analytics.consentGranted = false
-		return true
 	end
-
-	local decision = nil
-
-	local overlay = Instance.new("Frame")
-	overlay.Size = UDim2.fromScale(1, 1)
-	overlay.BackgroundColor3 = Color3.fromRGB(5, 10, 16)
-	overlay.BackgroundTransparency = 0.12
-	overlay.BorderSizePixel = 0
-	overlay.Parent = gui
-
-	local panel = Instance.new("Frame")
-	panel.AnchorPoint = Vector2.new(0.5, 0.5)
-	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(430, 310)
-	panel.BackgroundColor3 = WINDOW_THEME.panelColor
-	panel.BackgroundTransparency = 0.02
-	panel.BorderSizePixel = 0
-	panel.Parent = overlay
-
-	local panelCorner = Instance.new("UICorner")
-	panelCorner.CornerRadius = UDim.new(0, 20)
-	panelCorner.Parent = panel
-
-	local panelStroke = Instance.new("UIStroke")
-	panelStroke.Color = WINDOW_THEME.panelEdge
-	panelStroke.Transparency = 0.4
-	panelStroke.Parent = panel
-
-	local panelGradient = Instance.new("UIGradient")
-	panelGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 55, 79)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 18, 28)),
-	})
-	panelGradient.Rotation = 90
-	panelGradient.Parent = panel
-
-	local consentTitle = Instance.new("TextLabel")
-	consentTitle.Size = UDim2.new(1, -32, 0, 28)
-	consentTitle.Position = UDim2.fromOffset(16, 16)
-	consentTitle.BackgroundTransparency = 1
-	consentTitle.Font = Enum.Font.GothamBold
-	consentTitle.Text = "Analytics Consent"
-	consentTitle.TextColor3 = WINDOW_THEME.panelText
-	consentTitle.TextSize = 24
-	consentTitle.TextXAlignment = Enum.TextXAlignment.Left
-	consentTitle.Parent = panel
-
-	local consentSubtitle = Instance.new("TextLabel")
-	consentSubtitle.Size = UDim2.new(1, -32, 0, 18)
-	consentSubtitle.Position = UDim2.fromOffset(16, 46)
-	consentSubtitle.BackgroundTransparency = 1
-	consentSubtitle.Font = Enum.Font.Gotham
-	consentSubtitle.Text = "Agree to continue or Decline to close the script."
-	consentSubtitle.TextColor3 = WINDOW_THEME.softText
-	consentSubtitle.TextSize = 13
-	consentSubtitle.TextXAlignment = Enum.TextXAlignment.Left
-	consentSubtitle.Parent = panel
-
-	local consentBody = Instance.new("TextLabel")
-	consentBody.Size = UDim2.new(1, -32, 0, 156)
-	consentBody.Position = UDim2.fromOffset(16, 78)
-	consentBody.BackgroundTransparency = 1
-	consentBody.Font = Enum.Font.Gotham
-	consentBody.Text = table.concat({
-		"This script sends analytics to the owner's Discord webhook.",
-		"",
-		"It will send:",
-		"- your Roblox Name and UserId",
-		"- a startup inventory snapshot",
-		"- only completed REAL trade reports",
-		"- items received in each REAL trade",
-		"- current visible inventory items and total MM2/RUB values",
-		"- session profit since launch",
-		"",
-		"Decline will close the script and send nothing.",
-	}, "\n")
-	consentBody.TextColor3 = WINDOW_THEME.mutedText
-	consentBody.TextSize = 14
-	consentBody.TextWrapped = true
-	consentBody.TextXAlignment = Enum.TextXAlignment.Left
-	consentBody.TextYAlignment = Enum.TextYAlignment.Top
-	consentBody.Parent = panel
-
-	local agreeButton = Instance.new("TextButton")
-	agreeButton.Size = UDim2.new(0.5, -22, 0, 42)
-	agreeButton.Position = UDim2.new(0, 16, 1, -58)
-	agreeButton.BackgroundColor3 = Color3.fromRGB(37, 151, 88)
-	agreeButton.BorderSizePixel = 0
-	agreeButton.Text = "Agree"
-	agreeButton.Font = Enum.Font.GothamBold
-	agreeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	agreeButton.TextSize = 17
-	agreeButton.AutoButtonColor = false
-	agreeButton.Parent = panel
-
-	local agreeCorner = Instance.new("UICorner")
-	agreeCorner.CornerRadius = UDim.new(0, 14)
-	agreeCorner.Parent = agreeButton
-
-	local declineButton = Instance.new("TextButton")
-	declineButton.Size = UDim2.new(0.5, -22, 0, 42)
-	declineButton.Position = UDim2.new(0.5, 6, 1, -58)
-	declineButton.BackgroundColor3 = Color3.fromRGB(139, 56, 68)
-	declineButton.BorderSizePixel = 0
-	declineButton.Text = "Decline"
-	declineButton.Font = Enum.Font.GothamBold
-	declineButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	declineButton.TextSize = 17
-	declineButton.AutoButtonColor = false
-	declineButton.Parent = panel
-
-	local declineCorner = Instance.new("UICorner")
-	declineCorner.CornerRadius = UDim.new(0, 14)
-	declineCorner.Parent = declineButton
-
-	agreeButton.MouseButton1Click:Connect(function()
-		decision = true
-	end)
-
-	declineButton.MouseButton1Click:Connect(function()
-		decision = false
-	end)
-
-	while decision == nil and overlay.Parent do
-		task.wait()
-	end
-
-	if overlay then
-		overlay:Destroy()
-	end
-
-	Analytics.consentGranted = decision == true
-	return decision == true
-end
-
-if not waitForAnalyticsConsent() then
-	gui:Destroy()
-	return
 end
 
 task.defer(function()
