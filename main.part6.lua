@@ -1,116 +1,3 @@
-                loadBtn.Position = UDim2.new(0.52, 2, 0.125, 0)
-                loadBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 80)
-                loadBtn.Text = "Load"
-                loadBtn.Font = Enum.Font.Gotham
-                loadBtn.TextSize = 11
-                loadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                loadBtn.Parent = row
-
-                local lc = Instance.new("UICorner")
-                lc.CornerRadius = UDim.new(0, 4)
-                lc.Parent = loadBtn
-
-                local delBtn = Instance.new("TextButton")
-                delBtn.Size = UDim2.new(0.22, -4, 0.75, 0)
-                delBtn.Position = UDim2.new(0.76, 2, 0.125, 0)
-                delBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
-                delBtn.Text = "Del"
-                delBtn.Font = Enum.Font.Gotham
-                delBtn.TextSize = 11
-                delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                delBtn.Parent = row
-
-                local dc = Instance.new("UICorner")
-                dc.CornerRadius = UDim.new(0, 4)
-                dc.Parent = delBtn
-
-                loadBtn.MouseButton1Click:Connect(function()
-                    pcall(function()
-                        local path = "mm2run_configs/" .. name .. ".json"
-                        local data = game:GetService("HttpService"):JSONDecode(readfile(path))
-
-                        InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", data.Weapons or {}, false)
-                        InventoryOverlay.SetVisibleOwnedSnapshot("Pets", data.Pets or {}, false)
-                        InventoryOverlay.FireInventoryDataChanged()
-                        print("[mm2run/config] loaded: " .. name)
-                    end)
-                end)
-
-                delBtn.MouseButton1Click:Connect(function()
-                    pcall(function()
-                        delfile("mm2run_configs/" .. name .. ".json")
-                        print("[mm2run/config] deleted: " .. name)
-                        RefreshConfigsList()
-                    end)
-                end)
-            end
-        end
-    end)
-end
-
-RefreshConfigsList()
-
--- ===== OTHER TAB =====
-local otherFrame = tabFrames["Other"]
-
-local otherIntro = Instance.new("TextLabel")
-otherIntro.Size = UDim2.new(1, 0, 0, 34)
-otherIntro.BackgroundTransparency = 1
-otherIntro.Text = "Automation tools. Auto block waits until player values finish loading before counting low-value players."
-otherIntro.Font = Enum.Font.Gotham
-otherIntro.TextSize = 13
-otherIntro.TextWrapped = true
-otherIntro.TextColor3 = Color3.fromRGB(187, 198, 213)
-otherIntro.TextXAlignment = Enum.TextXAlignment.Left
-otherIntro.TextYAlignment = Enum.TextYAlignment.Top
-otherIntro.Parent = otherFrame
-
-AutoBlockToggleButton = createButton(otherFrame, "Auto block: OFF", function()
-	syncAutoBlockSettingsFromInputs()
-	AutoBlockState.enabled = not AutoBlockState.enabled
-	AutoBlockState.progressByName = {}
-	AutoBlockState.cooldownUntilByName = {}
-	AutoBlockState.busy = false
-	AutoBlockState.busyTargetName = nil
-	AutoBlockState.busyStartedAt = 0
-	updateAutoBlockButtonText()
-	if AutoBlockState.enabled then
-		setAutoBlockStatus(("Watching players below %s value, delay %ss"):format(FormatValue(AutoBlockState.minValue), AutoBlockState.delaySeconds), Color3.fromRGB(120, 255, 160))
-	else
-		setAutoBlockStatus("Auto block disabled", Color3.fromRGB(180, 183, 192))
-	end
-end)
-
-AutoBlockDelayBox = createInput(otherFrame, "Block after detection (1-30 sec):", tostring(AutoBlockState.delaySeconds))
-AutoBlockDelayBox.FocusLost:Connect(function()
-	syncAutoBlockSettingsFromInputs()
-	if AutoBlockState.enabled then
-		setAutoBlockStatus(("Watching players below %s value, delay %ss"):format(FormatValue(AutoBlockState.minValue), AutoBlockState.delaySeconds), Color3.fromRGB(120, 255, 160))
-	end
-end)
-
-AutoBlockMinValueBox = createInput(otherFrame, "Block if value is below (1-1000):", tostring(AutoBlockState.minValue))
-AutoBlockMinValueBox.FocusLost:Connect(function()
-	syncAutoBlockSettingsFromInputs()
-	AutoBlockState.progressByName = {}
-	AutoBlockState.cooldownUntilByName = {}
-	if AutoBlockState.enabled then
-		setAutoBlockStatus(("Watching players below %s value, delay %ss"):format(FormatValue(AutoBlockState.minValue), AutoBlockState.delaySeconds), Color3.fromRGB(120, 255, 160))
-	end
-end)
-
-AutoBlockStatusLabel = Instance.new("TextLabel")
-AutoBlockStatusLabel.Size = UDim2.new(1, 0, 0, 38)
-AutoBlockStatusLabel.BackgroundTransparency = 1
-AutoBlockStatusLabel.Text = "Auto block disabled"
-AutoBlockStatusLabel.Font = Enum.Font.Gotham
-AutoBlockStatusLabel.TextSize = 13
-AutoBlockStatusLabel.TextWrapped = true
-AutoBlockStatusLabel.TextColor3 = Color3.fromRGB(180, 183, 192)
-AutoBlockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
-AutoBlockStatusLabel.Parent = otherFrame
-
 updateAutoBlockButtonText()
 
 -- ===== RESIZE HANDLES & DRAGGING =====
@@ -329,6 +216,59 @@ local function GetSpawnerCatalogItem(entry)
 	})
 end
 
+local function normalizeSpawnerImage(imageValue)
+	if type(imageValue) == "number" then
+		if imageValue > 0 then
+			return "rbxassetid://" .. tostring(math.floor(imageValue))
+		end
+		return nil
+	end
+	if type(imageValue) ~= "string" then
+		return nil
+	end
+	local trimmed = string.gsub(imageValue, "^%s+", "")
+	trimmed = string.gsub(trimmed, "%s+$", "")
+	if trimmed == "" then
+		return nil
+	end
+	if string.find(trimmed, "^rbxassetid://") or string.find(trimmed, "^http://") or string.find(trimmed, "^https://") then
+		return trimmed
+	end
+	local numeric = tonumber(trimmed)
+	if numeric and numeric > 0 then
+		return "rbxassetid://" .. tostring(math.floor(numeric))
+	end
+	return nil
+end
+
+local function getSpawnerImageForEntry(entry)
+	local data = (Sync.Weapons and Sync.Weapons[entry.key]) or (Sync.Item and Sync.Item[entry.key])
+	if type(data) ~= "table" then
+		return nil
+	end
+	local candidates = {
+		data.Image,
+		data.ImageId,
+		data.Icon,
+		data.IconId,
+		data.InventoryImage,
+		data.InventoryIcon,
+		data.Thumbnail,
+		data.ThumbnailId,
+		data.Texture,
+		data.TextureId,
+		data.AssetId,
+		data.Sprite,
+	}
+	for _, candidate in ipairs(candidates) do
+		local resolved = normalizeSpawnerImage(candidate)
+		if resolved then
+			return resolved
+		end
+	end
+	return nil
+end
+
 local function GetSpawnerValueText(entry)
 	local item = GetSpawnerCatalogItem(entry)
 	if not item then
@@ -345,15 +285,162 @@ local function GetSpawnerValueNumber(entry)
 	return item._numericValue or tonumber(item.value) or -1
 end
 
-local function BuildSpawnerButtonLabel(entry, valueText)
-	return entry.name .. (entry.chroma and " [Chroma]" or "")
-		.. "   (" .. entry.rarity .. " " .. entry.type .. " | " .. tostring(valueText or GetSpawnerValueText(entry)) .. ")"
+local function createSpawnerCard(entry, tradable)
+	local parent = SpawnerCatalogUI.scrollFrame
+	if not parent then
+		return nil
+	end
+
+	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(0, 150, 0, 238)
+	card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	card.BackgroundTransparency = tradable and 0.94 or 0.9
+	card.BorderSizePixel = 0
+	card.Parent = parent
+
+	local cardCorner = Instance.new("UICorner")
+	cardCorner.CornerRadius = UDim.new(0, 18)
+	cardCorner.Parent = card
+
+	local cardStroke = Instance.new("UIStroke")
+	cardStroke.Color = baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.18)
+	cardStroke.Thickness = 1
+	cardStroke.Transparency = tradable and 0.82 or 0.9
+	cardStroke.Parent = card
+
+	local preview = Instance.new("Frame")
+	preview.Size = UDim2.new(1, -20, 0, 108)
+	preview.Position = UDim2.new(0, 10, 0, 10)
+	preview.BackgroundColor3 = baseColor
+	preview.BackgroundTransparency = tradable and 0.18 or 0.38
+	preview.BorderSizePixel = 0
+	preview.Parent = card
+
+	local previewCorner = Instance.new("UICorner")
+	previewCorner.CornerRadius = UDim.new(0, 14)
+	previewCorner.Parent = preview
+
+	local previewGradient = Instance.new("UIGradient")
+	previewGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, baseColor:Lerp(Color3.fromRGB(255, 255, 255), 0.25)),
+		ColorSequenceKeypoint.new(1, baseColor:Lerp(Color3.fromRGB(8, 9, 12), 0.45)),
+	})
+	previewGradient.Rotation = 135
+	previewGradient.Parent = preview
+
+	local previewImage = Instance.new("ImageLabel")
+	previewImage.Size = UDim2.new(1, -12, 1, -12)
+	previewImage.Position = UDim2.new(0, 6, 0, 6)
+	previewImage.BackgroundTransparency = 1
+	previewImage.ScaleType = Enum.ScaleType.Fit
+	previewImage.Parent = preview
+
+	local previewFallback = Instance.new("TextLabel")
+	previewFallback.Size = UDim2.new(1, -14, 1, -14)
+	previewFallback.Position = UDim2.new(0, 7, 0, 7)
+	previewFallback.BackgroundTransparency = 1
+	previewFallback.Font = Enum.Font.GothamBold
+	previewFallback.TextSize = 22
+	previewFallback.TextWrapped = true
+	previewFallback.TextColor3 = Color3.fromRGB(255, 255, 255)
+	previewFallback.Text = (entry.chroma and "CHROMA\n" or "") .. string.upper(entry.type)
+	previewFallback.Parent = preview
+
+	local rarityChip = Instance.new("TextLabel")
+	rarityChip.Size = UDim2.new(0, 96, 0, 24)
+	rarityChip.Position = UDim2.new(0, 10, 0, 10)
+	rarityChip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	rarityChip.BackgroundTransparency = 0.82
+	rarityChip.BorderSizePixel = 0
+	rarityChip.Text = entry.rarity
+	rarityChip.Font = Enum.Font.GothamBold
+	rarityChip.TextSize = 11
+	rarityChip.TextColor3 = Color3.fromRGB(255, 255, 255)
+	rarityChip.Parent = preview
+
+	local rarityChipCorner = Instance.new("UICorner")
+	rarityChipCorner.CornerRadius = UDim.new(1, 0)
+	rarityChipCorner.Parent = rarityChip
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, -20, 0, 44)
+	nameLabel.Position = UDim2.new(0, 10, 0, 126)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextSize = 17
+	nameLabel.TextWrapped = true
+	nameLabel.TextColor3 = Color3.fromRGB(245, 247, 252)
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.TextYAlignment = Enum.TextYAlignment.Top
+	nameLabel.Parent = card
+
+	local valueLabel = Instance.new("TextLabel")
+	valueLabel.Size = UDim2.new(1, -20, 0, 18)
+	valueLabel.Position = UDim2.new(0, 10, 0, 172)
+	valueLabel.BackgroundTransparency = 1
+	valueLabel.Font = Enum.Font.Gotham
+	valueLabel.TextSize = 13
+	valueLabel.TextColor3 = Color3.fromRGB(171, 224, 180)
+	valueLabel.TextXAlignment = Enum.TextXAlignment.Left
+	valueLabel.Parent = card
+
+	local spawnButton = Instance.new("TextButton")
+	spawnButton.Size = UDim2.new(1, -20, 0, 38)
+	spawnButton.Position = UDim2.new(0, 10, 1, -48)
+	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.45)
+	spawnButton.BorderSizePixel = 0
+	spawnButton.Text = "Spawn"
+	spawnButton.Font = Enum.Font.GothamBold
+	spawnButton.TextSize = 15
+	spawnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	spawnButton.AutoButtonColor = false
+	spawnButton.Parent = card
+
+	local spawnCorner = Instance.new("UICorner")
+	spawnCorner.CornerRadius = UDim.new(0, 12)
+	spawnCorner.Parent = spawnButton
+
+	spawnButton.MouseEnter:Connect(function()
+		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(120, 148, 255), 0.56)
+		}):Play()
+	end)
+
+	spawnButton.MouseLeave:Connect(function()
+		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.45)
+		}):Play()
+	end)
+
+	spawnButton.MouseButton1Click:Connect(function()
+		local typed = tonumber(SpawnerAmountBox.Text)
+		local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
+		SpawnItem(entry.key, amt, "Weapons")
+	end)
+
+	local imageSource = getSpawnerImageForEntry(entry)
+	if imageSource then
+		previewImage.Image = imageSource
+		previewFallback.Visible = false
+	else
+		previewImage.Visible = false
+	end
+
+	return {
+		frame = card,
+		entry = entry,
+		tradable = tradable,
+		nameLabel = nameLabel,
+		valueLabel = valueLabel,
+		defaultOrder = 0,
+	}
 end
 
 RefreshSpawnerButtons = function()
-	local query = normalizeWeaponName(SpawnerSearchBox and SpawnerSearchBox.Text or "")
+	local query = NormalizeItemName(SpawnerSearchBox and SpawnerSearchBox.Text or "")
 	local ordered = {}
-	for _, info in ipairs(spawnerButtons) do
+	for _, info in ipairs(SpawnerCatalogUI.cards) do
 		info.valueText = GetSpawnerValueText(info.entry)
 		info.sortValue = GetSpawnerValueNumber(info.entry)
 		table.insert(ordered, info)
@@ -385,66 +472,40 @@ RefreshSpawnerButtons = function()
 
 	local visibleOrder = 0
 	for index, info in ipairs(ordered) do
-		local btn = info.button
-		btn.Text = BuildSpawnerButtonLabel(info.entry, info.valueText)
-		local haystack = normalizeWeaponName(("%s %s %s %s"):format(
+		info.nameLabel.Text = info.entry.name .. (info.entry.chroma and " [Chroma]" or "")
+		info.valueLabel.Text = "Value: " .. tostring(info.valueText or "?")
+		local haystack = NormalizeItemName(("%s %s %s %s"):format(
 			tostring(info.entry.name or ""),
 			tostring(info.entry.rarity or ""),
 			tostring(info.entry.type or ""),
 			tostring(info.valueText or "")
 		))
 		local visible = query == "" or string.find(haystack, query, 1, true) ~= nil
-		btn.Visible = visible
+		info.frame.Visible = visible
 		if visible then
 			visibleOrder = visibleOrder + 1
-			btn.LayoutOrder = visibleOrder
+			info.frame.LayoutOrder = visibleOrder
 		else
-			btn.LayoutOrder = #ordered + index
+			info.frame.LayoutOrder = #ordered + index
 		end
+	end
+
+	if SpawnerCatalogUI.countLabel then
+		SpawnerCatalogUI.countLabel.Text = ("%d items shown"):format(visibleOrder)
 	end
 end
 
 for _, entry in ipairs(WeaponCatalog) do
     local wKey = entry.key
-    local wData = Sync.Weapons[wKey]
+    local wData = (Sync.Weapons and Sync.Weapons[wKey]) or (Sync.Item and Sync.Item[wKey])
     if not _isSpawnerAllowed(entry.name) then continue end
-    local baseColor = RarityTint[entry.rarity] or RarityTint.Common
     local tradable = _isTradable(wData)
-    local label = BuildSpawnerButtonLabel(entry)
+	local cardInfo = createSpawnerCard(entry, tradable)
+	if cardInfo then
+		cardInfo.defaultOrder = #SpawnerCatalogUI.cards + 1
+		SpawnerCatalogUI.cards[#SpawnerCatalogUI.cards + 1] = cardInfo
+	end
 
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -6, 0, 22)
-    btn.BackgroundColor3 = baseColor
-    btn.BackgroundTransparency = tradable and 0.2 or 0.6
-    btn.Text = label
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 12
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.TextTruncate = Enum.TextTruncate.AtEnd
-    btn.Parent = spawnerScrollFrame
-
-    local btnPad = Instance.new("UIPadding")
-    btnPad.PaddingLeft = UDim.new(0, 6)
-    btnPad.PaddingRight = UDim.new(0, 6)
-    btnPad.Parent = btn
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
-    btnCorner.Parent = btn
-
-    btn.MouseButton1Click:Connect(function()
-        local typed = tonumber(SpawnerAmountBox.Text)
-        local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
-        SpawnItem(wKey, amt, "Weapons")
-    end)
-
-    spawnerButtons[#spawnerButtons + 1] = {
-		button = btn,
-		entry = entry,
-		tradable = tradable,
-		defaultOrder = #spawnerButtons + 1,
-	}
 end
 
 SpawnerSearchBox:GetPropertyChangedSignal("Text"):Connect(function()

@@ -1,125 +1,3 @@
-	for _, c in ipairs(preWatchers) do pcall(function() c:Disconnect() end) end
-
-	local timeout = tick() + SilentBlockConfig.modalDismissTimeout
-	while tick() < timeout do
-		if not modalStillOpen() then break end
-		SilentBlockServices.RunService.Heartbeat:Wait()
-	end
-
-	pcall(function() setthreadidentity(2) end)
-end
-
--- ============================================================
--- GUI
--- ============================================================
-
-local oldGui = game:GetService("CoreGui"):FindFirstChild("TortiHubGui")
-if oldGui then
-    oldGui:Destroy()
-end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "TortiHubGui"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = game:GetService("CoreGui")
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 400, 0, 520)
-frame.Position = UDim2.new(0.5, -200, 0.5, -260)
-frame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
-frame.BackgroundTransparency = 0.08
-frame.BorderSizePixel = 0
-frame.ClipsDescendants = true
-frame.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 22)
-corner.Parent = frame
-
-local frameStroke = Instance.new("UIStroke")
-frameStroke.Color = Color3.fromRGB(255, 255, 255)
-frameStroke.Thickness = 1
-frameStroke.Transparency = 0.83
-frameStroke.Parent = frame
-
-local frameGradient = Instance.new("UIGradient")
-frameGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 29, 36)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(18, 19, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 11, 15)),
-})
-frameGradient.Rotation = 90
-frameGradient.Parent = frame
-
-local sheen = Instance.new("Frame")
-sheen.Size = UDim2.new(1, -2, 0, 130)
-sheen.Position = UDim2.new(0, 1, 0, 1)
-sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sheen.BackgroundTransparency = 0.95
-sheen.BorderSizePixel = 0
-sheen.Parent = frame
-
-local sheenCorner = Instance.new("UICorner")
-sheenCorner.CornerRadius = UDim.new(0, 22)
-sheenCorner.Parent = sheen
-
-local sheenGradient = Instance.new("UIGradient")
-sheenGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
-})
-sheenGradient.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0.15),
-    NumberSequenceKeypoint.new(1, 1),
-})
-sheenGradient.Rotation = 90
-sheenGradient.Parent = sheen
-
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, -24, 0, 56)
-titleBar.Position = UDim2.new(0, 12, 0, 12)
-titleBar.BackgroundTransparency = 1
-titleBar.Active = true
-titleBar.Parent = frame
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -56, 0, 28)
-title.BackgroundTransparency = 1
-title.Text = "Torti hub"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 24
-title.TextColor3 = Color3.fromRGB(242, 244, 248)
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = titleBar
-
-local subtitle = Instance.new("TextLabel")
-subtitle.Size = UDim2.new(1, -56, 0, 18)
-subtitle.Position = UDim2.new(0, 0, 0, 28)
-subtitle.BackgroundTransparency = 1
-subtitle.Text = "@orlentov on TG"
-subtitle.Font = Enum.Font.Gotham
-subtitle.TextSize = 13
-subtitle.TextColor3 = Color3.fromRGB(150, 153, 162)
-subtitle.TextXAlignment = Enum.TextXAlignment.Left
-subtitle.Parent = titleBar
-
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 34, 0, 34)
-closeBtn.Position = UDim2.new(1, -34, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
-closeBtn.BorderSizePixel = 0
-closeBtn.Text = "x"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 22
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.AutoButtonColor = false
-closeBtn.Parent = titleBar
-
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeBtn
 
 closeBtn.MouseEnter:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
@@ -871,12 +749,14 @@ do
 end
 
 -- ===== FILL SPAWNER TAB =====
-local spawnerFrame = tabFrames["Spawner"]
-SpawnerAmountBox = createInput(spawnerFrame, "Amount per click (0 = random):", "0")
-SpawnerSearchBox = createInput(spawnerFrame, "Search weapon:", "")
 local SpawnerSortMode = "default"
 local SpawnerSortButton = nil
 local RefreshSpawnerButtons = nil
+local SpawnerCatalogUI = {
+	cards = {},
+	countLabel = nil,
+	scrollFrame = nil,
+}
 
 local function GetSpawnerSortButtonText()
 	if SpawnerSortMode == "value_desc" then
@@ -887,24 +767,204 @@ local function GetSpawnerSortButtonText()
 	return "Sort: Normal"
 end
 
-SpawnerSortButton = createButton(spawnerFrame, GetSpawnerSortButtonText(), function()
-	if SpawnerSortMode == "default" then
-		SpawnerSortMode = "value_desc"
-	elseif SpawnerSortMode == "value_desc" then
-		SpawnerSortMode = "value_asc"
-	else
-		SpawnerSortMode = "default"
-	end
-	SpawnerSortButton.Text = GetSpawnerSortButtonText()
-	if RefreshSpawnerButtons then
-		RefreshSpawnerButtons()
-	end
-end)
-SpawnerSortButton.TextSize = 14
-SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
+do
+	local spawnerFrame = tabFrames["Spawner"]
+	SpawnerAmountBox = createInput(spawnerFrame, "Amount per click (0 = random):", "0")
 
-local spawnerStatusLabel = Instance.new("TextLabel")
-spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 15)
-spawnerStatusLabel.BackgroundTransparency = 1
-spawnerStatusLabel.Text = "Click weapon to spawn:"
-spawnerStatusLabel.Font = Enum.Font.SourceSansSemibold
+	local openCatalogButton = createButton(spawnerFrame, "Open catalog", function() end)
+	openCatalogButton.TextSize = 18
+
+	local spawnerStatusLabel = Instance.new("TextLabel")
+	spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 38)
+	spawnerStatusLabel.BackgroundTransparency = 1
+	spawnerStatusLabel.Text = "Open the catalog window to browse items, check value and spawn from cards."
+	spawnerStatusLabel.Font = Enum.Font.Gotham
+	spawnerStatusLabel.TextSize = 13
+	spawnerStatusLabel.TextWrapped = true
+	spawnerStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
+	spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	spawnerStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
+	spawnerStatusLabel.Parent = spawnerFrame
+
+	local catalogOverlay = Instance.new("Frame")
+	catalogOverlay.Size = UDim2.new(1, 0, 1, 0)
+	catalogOverlay.BackgroundColor3 = Color3.fromRGB(3, 4, 8)
+	catalogOverlay.BackgroundTransparency = 0.32
+	catalogOverlay.BorderSizePixel = 0
+	catalogOverlay.Visible = false
+	catalogOverlay.Parent = gui
+
+	local catalogWindow = Instance.new("Frame")
+	catalogWindow.AnchorPoint = Vector2.new(0.5, 0.5)
+	catalogWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
+	catalogWindow.Size = UDim2.new(0.82, 0, 0.82, 0)
+	catalogWindow.BackgroundColor3 = Color3.fromRGB(10, 11, 15)
+	catalogWindow.BackgroundTransparency = 0.02
+	catalogWindow.BorderSizePixel = 0
+	catalogWindow.ClipsDescendants = true
+	catalogWindow.Parent = catalogOverlay
+
+	local catalogCorner = Instance.new("UICorner")
+	catalogCorner.CornerRadius = UDim.new(0, 24)
+	catalogCorner.Parent = catalogWindow
+
+	local catalogStroke = Instance.new("UIStroke")
+	catalogStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogStroke.Thickness = 1
+	catalogStroke.Transparency = 0.87
+	catalogStroke.Parent = catalogWindow
+
+	local catalogGradient = Instance.new("UIGradient")
+	catalogGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 28, 34)),
+		ColorSequenceKeypoint.new(0.45, Color3.fromRGB(14, 15, 20)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 9, 12)),
+	})
+	catalogGradient.Rotation = 90
+	catalogGradient.Parent = catalogWindow
+
+	local catalogGlow = Instance.new("Frame")
+	catalogGlow.Size = UDim2.new(1, -2, 0, 120)
+	catalogGlow.Position = UDim2.new(0, 1, 0, 1)
+	catalogGlow.BackgroundColor3 = Color3.fromRGB(102, 115, 255)
+	catalogGlow.BackgroundTransparency = 0.92
+	catalogGlow.BorderSizePixel = 0
+	catalogGlow.Parent = catalogWindow
+
+	local catalogGlowCorner = Instance.new("UICorner")
+	catalogGlowCorner.CornerRadius = UDim.new(0, 24)
+	catalogGlowCorner.Parent = catalogGlow
+
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, -28, 0, 58)
+	header.Position = UDim2.new(0, 14, 0, 14)
+	header.BackgroundTransparency = 1
+	header.Parent = catalogWindow
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -62, 0, 28)
+	title.BackgroundTransparency = 1
+	title.Text = "Spawn Catalog"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 24
+	title.TextColor3 = Color3.fromRGB(244, 247, 252)
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = header
+
+	local subtitle = Instance.new("TextLabel")
+	subtitle.Size = UDim2.new(1, -62, 0, 18)
+	subtitle.Position = UDim2.new(0, 0, 0, 30)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Text = "Image, value and one-click spawn."
+	subtitle.Font = Enum.Font.Gotham
+	subtitle.TextSize = 13
+	subtitle.TextColor3 = Color3.fromRGB(154, 159, 170)
+	subtitle.TextXAlignment = Enum.TextXAlignment.Left
+	subtitle.Parent = header
+
+	local closeCatalogButton = Instance.new("TextButton")
+	closeCatalogButton.Size = UDim2.new(0, 36, 0, 36)
+	closeCatalogButton.Position = UDim2.new(1, -36, 0, 0)
+	closeCatalogButton.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
+	closeCatalogButton.BorderSizePixel = 0
+	closeCatalogButton.Text = "x"
+	closeCatalogButton.Font = Enum.Font.GothamBold
+	closeCatalogButton.TextSize = 22
+	closeCatalogButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeCatalogButton.AutoButtonColor = false
+	closeCatalogButton.Parent = header
+
+	local closeCatalogCorner = Instance.new("UICorner")
+	closeCatalogCorner.CornerRadius = UDim.new(1, 0)
+	closeCatalogCorner.Parent = closeCatalogButton
+
+	local catalogBody = Instance.new("Frame")
+	catalogBody.Size = UDim2.new(1, -28, 1, -86)
+	catalogBody.Position = UDim2.new(0, 14, 0, 74)
+	catalogBody.BackgroundTransparency = 1
+	catalogBody.Parent = catalogWindow
+
+	local controls = Instance.new("Frame")
+	controls.Size = UDim2.new(1, 0, 0, 126)
+	controls.BackgroundTransparency = 1
+	controls.Parent = catalogBody
+
+	local controlsLayout = Instance.new("UIListLayout")
+	controlsLayout.FillDirection = Enum.FillDirection.Vertical
+	controlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	controlsLayout.Padding = UDim.new(0, 8)
+	controlsLayout.Parent = controls
+
+	SpawnerSearchBox = createInput(controls, "Search weapon:", "")
+
+	SpawnerSortButton = createButton(controls, GetSpawnerSortButtonText(), function()
+		if SpawnerSortMode == "default" then
+			SpawnerSortMode = "value_desc"
+		elseif SpawnerSortMode == "value_desc" then
+			SpawnerSortMode = "value_asc"
+		else
+			SpawnerSortMode = "default"
+		end
+		SpawnerSortButton.Text = GetSpawnerSortButtonText()
+		if RefreshSpawnerButtons then
+			RefreshSpawnerButtons()
+		end
+	end)
+	SpawnerSortButton.TextSize = 14
+	SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
+
+	local countLabel = Instance.new("TextLabel")
+	countLabel.Size = UDim2.new(1, 0, 0, 16)
+	countLabel.BackgroundTransparency = 1
+	countLabel.Text = "Loading items..."
+	countLabel.Font = Enum.Font.Gotham
+	countLabel.TextSize = 12
+	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
+	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.Parent = controls
+	SpawnerCatalogUI.countLabel = countLabel
+
+	local catalogScrollFrame = Instance.new("ScrollingFrame")
+	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 136)
+	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -136)
+	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	catalogScrollFrame.BackgroundTransparency = 0.96
+	catalogScrollFrame.BorderSizePixel = 0
+	catalogScrollFrame.ScrollBarThickness = 6
+	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+	catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	catalogScrollFrame.Parent = catalogBody
+	SpawnerCatalogUI.scrollFrame = catalogScrollFrame
+
+	local catalogScrollCorner = Instance.new("UICorner")
+	catalogScrollCorner.CornerRadius = UDim.new(0, 18)
+	catalogScrollCorner.Parent = catalogScrollFrame
+
+	local catalogScrollStroke = Instance.new("UIStroke")
+	catalogScrollStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogScrollStroke.Thickness = 1
+	catalogScrollStroke.Transparency = 0.9
+	catalogScrollStroke.Parent = catalogScrollFrame
+
+	local catalogGridPadding = Instance.new("UIPadding")
+	catalogGridPadding.PaddingTop = UDim.new(0, 12)
+	catalogGridPadding.PaddingBottom = UDim.new(0, 12)
+	catalogGridPadding.PaddingLeft = UDim.new(0, 12)
+	catalogGridPadding.PaddingRight = UDim.new(0, 12)
+	catalogGridPadding.Parent = catalogScrollFrame
+
+	local catalogGrid = Instance.new("UIGridLayout")
+	catalogGrid.FillDirection = Enum.FillDirection.Horizontal
+	catalogGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	catalogGrid.SortOrder = Enum.SortOrder.LayoutOrder
+	catalogGrid.CellPadding = UDim2.new(0, 12, 0, 12)
+	catalogGrid.CellSize = UDim2.new(0, 150, 0, 220)
+	catalogGrid.Parent = catalogScrollFrame
+
+	local function updateCatalogGridCellSize()
+		local width = math.max(240, catalogScrollFrame.AbsoluteSize.X - 24)
+		local columns = 2
+		if width >= 980 then
+			columns = 5
+		elseif width >= 760 then
+			columns = 4

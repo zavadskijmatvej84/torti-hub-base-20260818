@@ -1,65 +1,4 @@
 
-	return rows
-end
-
-local function ScanPlayerVisibleCurrencies(targetPlayer)
-	local found = {}
-	if not targetPlayer then
-		return found
-	end
-
-	local function addRecord(name, value)
-		if type(value) ~= "number" then
-			return
-		end
-		local normalized = NormalizeItemName(name)
-		if normalized == "" or not VisiblePlayerCurrencyNames[normalized] then
-			return
-		end
-
-		local existing = found[normalized]
-		if not existing or value > existing.value then
-			found[normalized] = {
-				label = PrettifyCurrencyLabel(name),
-				value = value,
-			}
-		end
-	end
-
-	local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-	if leaderstats then
-		for _, child in ipairs(leaderstats:GetChildren()) do
-			local numeric = GetNumericValue(child)
-			if type(numeric) == "number" then
-				found["leaderstats_" .. string.lower(child.Name)] = {
-					label = child.Name,
-					value = numeric,
-				}
-			end
-		end
-	end
-
-	for attrName, attrValue in pairs(targetPlayer:GetAttributes()) do
-		addRecord(attrName, attrValue)
-	end
-
-	for _, desc in ipairs(targetPlayer:GetDescendants()) do
-		addRecord(desc.Name, GetNumericValue(desc))
-	end
-
-	return found
-end
-
-local function GetPlayerCurrencyAmount(targetPlayer)
-	local bestValue = nil
-	for _, entry in pairs(ScanPlayerVisibleCurrencies(targetPlayer)) do
-		if type(entry.value) == "number" and (bestValue == nil or entry.value > bestValue) then
-			bestValue = entry.value
-		end
-	end
-	return bestValue
-end
-
 local function GetPlayerCurrencyDisplay(targetPlayer)
 	local amount = GetPlayerCurrencyAmount(targetPlayer)
 	if amount == nil then
@@ -908,3 +847,125 @@ local function SilentBlockPlayer(Selected)
 	end
 
 	pcall(function() if posConn then posConn:Disconnect() end end)
+	for _, c in ipairs(preWatchers) do pcall(function() c:Disconnect() end) end
+
+	local timeout = tick() + SilentBlockConfig.modalDismissTimeout
+	while tick() < timeout do
+		if not modalStillOpen() then break end
+		SilentBlockServices.RunService.Heartbeat:Wait()
+	end
+
+	pcall(function() setthreadidentity(2) end)
+end
+
+-- ============================================================
+-- GUI
+-- ============================================================
+
+local oldGui = game:GetService("CoreGui"):FindFirstChild("TortiHubGui")
+if oldGui then
+    oldGui:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "TortiHubGui"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = game:GetService("CoreGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 400, 0, 520)
+frame.Position = UDim2.new(0.5, -200, 0.5, -260)
+frame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
+frame.BackgroundTransparency = 0.08
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 22)
+corner.Parent = frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(255, 255, 255)
+frameStroke.Thickness = 1
+frameStroke.Transparency = 0.83
+frameStroke.Parent = frame
+
+local frameGradient = Instance.new("UIGradient")
+frameGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 29, 36)),
+    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(18, 19, 25)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 11, 15)),
+})
+frameGradient.Rotation = 90
+frameGradient.Parent = frame
+
+local sheen = Instance.new("Frame")
+sheen.Size = UDim2.new(1, -2, 0, 130)
+sheen.Position = UDim2.new(0, 1, 0, 1)
+sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sheen.BackgroundTransparency = 0.95
+sheen.BorderSizePixel = 0
+sheen.Parent = frame
+
+local sheenCorner = Instance.new("UICorner")
+sheenCorner.CornerRadius = UDim.new(0, 22)
+sheenCorner.Parent = sheen
+
+local sheenGradient = Instance.new("UIGradient")
+sheenGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+})
+sheenGradient.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 0.15),
+    NumberSequenceKeypoint.new(1, 1),
+})
+sheenGradient.Rotation = 90
+sheenGradient.Parent = sheen
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, -24, 0, 56)
+titleBar.Position = UDim2.new(0, 12, 0, 12)
+titleBar.BackgroundTransparency = 1
+titleBar.Active = true
+titleBar.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -56, 0, 28)
+title.BackgroundTransparency = 1
+title.Text = "Torti hub"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+title.TextColor3 = Color3.fromRGB(242, 244, 248)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, -56, 0, 18)
+subtitle.Position = UDim2.new(0, 0, 0, 28)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "@orlentov on TG"
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 13
+subtitle.TextColor3 = Color3.fromRGB(150, 153, 162)
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.Parent = titleBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 34, 0, 34)
+closeBtn.Position = UDim2.new(1, -34, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
+closeBtn.BorderSizePixel = 0
+closeBtn.Text = "x"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 22
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.AutoButtonColor = false
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
