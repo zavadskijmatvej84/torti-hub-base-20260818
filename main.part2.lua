@@ -948,7 +948,7 @@ frameGradient.Color = ColorSequence.new({
 frameGradient.Rotation = 90
 frameGradient.Parent = mainPanel
 
-local titleBar = Instance.new("Frame")
+titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, -24, 0, 56)
 titleBar.Position = UDim2.new(0, 12, 0, 12)
 titleBar.BackgroundTransparency = 1
@@ -976,7 +976,7 @@ subtitle.TextColor3 = WINDOW_THEME.softText
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
 
-local closeBtn = Instance.new("TextButton")
+closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 36, 0, 36)
 closeBtn.Position = UDim2.new(1, -36, 0, 0)
 closeBtn.BackgroundColor3 = Color3.fromRGB(55, 126, 173)
