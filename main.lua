@@ -1902,6 +1902,135 @@ do
 		return DEFAULT_PARTNER_NAME
 	end
 
+	local tradeDisplayIndexByType = {}
+
+	local function getTradeSyncBucket(itemType)
+		if itemType == "Weapons" then
+			return Sync.Weapons or Sync.Item
+		end
+		return Sync[itemType]
+	end
+
+	local function buildTradeDisplayIndex(itemType)
+		local index = {
+			normalized = {},
+		}
+		local bucket = getTradeSyncBucket(itemType)
+		if type(bucket) ~= "table" then
+			return index
+		end
+
+		for key, value in pairs(bucket) do
+			if type(key) == "string" and key ~= "" then
+				local aliases = { key }
+				if type(value) == "table" then
+					aliases[#aliases + 1] = value.ItemName
+					aliases[#aliases + 1] = value.Name
+					aliases[#aliases + 1] = value.DisplayName
+					aliases[#aliases + 1] = value.Key
+					aliases[#aliases + 1] = value.Id
+				end
+
+				for _, alias in ipairs(aliases) do
+					if type(alias) == "string" and alias ~= "" then
+						local normalized = NormalizeItemName(alias)
+						if normalized ~= "" and not index.normalized[normalized] then
+							index.normalized[normalized] = key
+						end
+					end
+				end
+			end
+		end
+
+		return index
+	end
+
+	local function resolveTradeDisplayItem(rawText)
+		local normalized = NormalizeItemName(rawText)
+		if normalized == "" then
+			return nil, nil
+		end
+
+		for _, itemType in ipairs({ "Weapons", "Pets" }) do
+			if not tradeDisplayIndexByType[itemType] then
+				tradeDisplayIndexByType[itemType] = buildTradeDisplayIndex(itemType)
+			end
+			local resolvedKey = tradeDisplayIndexByType[itemType].normalized[normalized]
+			if resolvedKey then
+				return resolvedKey, itemType
+			end
+		end
+
+		return nil, nil
+	end
+
+	local function extractTradeSlotAmount(slotFrame, texts)
+		local amount = 1
+		local function checkText(text)
+			if type(text) ~= "string" or text == "" then
+				return
+			end
+			local plain = text:match("^x(%d+)$") or text:match("^X(%d+)$") or text:match("^[xX]%s*(%d+)$")
+			if plain then
+				amount = math.max(amount, tonumber(plain) or 1)
+			end
+		end
+
+		for _, text in ipairs(texts) do
+			checkText(text)
+		end
+
+		pcall(function()
+			if slotFrame.Container and slotFrame.Container:FindFirstChild("Amount") then
+				checkText(slotFrame.Container.Amount.Text)
+			end
+		end)
+
+		return amount
+	end
+
+	local function getTradeOfferFromGui(offerFrame, fallbackOffer)
+		if not offerFrame or not offerFrame:FindFirstChild("Container") then
+			return fallbackOffer or {}
+		end
+
+		local extracted = {}
+		for _, slotFrame in ipairs(offerFrame.Container:GetChildren()) do
+			if slotFrame:IsA("Frame") and slotFrame.Visible then
+				local texts = {}
+				for _, descendant in ipairs(slotFrame:GetDescendants()) do
+					if descendant:IsA("TextLabel") or descendant:IsA("TextButton") then
+						local text = tostring(descendant.Text or "")
+						if text ~= "" then
+							texts[#texts + 1] = text
+						end
+					end
+				end
+
+				local foundKey, foundType = nil, nil
+				for _, text in ipairs(texts) do
+					foundKey, foundType = resolveTradeDisplayItem(text)
+					if foundKey then
+						break
+					end
+				end
+
+				if foundKey and foundType then
+					extracted[#extracted + 1] = {
+						foundKey,
+						extractTradeSlotAmount(slotFrame, texts),
+						foundType,
+					}
+				end
+			end
+		end
+
+		if #extracted > 0 then
+			return extracted
+		end
+		return fallbackOffer or {}
+	end
+
 	local function isTradeInterfaceOpen()
 		if Config and Config.in_trade == true then
 			return true
@@ -2127,8 +2256,10 @@ do
 		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
 		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
 
-		local localTotals = getTradeOfferSnapshot(TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
-		local remoteTotals = getTradeOfferSnapshot(TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
+		local localOffer = getTradeOfferFromGui(YourOffer, TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
+		local remoteOffer = getTradeOfferFromGui(TheirOffer, TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
+		local localTotals = getTradeOfferSnapshot(localOffer)
+		local remoteTotals = getTradeOfferSnapshot(remoteOffer)
 		session.localMM2 = localTotals.mm2
 		session.localRub = localTotals.rub
 		session.remoteMM2 = remoteTotals.mm2
