@@ -40,7 +40,7 @@ function FormatCatalogValue(v)
 	if not numeric then
 		return tostring(v)
 	end
-	return string.format("%.2f RUB", numeric)
+	return string.format("%.2f₽", numeric)
 end
 
 function NormalizeItemName(value)
@@ -5566,7 +5566,7 @@ local function createSpawnerCardBody(card, entry, tradable, baseColor)
 	valueLabel.Size = UDim2.new(0.62, 0, 1, 0)
 	valueLabel.Position = UDim2.new(0.38, 0, 0, 0)
 	valueLabel.BackgroundTransparency = 1
-	valueLabel.Font = Enum.Font.GothamBold
+	valueLabel.Font = Enum.Font.ArialBold
 	valueLabel.TextSize = 11
 	valueLabel.TextColor3 = Color3.fromRGB(235, 211, 154)
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
