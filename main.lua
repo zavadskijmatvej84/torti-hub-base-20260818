@@ -1902,6 +1902,25 @@ do
 		return DEFAULT_PARTNER_NAME
 	end
 
+	local function isTradeInterfaceOpen()
+		if Config and Config.in_trade == true then
+			return true
+		end
+		if not TradeGUI then
+			return false
+		end
+		if TradeGUI.Enabled == true then
+			return true
+		end
+		local ok, visible = pcall(function()
+			return TradeGUI.Container
+				and TradeGUI.Container.Visible
+				and TradeGUI.Container.Trade
+				and TradeGUI.Container.Trade.Visible
+		end)
+		return ok and visible == true
+	end
+
 	local function formatSignedValue(v)
 		local numeric = tonumber(v) or 0
 		local prefix = numeric > 0 and "+" or ""
@@ -2092,14 +2111,19 @@ do
 
 	function TradeMonitor.RefreshState()
 		local state = TradeMonitor.state
+		local tradeOpen = isTradeInterfaceOpen()
 		local session = state.current
 		if not session then
+			if tradeOpen then
+				TradeMonitor.BeginSession()
+				return
+			end
 			TradeMonitor.RefreshUI()
 			return
 		end
 
 		session.partner = getTradeSessionPartner()
-		session.active = Config and Config.in_trade == true
+		session.active = tradeOpen
 		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
 		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
 
@@ -2125,6 +2149,10 @@ do
 		state.remoteEventName = remoteName or state.remoteEventName
 		state.remoteEventAt = tick()
 		state.remoteMarkerId = state.remoteMarkerId + 1
+		if not state.current and isTradeInterfaceOpen() then
+			TradeMonitor.BeginSession()
+			return
+		end
 		if state.current then
 			state.current.remoteEventAt = state.remoteEventAt
 			state.current.remoteEventName = state.remoteEventName
