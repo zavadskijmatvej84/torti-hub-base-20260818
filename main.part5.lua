@@ -551,6 +551,7 @@
     {name='Tourist', rarity='Common', value='0.002', trend='Stable', demand=1},
 }
 
+do
 local function FetchAllValues(onProgress)
     local all = {}
     for i, item in ipairs(BuiltInValuesCatalog) do
@@ -768,8 +769,10 @@ valueSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 task.spawn(function() LoadFullCatalog(false) end)
+end
 
 -- ===== CONFIG TAB =====
+do
 local configFrame = tabFrames["Config"]
 
 local configNameBox = createInput(configFrame, "Config name:", "")
@@ -944,8 +947,10 @@ local function RefreshConfigsList()
 end
 
 RefreshConfigsList()
+end
 
 -- ===== OTHER TAB =====
+do
 local otherFrame = tabFrames["Other"]
 
 local otherIntro = Instance.new("TextLabel")
@@ -1007,8 +1012,10 @@ AutoBlockStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 AutoBlockStatusLabel.Parent = otherFrame
 
 updateAutoBlockButtonText()
+end
 
 -- ===== RESIZE HANDLES & DRAGGING =====
+do
 local resizeData = nil
 
 local function createResizeHandle(pos, anchor, rx, ry, mx, my)

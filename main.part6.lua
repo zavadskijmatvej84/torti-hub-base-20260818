@@ -69,9 +69,11 @@ end)
 closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
+end
 
 -- ===== POPULATE WEAPONS, PLAYERS & VALUES =====
 
+do
 local ItemsTabAllowedNames = {
     "Alienbeam", "America", "Amerilaser", "Bauble", "Bat", "BattleAxe", "BattleAxe II",
     "Batwing", "Beachy", "Bioblade", "Blaster", "Bloom", "Blue Seer", "Blizzard", "Boneblade",
@@ -305,14 +307,7 @@ local function GetSpawnerValueNumber(entry)
 	return item._numericValue or tonumber(item.value) or -1
 end
 
-local function createSpawnerCard(entry, tradable)
-	local parent = SpawnerCatalogUI.scrollFrame
-	if not parent then
-		return nil
-	end
-
-	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
-	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
+local function createSpawnerCardFrame(parent, baseColor, accentColor, tradable)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(0, 136, 0, 180)
 	card.BackgroundColor3 = Color3.fromRGB(26, 19, 22)
@@ -339,6 +334,10 @@ local function createSpawnerCard(entry, tradable)
 	cardGradient.Rotation = 112
 	cardGradient.Parent = card
 
+	return card
+end
+
+local function createSpawnerCardPreview(card, entry, baseColor, accentColor, tradable)
 	local cardTint = Instance.new("Frame")
 	cardTint.Size = UDim2.new(1, 0, 0, 50)
 	cardTint.BackgroundColor3 = accentColor
@@ -410,6 +409,10 @@ local function createSpawnerCard(entry, tradable)
 	rarityChipCorner.CornerRadius = UDim.new(1, 0)
 	rarityChipCorner.Parent = rarityChip
 
+	return previewImage, previewFallback
+end
+
+local function createSpawnerCardBody(card, entry, tradable, baseColor)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, -16, 0, 34)
 	nameLabel.Position = UDim2.new(0, 8, 0, 92)
@@ -475,6 +478,10 @@ local function createSpawnerCard(entry, tradable)
 	spawnCorner.CornerRadius = UDim.new(0, 10)
 	spawnCorner.Parent = spawnButton
 
+	return nameLabel, valueLabel, spawnButton
+end
+
+local function wireSpawnerCardButton(spawnButton, entry, baseColor)
 	spawnButton.MouseEnter:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
 			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 170, 130), 0.5)
@@ -492,6 +499,20 @@ local function createSpawnerCard(entry, tradable)
 		local amt = (typed and typed > 0) and typed or _randomAmount(entry.rarity, false)
 		SpawnItem(entry.key, amt, "Weapons")
 	end)
+end
+
+local function createSpawnerCard(entry, tradable)
+	local parent = SpawnerCatalogUI.scrollFrame
+	if not parent then
+		return nil
+	end
+
+	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
+	local card = createSpawnerCardFrame(parent, baseColor, accentColor, tradable)
+	local previewImage, previewFallback = createSpawnerCardPreview(card, entry, baseColor, accentColor, tradable)
+	local nameLabel, valueLabel, spawnButton = createSpawnerCardBody(card, entry, tradable, baseColor)
+	wireSpawnerCardButton(spawnButton, entry, baseColor)
 
 	local imageSource = getSpawnerImageForEntry(entry)
 	if imageSource then
@@ -591,8 +612,10 @@ end)
 if RefreshSpawnerButtons then
 	RefreshSpawnerButtons()
 end
+end
 
 -- === PLAYERS TAB VALUES ===
+do
 local playersStatusLabel = Instance.new("TextLabel")
 playersStatusLabel.Size = UDim2.new(1, 0, 0, 16)
 playersStatusLabel.BackgroundTransparency = 1
@@ -906,6 +929,7 @@ task.spawn(function()
 		end
 	end
 end)
+end
 
 task.spawn(function()
 	local lastTick = tick()

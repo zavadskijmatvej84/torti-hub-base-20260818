@@ -244,6 +244,12 @@ end
 local RefreshPlayerValues = function() end
 
 local Values
+local FetchPlayerInventory = function() return nil end
+local findCatalogValueForInventoryItem = function() return nil end
+local CalculateInventoryValue = function() return 0, {} end
+local indexValueAlias = function() end
+
+do
 
 local function resolveInventoryItemData(key)
 	if key == nil then return nil end
@@ -319,7 +325,7 @@ local function harvestProfile(raw)
 	return out
 end
 
-local function FetchPlayerInventory(player)
+function FetchPlayerInventory(player)
 	if not player then return nil end
 
 	if player == game.Players.LocalPlayer then
@@ -362,7 +368,7 @@ local CatalogLookupAliases = {
 	["plasmablade"] = "Plasma Blade",
 }
 
-local function indexValueAlias(index, alias, item)
+function indexValueAlias(index, alias, item)
 	local key = normalizeWeaponName(alias)
 	if key == "" then return end
 
@@ -415,7 +421,7 @@ local function catalogRarityMatchesInventory(item, inventoryItem)
 	return itemRarity == inventoryRarity
 end
 
-local function findCatalogValueForInventoryItem(w)
+function findCatalogValueForInventoryItem(w)
 	if not Values or not Values.byName then return nil end
 
 	local candidates, seen = {}, {}
@@ -472,7 +478,7 @@ local function findCatalogValueForInventoryItem(w)
 	return nil
 end
 
-local function CalculateInventoryValue(inv, playerNameForLog)
+function CalculateInventoryValue(inv, playerNameForLog)
 	if not inv then return 0, {} end
 	if not Values or not Values.byName then
 		if playerNameForLog then
@@ -531,6 +537,7 @@ Values = {
 	fetchedAt = 0,
 	fetching = false,
 }
+end
 
 local BuiltInValuesCatalog = {
     {name='Chroma Ever Set', rarity='Set', value='136000', trend='Stable', demand=8},
