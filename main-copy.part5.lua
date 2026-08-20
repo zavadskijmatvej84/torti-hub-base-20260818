@@ -4,8 +4,10 @@
 end)
 
 task.spawn(function() LoadFullCatalog(false) end)
+end
 
 -- ===== CONFIG TAB =====
+do
 local configFrame = tabFrames["Config"]
 
 local configNameBox = createInput(configFrame, "Config name:", "")
@@ -180,8 +182,10 @@ local function RefreshConfigsList()
 end
 
 RefreshConfigsList()
+end
 
 -- ===== OTHER TAB =====
+do
 local otherFrame = tabFrames["Other"]
 
 local otherIntro = Instance.new("TextLabel")
@@ -330,6 +334,7 @@ end
 
 closeBtn.MouseButton1Click:Connect(closeHub)
 registerBindableAction("hub_close", "Close hub", closeBtn, closeHub)
+end
 
 -- ===== POPULATE WEAPONS, PLAYERS & VALUES =====
 

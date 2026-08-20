@@ -839,6 +839,7 @@ local function FetchAllValues(onProgress)
     return all, true
 end
 
+do
 local valuesFrame = tabFrames["Values"]
 local function RebuildValuesIndex()
 	Values.byName = {}
