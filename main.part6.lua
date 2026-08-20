@@ -1,25 +1,3 @@
-    h.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            resizeData = {
-                start = input.Position,
-                size = frame.Size,
-                pos = frame.Position,
-                rx = rx, ry = ry, mx = mx, my = my
-            }
-        end
-    end)
-
-    return h
-end
-
-createResizeHandle(UDim2.new(1, -10, 1, -10), Vector2.new(1, 1), 1, 1, 0, 0)
-createResizeHandle(UDim2.new(0, 10, 1, -10), Vector2.new(0, 1), -1, 1, 1, 0)
-
-UserInputService.InputChanged:Connect(function(input)
-    if not resizeData then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
-
-    local delta = input.Position - resizeData.start
     local newW = math.max(240, resizeData.size.X.Offset + delta.X * resizeData.rx)
     local newH = math.max(200, resizeData.size.Y.Offset + delta.Y * resizeData.ry)
 
@@ -33,10 +11,32 @@ UserInputService.InputChanged:Connect(function(input)
     )
 end)
 
+UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+	if not SpawnerCatalogUI.resizeState then return end
+
+	local deltaX = input.Position.X - SpawnerCatalogUI.resizeState.startX
+	CatalogPanelWidth = math.clamp(SpawnerCatalogUI.resizeState.width + deltaX, CatalogPanelMinWidth, CatalogPanelMaxWidth)
+	if SpawnerCatalogUI.panel then
+		SpawnerCatalogUI.panel.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
+		if SpawnerCatalogUI.isVisible then
+			SpawnerCatalogUI.panel.Position = UDim2.new(1, CatalogPanelGap, 0, 0)
+		else
+			SpawnerCatalogUI.panel.Position = UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
+		end
+	end
+end)
+
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         resizeData = nil
     end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		SpawnerCatalogUI.resizeState = nil
+	end
 end)
 
 local dragData = nil
@@ -162,28 +162,62 @@ for i, entry in ipairs(allWeaponsList) do
 	local wKey = entry.key
 	local wName = entry.name
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 158, 122), 0.18)
 	local label = wName .. (entry.chroma and " [Chroma]" or "") .. "   (" .. entry.rarity .. " " .. entry.type .. ")"
 
     local weaponBtn = Instance.new("TextButton")
-    weaponBtn.Size = UDim2.new(1, -6, 0, 22)
-    weaponBtn.BackgroundColor3 = baseColor
-    weaponBtn.BackgroundTransparency = 0.2
+    weaponBtn.Size = UDim2.new(1, -8, 0, 28)
+    weaponBtn.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(22, 18, 21), 0.68)
+    weaponBtn.BackgroundTransparency = 0.08
+    weaponBtn.AutoButtonColor = false
     weaponBtn.Text = label
-    weaponBtn.Font = Enum.Font.SourceSans
+    weaponBtn.Font = Enum.Font.GothamMedium
     weaponBtn.TextSize = 12
-    weaponBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    weaponBtn.TextColor3 = Color3.fromRGB(244, 244, 246)
     weaponBtn.TextXAlignment = Enum.TextXAlignment.Left
     weaponBtn.TextTruncate = Enum.TextTruncate.AtEnd
     weaponBtn.Parent = weaponScrollFrame
 
     local btnPadding = Instance.new("UIPadding")
-    btnPadding.PaddingLeft = UDim.new(0, 6)
+    btnPadding.PaddingLeft = UDim.new(0, 10)
     btnPadding.PaddingRight = UDim.new(0, 6)
     btnPadding.Parent = weaponBtn
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = weaponBtn
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = accentColor
+    btnStroke.Transparency = 0.54
+    btnStroke.Thickness = 1
+    btnStroke.Parent = weaponBtn
+
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, accentColor),
+        ColorSequenceKeypoint.new(0.24, baseColor:Lerp(Color3.fromRGB(58, 40, 42), 0.56)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(19, 17, 20)),
+    })
+    btnGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.3),
+        NumberSequenceKeypoint.new(0.4, 0.12),
+        NumberSequenceKeypoint.new(1, 0.02),
+    })
+    btnGradient.Rotation = 180
+    btnGradient.Parent = weaponBtn
+
+    weaponBtn.MouseEnter:Connect(function()
+        TweenService:Create(weaponBtn, TweenInfo.new(0.15), {
+            BackgroundTransparency = 0.02,
+        }):Play()
+    end)
+
+    weaponBtn.MouseLeave:Connect(function()
+        TweenService:Create(weaponBtn, TweenInfo.new(0.15), {
+            BackgroundTransparency = 0.08,
+        }):Play()
+    end)
 
     weaponBtn.MouseButton1Click:Connect(function()
         OfferItemAnotherPlayer(wKey, "Weapons")
@@ -278,11 +312,11 @@ local function createSpawnerCard(entry, tradable)
 	end
 
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
-	local accentColor = baseColor:Lerp(Color3.fromRGB(109, 138, 255), 0.32)
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(0, 136, 0, 180)
-	card.BackgroundColor3 = Color3.fromRGB(18, 20, 27)
-	card.BackgroundTransparency = tradable and 0.06 or 0.12
+	card.BackgroundColor3 = Color3.fromRGB(26, 19, 22)
+	card.BackgroundTransparency = tradable and 0.08 or 0.14
 	card.BorderSizePixel = 0
 	card.Parent = parent
 
@@ -298,17 +332,17 @@ local function createSpawnerCard(entry, tradable)
 
 	local cardGradient = Instance.new("UIGradient")
 	cardGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 30, 39)),
-		ColorSequenceKeypoint.new(0.65, Color3.fromRGB(18, 20, 27)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 15, 21)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 31, 35)),
+		ColorSequenceKeypoint.new(0.65, Color3.fromRGB(25, 20, 22)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 18)),
 	})
-	cardGradient.Rotation = 90
+	cardGradient.Rotation = 112
 	cardGradient.Parent = card
 
 	local cardTint = Instance.new("Frame")
 	cardTint.Size = UDim2.new(1, 0, 0, 50)
 	cardTint.BackgroundColor3 = accentColor
-	cardTint.BackgroundTransparency = 0.94
+	cardTint.BackgroundTransparency = 0.95
 	cardTint.BorderSizePixel = 0
 	cardTint.Parent = card
 
@@ -320,7 +354,7 @@ local function createSpawnerCard(entry, tradable)
 	preview.Size = UDim2.new(1, -16, 0, 78)
 	preview.Position = UDim2.new(0, 8, 0, 8)
 	preview.BackgroundColor3 = baseColor
-	preview.BackgroundTransparency = tradable and 0.14 or 0.26
+	preview.BackgroundTransparency = tradable and 0.18 or 0.28
 	preview.BorderSizePixel = 0
 	preview.Parent = card
 
@@ -339,7 +373,7 @@ local function createSpawnerCard(entry, tradable)
 	local previewStroke = Instance.new("UIStroke")
 	previewStroke.Color = Color3.fromRGB(255, 255, 255)
 	previewStroke.Thickness = 1
-	previewStroke.Transparency = 0.92
+	previewStroke.Transparency = 0.94
 	previewStroke.Parent = preview
 
 	local previewImage = Instance.new("ImageLabel")
@@ -364,7 +398,7 @@ local function createSpawnerCard(entry, tradable)
 	rarityChip.Size = UDim2.new(0, 82, 0, 20)
 	rarityChip.Position = UDim2.new(0, 8, 0, 8)
 	rarityChip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	rarityChip.BackgroundTransparency = 0.84
+	rarityChip.BackgroundTransparency = 0.8
 	rarityChip.BorderSizePixel = 0
 	rarityChip.Text = entry.rarity
 	rarityChip.Font = Enum.Font.GothamBold
@@ -399,7 +433,7 @@ local function createSpawnerCard(entry, tradable)
 	typeChip.BackgroundTransparency = 1
 	typeChip.Font = Enum.Font.GothamMedium
 	typeChip.TextSize = 11
-	typeChip.TextColor3 = Color3.fromRGB(150, 156, 170)
+	typeChip.TextColor3 = Color3.fromRGB(171, 170, 177)
 	typeChip.TextXAlignment = Enum.TextXAlignment.Left
 	typeChip.Text = entry.type
 	typeChip.Parent = metaRow
@@ -410,7 +444,7 @@ local function createSpawnerCard(entry, tradable)
 	valueLabel.BackgroundTransparency = 1
 	valueLabel.Font = Enum.Font.GothamBold
 	valueLabel.TextSize = 11
-	valueLabel.TextColor3 = Color3.fromRGB(171, 224, 180)
+	valueLabel.TextColor3 = Color3.fromRGB(235, 211, 154)
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
 	valueLabel.Parent = metaRow
 
@@ -420,7 +454,7 @@ local function createSpawnerCard(entry, tradable)
 	detailLabel.BackgroundTransparency = 1
 	detailLabel.Font = Enum.Font.GothamMedium
 	detailLabel.TextSize = 10
-	detailLabel.TextColor3 = Color3.fromRGB(108, 113, 124)
+	detailLabel.TextColor3 = Color3.fromRGB(143, 140, 148)
 	detailLabel.TextXAlignment = Enum.TextXAlignment.Left
 	detailLabel.Text = tradable and "click to spawn quickly" or "locked source item"
 	detailLabel.Parent = card
@@ -428,7 +462,7 @@ local function createSpawnerCard(entry, tradable)
 	local spawnButton = Instance.new("TextButton")
 	spawnButton.Size = UDim2.new(1, -16, 0, 30)
 	spawnButton.Position = UDim2.new(0, 8, 1, -38)
-	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.52)
+	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 146, 108), 0.42)
 	spawnButton.BorderSizePixel = 0
 	spawnButton.Text = "Spawn"
 	spawnButton.Font = Enum.Font.GothamBold
@@ -443,13 +477,13 @@ local function createSpawnerCard(entry, tradable)
 
 	spawnButton.MouseEnter:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
-			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(120, 148, 255), 0.56)
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 170, 130), 0.5)
 		}):Play()
 	end)
 
 	spawnButton.MouseLeave:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
-			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.45)
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 146, 108), 0.42)
 		}):Play()
 	end)
 

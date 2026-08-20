@@ -1929,41 +1929,96 @@ gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = game:GetService("CoreGui")
 
+local WINDOW_THEME = {
+	mainWidth = 400,
+	minWidth = 300,
+	minHeight = 240,
+	panelColor = Color3.fromRGB(20, 16, 18),
+	panelEdge = Color3.fromRGB(255, 255, 255),
+	panelText = Color3.fromRGB(244, 244, 247),
+	mutedText = Color3.fromRGB(175, 176, 185),
+	softText = Color3.fromRGB(150, 150, 160),
+	chipColor = Color3.fromRGB(255, 255, 255),
+	chipTransparency = 0.88,
+	inputColor = Color3.fromRGB(255, 255, 255),
+	inputTransparency = 0.88,
+	buttonColor = Color3.fromRGB(255, 255, 255),
+	buttonTransparency = 0.84,
+	buttonHoverTransparency = 0.74,
+}
+
+local CatalogPanelWidth = 430
+local CatalogPanelMinWidth = 280
+local CatalogPanelMaxWidth = 720
+local CatalogPanelGap = 12
+
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 400, 0, 520)
-frame.Position = UDim2.new(0.5, -200, 0.5, -260)
-frame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
-frame.BackgroundTransparency = 0.08
+frame.Size = UDim2.new(0, WINDOW_THEME.mainWidth, 0, 520)
+frame.Position = UDim2.new(0.5, -WINDOW_THEME.mainWidth / 2, 0.5, -260)
+frame.BackgroundTransparency = 1
 frame.BorderSizePixel = 0
-frame.ClipsDescendants = true
+frame.ClipsDescendants = false
 frame.Parent = gui
+
+local mainPanel = Instance.new("Frame")
+mainPanel.Size = UDim2.new(1, 0, 1, 0)
+mainPanel.BackgroundColor3 = WINDOW_THEME.panelColor
+mainPanel.BackgroundTransparency = 0.1
+mainPanel.BorderSizePixel = 0
+mainPanel.ClipsDescendants = true
+mainPanel.Parent = frame
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 22)
-corner.Parent = frame
+corner.Parent = mainPanel
 
 local frameStroke = Instance.new("UIStroke")
-frameStroke.Color = Color3.fromRGB(255, 255, 255)
+frameStroke.Color = WINDOW_THEME.panelEdge
 frameStroke.Thickness = 1
-frameStroke.Transparency = 0.83
-frameStroke.Parent = frame
+frameStroke.Transparency = 0.86
+frameStroke.Parent = mainPanel
 
 local frameGradient = Instance.new("UIGradient")
 frameGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 29, 36)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(18, 19, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 11, 15)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 29, 30)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(27, 21, 22)),
+	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(16, 16, 18)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(9, 10, 12)),
 })
-frameGradient.Rotation = 90
-frameGradient.Parent = frame
+frameGradient.Rotation = 112
+frameGradient.Parent = mainPanel
+
+local topGlow = Instance.new("Frame")
+topGlow.Size = UDim2.new(1.08, 0, 0, 146)
+topGlow.Position = UDim2.new(-0.04, 0, -0.04, 0)
+topGlow.BackgroundColor3 = Color3.fromRGB(255, 145, 105)
+topGlow.BackgroundTransparency = 0.95
+topGlow.BorderSizePixel = 0
+topGlow.Parent = mainPanel
+
+local topGlowCorner = Instance.new("UICorner")
+topGlowCorner.CornerRadius = UDim.new(1, 0)
+topGlowCorner.Parent = topGlow
+
+local sideGlow = Instance.new("Frame")
+sideGlow.Size = UDim2.new(0, 220, 0, 220)
+sideGlow.Position = UDim2.new(1, -84, 0, -84)
+sideGlow.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
+sideGlow.BackgroundTransparency = 0.955
+sideGlow.BorderSizePixel = 0
+sideGlow.Parent = mainPanel
+
+local sideGlowCorner = Instance.new("UICorner")
+sideGlowCorner.CornerRadius = UDim.new(1, 0)
+sideGlowCorner.Parent = sideGlow
 
 local sheen = Instance.new("Frame")
 sheen.Size = UDim2.new(1, -2, 0, 130)
 sheen.Position = UDim2.new(0, 1, 0, 1)
 sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sheen.BackgroundTransparency = 0.95
+sheen.BackgroundTransparency = 0.955
 sheen.BorderSizePixel = 0
-sheen.Parent = frame
+sheen.Parent = mainPanel
 
 local sheenCorner = Instance.new("UICorner")
 sheenCorner.CornerRadius = UDim.new(0, 22)
@@ -1971,12 +2026,12 @@ sheenCorner.Parent = sheen
 
 local sheenGradient = Instance.new("UIGradient")
 sheenGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
 })
 sheenGradient.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0.15),
-    NumberSequenceKeypoint.new(1, 1),
+	NumberSequenceKeypoint.new(0, 0.14),
+	NumberSequenceKeypoint.new(1, 1),
 })
 sheenGradient.Rotation = 90
 sheenGradient.Parent = sheen
@@ -1986,7 +2041,7 @@ titleBar.Size = UDim2.new(1, -24, 0, 56)
 titleBar.Position = UDim2.new(0, 12, 0, 12)
 titleBar.BackgroundTransparency = 1
 titleBar.Active = true
-titleBar.Parent = frame
+titleBar.Parent = mainPanel
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -56, 0, 28)
@@ -1994,7 +2049,7 @@ title.BackgroundTransparency = 1
 title.Text = "Torti hub"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
-title.TextColor3 = Color3.fromRGB(242, 244, 248)
+title.TextColor3 = WINDOW_THEME.panelText
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
@@ -2005,14 +2060,14 @@ subtitle.BackgroundTransparency = 1
 subtitle.Text = "@orlentov on TG"
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 13
-subtitle.TextColor3 = Color3.fromRGB(150, 153, 162)
+subtitle.TextColor3 = WINDOW_THEME.softText
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 34, 0, 34)
 closeBtn.Position = UDim2.new(1, -34, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
 closeBtn.BorderSizePixel = 0
 closeBtn.Text = "x"
 closeBtn.Font = Enum.Font.GothamBold
@@ -2026,40 +2081,40 @@ closeCorner.CornerRadius = UDim.new(1, 0)
 closeCorner.Parent = closeBtn
 
 closeBtn.MouseEnter:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
 end)
 
 closeBtn.MouseLeave:Connect(function()
-    TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 92, 92)}):Play()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
 end)
 
 local tabContainer = Instance.new("Frame")
 tabContainer.Size = UDim2.new(1, -24, 0, 48)
 tabContainer.Position = UDim2.new(0, 12, 0, 76)
-tabContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-tabContainer.BackgroundTransparency = 0.93
+tabContainer.BackgroundColor3 = WINDOW_THEME.chipColor
+tabContainer.BackgroundTransparency = WINDOW_THEME.chipTransparency
 tabContainer.BorderSizePixel = 0
-tabContainer.Parent = frame
+tabContainer.Parent = mainPanel
 
 local tabContainerCorner = Instance.new("UICorner")
 tabContainerCorner.CornerRadius = UDim.new(0, 16)
 tabContainerCorner.Parent = tabContainer
 
 local tabContainerStroke = Instance.new("UIStroke")
-tabContainerStroke.Color = Color3.fromRGB(255, 255, 255)
-tabContainerStroke.Transparency = 0.86
+tabContainerStroke.Color = WINDOW_THEME.panelEdge
+tabContainerStroke.Transparency = 0.9
 tabContainerStroke.Parent = tabContainer
 
 local tabLayout = Instance.new("UIListLayout")
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
 tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabLayout.Padding = UDim.new(0, 4)
+tabLayout.Padding = UDim.new(0, 2)
 tabLayout.Parent = tabContainer
 
 local tabPadding = Instance.new("UIPadding")
-tabPadding.PaddingLeft = UDim.new(0, 8)
-tabPadding.PaddingRight = UDim.new(0, 8)
+tabPadding.PaddingLeft = UDim.new(0, 6)
+tabPadding.PaddingRight = UDim.new(0, 6)
 tabPadding.PaddingTop = UDim.new(0, 6)
 tabPadding.PaddingBottom = UDim.new(0, 6)
 tabPadding.Parent = tabContainer
@@ -2070,191 +2125,208 @@ local tabFrames = {}
 local activeTab = "Control"
 
 local function setActiveTab(name)
-    for _, f in pairs(tabFrames) do
-        f.Visible = false
-    end
+	for _, f in pairs(tabFrames) do
+		f.Visible = false
+	end
 
-    if tabFrames[name] then
-        tabFrames[name].Visible = true
-        tabFrames[name].CanvasPosition = Vector2.new(0, 0)
-    end
+	if tabFrames[name] then
+		tabFrames[name].Visible = true
+		tabFrames[name].CanvasPosition = Vector2.new(0, 0)
+	end
 
-    for n, b in pairs(tabButtons) do
-        if n == name then
-            b.BackgroundTransparency = 0.82
-            b.TextColor3 = Color3.fromRGB(255, 255, 255)
-        else
-            b.BackgroundTransparency = 1
-            b.TextColor3 = Color3.fromRGB(194, 198, 206)
-        end
-    end
+	for n, b in pairs(tabButtons) do
+		if n == name then
+			b.BackgroundTransparency = 0.76
+			b.TextColor3 = WINDOW_THEME.panelText
+		else
+			b.BackgroundTransparency = 1
+			b.TextColor3 = WINDOW_THEME.mutedText
+		end
+	end
 
-    activeTab = name
+	activeTab = name
 end
 
 for i, name in ipairs(tabs) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1 / #tabs, -4, 1, 0)
-    btn.Position = UDim2.new((i - 1) / #tabs, 0, 0, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundTransparency = 1
-    btn.BorderSizePixel = 0
-    btn.Text = name
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 13
-    btn.TextColor3 = Color3.fromRGB(194, 198, 206)
-    btn.AutoButtonColor = false
-    btn.Parent = tabContainer
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 0, 1, 0)
+	btn.AutomaticSize = Enum.AutomaticSize.X
+	btn.BackgroundColor3 = WINDOW_THEME.chipColor
+	btn.BackgroundTransparency = 1
+	btn.BorderSizePixel = 0
+	btn.Text = name
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 13
+	btn.TextColor3 = Color3.fromRGB(194, 198, 206)
+	btn.AutoButtonColor = false
+	btn.Parent = tabContainer
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 12)
-    c.Parent = btn
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = btn
 
-    tabButtons[name] = btn
+	local p = Instance.new("UIPadding")
+	p.PaddingLeft = UDim.new(0, 10)
+	p.PaddingRight = UDim.new(0, 10)
+	p.Parent = btn
 
-    local content = Instance.new("ScrollingFrame")
-    content.Size = UDim2.new(1, -24, 1, -142)
-    content.Position = UDim2.new(0, 12, 0, 130)
-    content.BackgroundTransparency = 1
-    content.BorderSizePixel = 0
-    content.ScrollBarThickness = 3
-    content.ScrollBarImageColor3 = Color3.fromRGB(140, 140, 148)
-    content.CanvasSize = UDim2.new(0, 0, 0, 0)
-    content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    content.Visible = i == 1
-    content.Parent = frame
-    tabFrames[name] = content
+	tabButtons[name] = btn
 
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Vertical
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 10)
-    layout.Parent = content
+	local content = Instance.new("ScrollingFrame")
+	content.Size = UDim2.new(1, -24, 1, -142)
+	content.Position = UDim2.new(0, 12, 0, 130)
+	content.BackgroundTransparency = 1
+	content.BorderSizePixel = 0
+	content.ScrollBarThickness = 3
+	content.ScrollBarImageColor3 = Color3.fromRGB(164, 144, 148)
+	content.CanvasSize = UDim2.new(0, 0, 0, 0)
+	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.Visible = i == 1
+	content.Parent = mainPanel
+	tabFrames[name] = content
 
-    local padding = Instance.new("UIPadding")
-    padding.PaddingTop = UDim.new(0, 2)
-    padding.PaddingBottom = UDim.new(0, 4)
-    padding.PaddingLeft = UDim.new(0, 2)
-    padding.PaddingRight = UDim.new(0, 2)
-    padding.Parent = content
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 10)
+	layout.Parent = content
 
-    btn.MouseEnter:Connect(function()
-        if activeTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(225, 228, 234)}):Play()
-        end
-    end)
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 2)
+	padding.PaddingBottom = UDim.new(0, 4)
+	padding.PaddingLeft = UDim.new(0, 2)
+	padding.PaddingRight = UDim.new(0, 2)
+	padding.Parent = content
 
-    btn.MouseLeave:Connect(function()
-        if activeTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(194, 198, 206)}):Play()
-        end
-    end)
+	btn.MouseEnter:Connect(function()
+		if activeTab ~= name then
+			TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(229, 228, 232)}):Play()
+		end
+	end)
 
-    btn.MouseButton1Click:Connect(function()
-        setActiveTab(name)
-    end)
+	btn.MouseLeave:Connect(function()
+		if activeTab ~= name then
+			TweenService:Create(btn, TweenInfo.new(0.15), {TextColor3 = WINDOW_THEME.mutedText}):Play()
+		end
+	end)
+
+	btn.MouseButton1Click:Connect(function()
+		setActiveTab(name)
+	end)
 end
 
 -- Helper functions for GUI
 local function createButton(parent, text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 42)
-    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundTransparency = 0.84
-    btn.BorderSizePixel = 0
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 19
-    btn.TextColor3 = Color3.fromRGB(248, 250, 255)
-    btn.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    btn.TextStrokeTransparency = 0.9
-    btn.AutoButtonColor = false
-    btn.Parent = parent
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, 0, 0, 42)
+	btn.BackgroundColor3 = WINDOW_THEME.buttonColor
+	btn.BackgroundTransparency = WINDOW_THEME.buttonTransparency
+	btn.BorderSizePixel = 0
+	btn.Text = text
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 19
+	btn.TextColor3 = WINDOW_THEME.panelText
+	btn.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	btn.TextStrokeTransparency = 0.92
+	btn.AutoButtonColor = false
+	btn.Parent = parent
 
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 16)
-    c.Parent = btn
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 16)
+	c.Parent = btn
 
-    local s = Instance.new("UIStroke")
-    s.Color = Color3.fromRGB(255, 255, 255)
-    s.Thickness = 1
-    s.Transparency = 0.84
-    s.Parent = btn
+	local s = Instance.new("UIStroke")
+	s.Color = WINDOW_THEME.panelEdge
+	s.Thickness = 1
+	s.Transparency = 0.88
+	s.Parent = btn
 
-    local g = Instance.new("UIGradient")
-    g.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(58, 60, 72)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 30, 38)),
-    })
-    g.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.08),
-        NumberSequenceKeypoint.new(1, 0.2),
-    })
-    g.Rotation = 90
-    g.Parent = btn
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(92, 76, 80)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 35, 39)),
+	})
+	g.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.14),
+		NumberSequenceKeypoint.new(1, 0.34),
+	})
+	g.Rotation = 90
+	g.Parent = btn
 
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.75}):Play()
-    end)
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = WINDOW_THEME.buttonHoverTransparency}):Play()
+	end)
 
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = 0.84}):Play()
-    end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundTransparency = WINDOW_THEME.buttonTransparency}):Play()
+	end)
 
-    btn.MouseButton1Click:Connect(callback)
+	btn.MouseButton1Click:Connect(callback)
 
-    return btn
+	return btn
 end
 
 local function createInput(parent, label, default)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 62)
-    container.BackgroundTransparency = 1
-    container.Parent = parent
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, 0, 0, 62)
+	container.BackgroundTransparency = 1
+	container.Parent = parent
 
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 18)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = label
-    lbl.Font = Enum.Font.Gotham
-    lbl.TextSize = 15
-    lbl.TextColor3 = Color3.fromRGB(180, 183, 192)
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.Parent = container
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(1, 0, 0, 18)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = label
+	lbl.Font = Enum.Font.Gotham
+	lbl.TextSize = 15
+	lbl.TextColor3 = WINDOW_THEME.mutedText
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.Parent = container
 
-    local boxHolder = Instance.new("Frame")
-    boxHolder.Size = UDim2.new(1, 0, 0, 40)
-    boxHolder.Position = UDim2.new(0, 0, 0, 22)
-    boxHolder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    boxHolder.BackgroundTransparency = 0.92
-    boxHolder.BorderSizePixel = 0
-    boxHolder.Parent = container
+	local boxHolder = Instance.new("Frame")
+	boxHolder.Size = UDim2.new(1, 0, 0, 40)
+	boxHolder.Position = UDim2.new(0, 0, 0, 22)
+	boxHolder.BackgroundColor3 = WINDOW_THEME.inputColor
+	boxHolder.BackgroundTransparency = WINDOW_THEME.inputTransparency
+	boxHolder.BorderSizePixel = 0
+	boxHolder.Parent = container
 
-    local holderCorner = Instance.new("UICorner")
-    holderCorner.CornerRadius = UDim.new(0, 14)
-    holderCorner.Parent = boxHolder
+	local holderCorner = Instance.new("UICorner")
+	holderCorner.CornerRadius = UDim.new(0, 14)
+	holderCorner.Parent = boxHolder
 
-    local holderStroke = Instance.new("UIStroke")
-    holderStroke.Color = Color3.fromRGB(255, 255, 255)
-    holderStroke.Thickness = 1
-    holderStroke.Transparency = 0.86
-    holderStroke.Parent = boxHolder
+	local holderStroke = Instance.new("UIStroke")
+	holderStroke.Color = WINDOW_THEME.panelEdge
+	holderStroke.Thickness = 1
+	holderStroke.Transparency = 0.88
+	holderStroke.Parent = boxHolder
 
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -20, 1, 0)
-    box.Position = UDim2.new(0, 10, 0, 0)
-    box.BackgroundTransparency = 1
-    box.Text = default or ""
-    box.PlaceholderText = default == "" and label or ""
-    box.Font = Enum.Font.GothamMedium
-    box.TextSize = 18
-    box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    box.PlaceholderColor3 = Color3.fromRGB(118, 121, 130)
-    box.TextXAlignment = Enum.TextXAlignment.Center
-    box.ClearTextOnFocus = false
-    box.Parent = boxHolder
+	local holderGradient = Instance.new("UIGradient")
+	holderGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(74, 60, 64)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(33, 30, 34)),
+	})
+	holderGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.2),
+		NumberSequenceKeypoint.new(1, 0.4),
+	})
+	holderGradient.Rotation = 90
+	holderGradient.Parent = boxHolder
 
-    return box
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(1, -20, 1, 0)
+	box.Position = UDim2.new(0, 10, 0, 0)
+	box.BackgroundTransparency = 1
+	box.Text = default or ""
+	box.PlaceholderText = default == "" and label or ""
+	box.Font = Enum.Font.GothamMedium
+	box.TextSize = 18
+	box.TextColor3 = WINDOW_THEME.panelText
+	box.PlaceholderColor3 = WINDOW_THEME.softText
+	box.TextXAlignment = Enum.TextXAlignment.Center
+	box.ClearTextOnFocus = false
+	box.Parent = boxHolder
+
+	return box
 end
 
 -- Global GUI elements
@@ -2803,58 +2875,51 @@ do
 	local spawnerStatusLabel = Instance.new("TextLabel")
 	spawnerStatusLabel.Size = UDim2.new(1, 0, 0, 38)
 	spawnerStatusLabel.BackgroundTransparency = 1
-	spawnerStatusLabel.Text = "Open the catalog window to browse items, check value and spawn from cards."
+	spawnerStatusLabel.Text = "Open the catalog and it will slide out as a right-side extension of the hub."
 	spawnerStatusLabel.Font = Enum.Font.Gotham
 	spawnerStatusLabel.TextSize = 13
 	spawnerStatusLabel.TextWrapped = true
-	spawnerStatusLabel.TextColor3 = Color3.fromRGB(187, 198, 213)
+	spawnerStatusLabel.TextColor3 = WINDOW_THEME.mutedText
 	spawnerStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	spawnerStatusLabel.TextYAlignment = Enum.TextYAlignment.Top
 	spawnerStatusLabel.Parent = spawnerFrame
 
-	local catalogOverlay = Instance.new("Frame")
-	catalogOverlay.Size = UDim2.new(1, 0, 1, 0)
-	catalogOverlay.BackgroundColor3 = Color3.fromRGB(3, 4, 8)
-	catalogOverlay.BackgroundTransparency = 0.4
-	catalogOverlay.BorderSizePixel = 0
-	catalogOverlay.Visible = false
-	catalogOverlay.Parent = gui
-
 	local catalogWindow = Instance.new("Frame")
-	catalogWindow.AnchorPoint = Vector2.new(0.5, 0.5)
-	catalogWindow.Position = UDim2.new(0.5, 0, 0.5, 0)
-	catalogWindow.Size = UDim2.new(0.74, 0, 0.72, 0)
-	catalogWindow.BackgroundColor3 = Color3.fromRGB(9, 10, 15)
-	catalogWindow.BackgroundTransparency = 0.02
+	catalogWindow.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
+	catalogWindow.Position = UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
+	catalogWindow.BackgroundColor3 = Color3.fromRGB(16, 14, 16)
+	catalogWindow.BackgroundTransparency = 0.06
 	catalogWindow.BorderSizePixel = 0
 	catalogWindow.ClipsDescendants = true
-	catalogWindow.Parent = catalogOverlay
+	catalogWindow.Visible = false
+	catalogWindow.Parent = frame
+	SpawnerCatalogUI.panel = catalogWindow
 
 	local catalogCorner = Instance.new("UICorner")
 	catalogCorner.CornerRadius = UDim.new(0, 24)
 	catalogCorner.Parent = catalogWindow
 
 	local catalogStroke = Instance.new("UIStroke")
-	catalogStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogStroke.Color = WINDOW_THEME.panelEdge
 	catalogStroke.Thickness = 1
-	catalogStroke.Transparency = 0.87
+	catalogStroke.Transparency = 0.88
 	catalogStroke.Parent = catalogWindow
 
 	local catalogGradient = Instance.new("UIGradient")
 	catalogGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 26, 34)),
-		ColorSequenceKeypoint.new(0.34, Color3.fromRGB(14, 16, 24)),
-		ColorSequenceKeypoint.new(0.7, Color3.fromRGB(9, 10, 16)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(7, 8, 12)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 27, 29)),
+		ColorSequenceKeypoint.new(0.3, Color3.fromRGB(25, 20, 22)),
+		ColorSequenceKeypoint.new(0.68, Color3.fromRGB(15, 15, 17)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 12)),
 	})
-	catalogGradient.Rotation = 105
+	catalogGradient.Rotation = 115
 	catalogGradient.Parent = catalogWindow
 
 	local catalogGlow = Instance.new("Frame")
 	catalogGlow.Size = UDim2.new(1, -2, 0, 90)
 	catalogGlow.Position = UDim2.new(0, 1, 0, 1)
-	catalogGlow.BackgroundColor3 = Color3.fromRGB(72, 104, 255)
-	catalogGlow.BackgroundTransparency = 0.9
+	catalogGlow.BackgroundColor3 = Color3.fromRGB(255, 144, 102)
+	catalogGlow.BackgroundTransparency = 0.94
 	catalogGlow.BorderSizePixel = 0
 	catalogGlow.Parent = catalogWindow
 
@@ -2865,8 +2930,8 @@ do
 	local catalogOrbA = Instance.new("Frame")
 	catalogOrbA.Size = UDim2.new(0, 220, 0, 220)
 	catalogOrbA.Position = UDim2.new(1, -110, 0, -86)
-	catalogOrbA.BackgroundColor3 = Color3.fromRGB(88, 121, 255)
-	catalogOrbA.BackgroundTransparency = 0.94
+	catalogOrbA.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
+	catalogOrbA.BackgroundTransparency = 0.955
 	catalogOrbA.BorderSizePixel = 0
 	catalogOrbA.Parent = catalogWindow
 
@@ -2877,14 +2942,38 @@ do
 	local catalogOrbB = Instance.new("Frame")
 	catalogOrbB.Size = UDim2.new(0, 180, 0, 180)
 	catalogOrbB.Position = UDim2.new(0, -70, 1, -90)
-	catalogOrbB.BackgroundColor3 = Color3.fromRGB(166, 92, 255)
-	catalogOrbB.BackgroundTransparency = 0.965
+	catalogOrbB.BackgroundColor3 = Color3.fromRGB(196, 110, 82)
+	catalogOrbB.BackgroundTransparency = 0.97
 	catalogOrbB.BorderSizePixel = 0
 	catalogOrbB.Parent = catalogWindow
 
 	local catalogOrbBCorner = Instance.new("UICorner")
 	catalogOrbBCorner.CornerRadius = UDim.new(1, 0)
 	catalogOrbBCorner.Parent = catalogOrbB
+
+	local catalogResizeHandle = Instance.new("Frame")
+	catalogResizeHandle.Size = UDim2.new(0, 18, 0, 92)
+	catalogResizeHandle.Position = UDim2.new(0, 0, 0.5, -46)
+	catalogResizeHandle.BackgroundColor3 = Color3.fromRGB(255, 176, 136)
+	catalogResizeHandle.BackgroundTransparency = 0.88
+	catalogResizeHandle.ZIndex = 40
+	catalogResizeHandle.Parent = catalogWindow
+
+	local catalogResizeHandleCorner = Instance.new("UICorner")
+	catalogResizeHandleCorner.CornerRadius = UDim.new(1, 0)
+	catalogResizeHandleCorner.Parent = catalogResizeHandle
+
+	local catalogResizeBar = Instance.new("Frame")
+	catalogResizeBar.Size = UDim2.new(0, 4, 1, -18)
+	catalogResizeBar.Position = UDim2.new(0.5, -2, 0, 9)
+	catalogResizeBar.BackgroundColor3 = Color3.fromRGB(255, 233, 214)
+	catalogResizeBar.BackgroundTransparency = 0.34
+	catalogResizeBar.BorderSizePixel = 0
+	catalogResizeBar.Parent = catalogResizeHandle
+
+	local catalogResizeBarCorner = Instance.new("UICorner")
+	catalogResizeBarCorner.CornerRadius = UDim.new(1, 0)
+	catalogResizeBarCorner.Parent = catalogResizeBar
 
 	local header = Instance.new("Frame")
 	header.Size = UDim2.new(1, -28, 0, 50)
@@ -2898,7 +2987,7 @@ do
 	title.Text = "Spawn Catalog"
 	title.Font = Enum.Font.GothamBold
 	title.TextSize = 22
-	title.TextColor3 = Color3.fromRGB(244, 247, 252)
+	title.TextColor3 = WINDOW_THEME.panelText
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.Parent = header
 
@@ -2906,19 +2995,19 @@ do
 	subtitle.Size = UDim2.new(1, -62, 0, 18)
 	subtitle.Position = UDim2.new(0, 0, 0, 26)
 	subtitle.BackgroundTransparency = 1
-	subtitle.Text = "Compact card catalog with instant spawn."
+	subtitle.Text = "Slides out from the hub and keeps the same height."
 	subtitle.Font = Enum.Font.Gotham
 	subtitle.TextSize = 12
-	subtitle.TextColor3 = Color3.fromRGB(154, 159, 170)
+	subtitle.TextColor3 = WINDOW_THEME.softText
 	subtitle.TextXAlignment = Enum.TextXAlignment.Left
 	subtitle.Parent = header
 
 	local closeCatalogButton = Instance.new("TextButton")
 	closeCatalogButton.Size = UDim2.new(0, 32, 0, 32)
 	closeCatalogButton.Position = UDim2.new(1, -32, 0, 2)
-	closeCatalogButton.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
+	closeCatalogButton.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
 	closeCatalogButton.BorderSizePixel = 0
-	closeCatalogButton.Text = "x"
+	closeCatalogButton.Text = ">"
 	closeCatalogButton.Font = Enum.Font.GothamBold
 	closeCatalogButton.TextSize = 18
 	closeCatalogButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -2943,7 +3032,7 @@ do
 	local controlsPanel = Instance.new("Frame")
 	controlsPanel.Size = UDim2.new(1, 0, 0, 66)
 	controlsPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	controlsPanel.BackgroundTransparency = 0.94
+	controlsPanel.BackgroundTransparency = 0.9
 	controlsPanel.BorderSizePixel = 0
 	controlsPanel.Parent = controls
 
@@ -2952,15 +3041,15 @@ do
 	controlsPanelCorner.Parent = controlsPanel
 
 	local controlsPanelStroke = Instance.new("UIStroke")
-	controlsPanelStroke.Color = Color3.fromRGB(255, 255, 255)
+	controlsPanelStroke.Color = WINDOW_THEME.panelEdge
 	controlsPanelStroke.Thickness = 1
 	controlsPanelStroke.Transparency = 0.9
 	controlsPanelStroke.Parent = controlsPanel
 
 	local controlsGlow = Instance.new("Frame")
 	controlsGlow.Size = UDim2.new(0.36, 0, 1, 0)
-	controlsGlow.BackgroundColor3 = Color3.fromRGB(92, 123, 255)
-	controlsGlow.BackgroundTransparency = 0.92
+	controlsGlow.BackgroundColor3 = Color3.fromRGB(255, 142, 104)
+	controlsGlow.BackgroundTransparency = 0.94
 	controlsGlow.BorderSizePixel = 0
 	controlsGlow.Parent = controlsPanel
 
@@ -2996,7 +3085,7 @@ do
 				child.Size = UDim2.new(1, 0, 0, 14)
 				child.Font = Enum.Font.GothamMedium
 				child.TextSize = 12
-				child.TextColor3 = Color3.fromRGB(150, 156, 168)
+				child.TextColor3 = WINDOW_THEME.softText
 			end
 		end
 	end
@@ -3026,18 +3115,18 @@ do
 	SpawnerSortButton.TextSize = 13
 	SpawnerSortButton.Size = UDim2.new(1, 0, 0, 36)
 	SpawnerSortButton.Position = UDim2.new(0, 0, 1, -36)
-	SpawnerSortButton.BackgroundTransparency = 0.8
+	SpawnerSortButton.BackgroundTransparency = 0.78
 
 	local countLabel = Instance.new("TextLabel")
 	countLabel.Size = UDim2.new(0, 128, 0, 20)
 	countLabel.Position = UDim2.new(0, 6, 0, 72)
 	countLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	countLabel.BackgroundTransparency = 0.9
+	countLabel.BackgroundTransparency = 0.88
 	countLabel.BorderSizePixel = 0
 	countLabel.Text = "Loading items..."
 	countLabel.Font = Enum.Font.GothamMedium
 	countLabel.TextSize = 11
-	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
+	countLabel.TextColor3 = WINDOW_THEME.mutedText
 	countLabel.TextXAlignment = Enum.TextXAlignment.Center
 	countLabel.Parent = controls
 	SpawnerCatalogUI.countLabel = countLabel
@@ -3047,7 +3136,7 @@ do
 	countCorner.Parent = countLabel
 
 	local countStroke = Instance.new("UIStroke")
-	countStroke.Color = Color3.fromRGB(255, 255, 255)
+	countStroke.Color = WINDOW_THEME.panelEdge
 	countStroke.Thickness = 1
 	countStroke.Transparency = 0.92
 	countStroke.Parent = countLabel
@@ -3056,10 +3145,10 @@ do
 	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 96)
 	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -96)
 	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	catalogScrollFrame.BackgroundTransparency = 0.965
+	catalogScrollFrame.BackgroundTransparency = 0.955
 	catalogScrollFrame.BorderSizePixel = 0
 	catalogScrollFrame.ScrollBarThickness = 6
-	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(205, 138, 118)
 	catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	catalogScrollFrame.Parent = catalogBody
 	SpawnerCatalogUI.scrollFrame = catalogScrollFrame
@@ -3069,7 +3158,7 @@ do
 	catalogScrollCorner.Parent = catalogScrollFrame
 
 	local catalogScrollStroke = Instance.new("UIStroke")
-	catalogScrollStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogScrollStroke.Color = WINDOW_THEME.panelEdge
 	catalogScrollStroke.Thickness = 1
 	catalogScrollStroke.Transparency = 0.9
 	catalogScrollStroke.Parent = catalogScrollFrame
@@ -3092,11 +3181,7 @@ do
 	local function updateCatalogGridCellSize()
 		local width = math.max(240, catalogScrollFrame.AbsoluteSize.X - 24)
 		local columns = 2
-		if width >= 1180 then
-			columns = 6
-		elseif width >= 940 then
-			columns = 5
-		elseif width >= 720 then
+		if width >= 760 then
 			columns = 4
 		elseif width >= 520 then
 			columns = 3
@@ -3123,15 +3208,63 @@ do
 		catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, catalogGrid.AbsoluteContentSize.Y + 24)
 	end)
 
+	local catalogIsVisible = false
+
+	local function getCatalogShownPosition()
+		return UDim2.new(1, CatalogPanelGap, 0, 0)
+	end
+
+	local function getCatalogHiddenPosition()
+		return UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
+	end
+
+	local function syncCatalogPanelWidth()
+		catalogWindow.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
+		if catalogIsVisible then
+			catalogWindow.Position = getCatalogShownPosition()
+		else
+			catalogWindow.Position = getCatalogHiddenPosition()
+		end
+		updateCatalogGridCellSize()
+	end
+
 	local function setCatalogVisible(visible)
-		catalogOverlay.Visible = visible
-		if visible and RefreshSpawnerButtons then
-			RefreshSpawnerButtons()
+		if catalogIsVisible == visible then
+			return
+		end
+
+		catalogIsVisible = visible
+		SpawnerCatalogUI.isVisible = visible
+		openCatalogButton.Text = visible and "Hide catalog" or "Open catalog"
+		spawnerStatusLabel.Text = visible and "Catalog is docked to the right. Drag the thin handle to resize its width." or "Open the catalog and it will slide out as a right-side extension of the hub."
+
+		if visible then
+			catalogWindow.Visible = true
+			TweenService:Create(catalogWindow, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Position = getCatalogShownPosition(),
+			}):Play()
+			if RefreshSpawnerButtons then
+				RefreshSpawnerButtons()
+			end
+		else
+			local tween = TweenService:Create(catalogWindow, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Position = getCatalogHiddenPosition(),
+			})
+			local connection
+			connection = tween.Completed:Connect(function()
+				if connection then
+					connection:Disconnect()
+				end
+				if not catalogIsVisible then
+					catalogWindow.Visible = false
+				end
+			end)
+			tween:Play()
 		end
 	end
 
 	openCatalogButton.MouseButton1Click:Connect(function()
-		setCatalogVisible(true)
+		setCatalogVisible(not catalogIsVisible)
 	end)
 
 	closeCatalogButton.MouseButton1Click:Connect(function()
@@ -3139,14 +3272,24 @@ do
 	end)
 
 	closeCatalogButton.MouseEnter:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
 	end)
 
 	closeCatalogButton.MouseLeave:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 92, 92)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+	end)
+
+	catalogResizeHandle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and catalogIsVisible then
+			SpawnerCatalogUI.resizeState = {
+				startX = input.Position.X,
+				width = CatalogPanelWidth,
+			}
+		end
 	end)
 
 	task.defer(function()
+		syncCatalogPanelWidth()
 		updateCatalogScrollHeight()
 		updateCatalogGridCellSize()
 	end)
@@ -5088,10 +5231,32 @@ UserInputService.InputChanged:Connect(function(input)
     )
 end)
 
+UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+	if not SpawnerCatalogUI.resizeState then return end
+
+	local deltaX = input.Position.X - SpawnerCatalogUI.resizeState.startX
+	CatalogPanelWidth = math.clamp(SpawnerCatalogUI.resizeState.width + deltaX, CatalogPanelMinWidth, CatalogPanelMaxWidth)
+	if SpawnerCatalogUI.panel then
+		SpawnerCatalogUI.panel.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
+		if SpawnerCatalogUI.isVisible then
+			SpawnerCatalogUI.panel.Position = UDim2.new(1, CatalogPanelGap, 0, 0)
+		else
+			SpawnerCatalogUI.panel.Position = UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
+		end
+	end
+end)
+
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         resizeData = nil
     end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		SpawnerCatalogUI.resizeState = nil
+	end
 end)
 
 local dragData = nil
@@ -5217,28 +5382,62 @@ for i, entry in ipairs(allWeaponsList) do
 	local wKey = entry.key
 	local wName = entry.name
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 158, 122), 0.18)
 	local label = wName .. (entry.chroma and " [Chroma]" or "") .. "   (" .. entry.rarity .. " " .. entry.type .. ")"
 
     local weaponBtn = Instance.new("TextButton")
-    weaponBtn.Size = UDim2.new(1, -6, 0, 22)
-    weaponBtn.BackgroundColor3 = baseColor
-    weaponBtn.BackgroundTransparency = 0.2
+    weaponBtn.Size = UDim2.new(1, -8, 0, 28)
+    weaponBtn.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(22, 18, 21), 0.68)
+    weaponBtn.BackgroundTransparency = 0.08
+    weaponBtn.AutoButtonColor = false
     weaponBtn.Text = label
-    weaponBtn.Font = Enum.Font.SourceSans
+    weaponBtn.Font = Enum.Font.GothamMedium
     weaponBtn.TextSize = 12
-    weaponBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    weaponBtn.TextColor3 = Color3.fromRGB(244, 244, 246)
     weaponBtn.TextXAlignment = Enum.TextXAlignment.Left
     weaponBtn.TextTruncate = Enum.TextTruncate.AtEnd
     weaponBtn.Parent = weaponScrollFrame
 
     local btnPadding = Instance.new("UIPadding")
-    btnPadding.PaddingLeft = UDim.new(0, 6)
+    btnPadding.PaddingLeft = UDim.new(0, 10)
     btnPadding.PaddingRight = UDim.new(0, 6)
     btnPadding.Parent = weaponBtn
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.CornerRadius = UDim.new(0, 10)
     btnCorner.Parent = weaponBtn
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = accentColor
+    btnStroke.Transparency = 0.54
+    btnStroke.Thickness = 1
+    btnStroke.Parent = weaponBtn
+
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, accentColor),
+        ColorSequenceKeypoint.new(0.24, baseColor:Lerp(Color3.fromRGB(58, 40, 42), 0.56)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(19, 17, 20)),
+    })
+    btnGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.3),
+        NumberSequenceKeypoint.new(0.4, 0.12),
+        NumberSequenceKeypoint.new(1, 0.02),
+    })
+    btnGradient.Rotation = 180
+    btnGradient.Parent = weaponBtn
+
+    weaponBtn.MouseEnter:Connect(function()
+        TweenService:Create(weaponBtn, TweenInfo.new(0.15), {
+            BackgroundTransparency = 0.02,
+        }):Play()
+    end)
+
+    weaponBtn.MouseLeave:Connect(function()
+        TweenService:Create(weaponBtn, TweenInfo.new(0.15), {
+            BackgroundTransparency = 0.08,
+        }):Play()
+    end)
 
     weaponBtn.MouseButton1Click:Connect(function()
         OfferItemAnotherPlayer(wKey, "Weapons")
@@ -5333,11 +5532,11 @@ local function createSpawnerCard(entry, tradable)
 	end
 
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
-	local accentColor = baseColor:Lerp(Color3.fromRGB(109, 138, 255), 0.32)
+	local accentColor = baseColor:Lerp(Color3.fromRGB(255, 150, 110), 0.2)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(0, 136, 0, 180)
-	card.BackgroundColor3 = Color3.fromRGB(18, 20, 27)
-	card.BackgroundTransparency = tradable and 0.06 or 0.12
+	card.BackgroundColor3 = Color3.fromRGB(26, 19, 22)
+	card.BackgroundTransparency = tradable and 0.08 or 0.14
 	card.BorderSizePixel = 0
 	card.Parent = parent
 
@@ -5353,17 +5552,17 @@ local function createSpawnerCard(entry, tradable)
 
 	local cardGradient = Instance.new("UIGradient")
 	cardGradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 30, 39)),
-		ColorSequenceKeypoint.new(0.65, Color3.fromRGB(18, 20, 27)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 15, 21)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 31, 35)),
+		ColorSequenceKeypoint.new(0.65, Color3.fromRGB(25, 20, 22)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 18)),
 	})
-	cardGradient.Rotation = 90
+	cardGradient.Rotation = 112
 	cardGradient.Parent = card
 
 	local cardTint = Instance.new("Frame")
 	cardTint.Size = UDim2.new(1, 0, 0, 50)
 	cardTint.BackgroundColor3 = accentColor
-	cardTint.BackgroundTransparency = 0.94
+	cardTint.BackgroundTransparency = 0.95
 	cardTint.BorderSizePixel = 0
 	cardTint.Parent = card
 
@@ -5375,7 +5574,7 @@ local function createSpawnerCard(entry, tradable)
 	preview.Size = UDim2.new(1, -16, 0, 78)
 	preview.Position = UDim2.new(0, 8, 0, 8)
 	preview.BackgroundColor3 = baseColor
-	preview.BackgroundTransparency = tradable and 0.14 or 0.26
+	preview.BackgroundTransparency = tradable and 0.18 or 0.28
 	preview.BorderSizePixel = 0
 	preview.Parent = card
 
@@ -5394,7 +5593,7 @@ local function createSpawnerCard(entry, tradable)
 	local previewStroke = Instance.new("UIStroke")
 	previewStroke.Color = Color3.fromRGB(255, 255, 255)
 	previewStroke.Thickness = 1
-	previewStroke.Transparency = 0.92
+	previewStroke.Transparency = 0.94
 	previewStroke.Parent = preview
 
 	local previewImage = Instance.new("ImageLabel")
@@ -5419,7 +5618,7 @@ local function createSpawnerCard(entry, tradable)
 	rarityChip.Size = UDim2.new(0, 82, 0, 20)
 	rarityChip.Position = UDim2.new(0, 8, 0, 8)
 	rarityChip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	rarityChip.BackgroundTransparency = 0.84
+	rarityChip.BackgroundTransparency = 0.8
 	rarityChip.BorderSizePixel = 0
 	rarityChip.Text = entry.rarity
 	rarityChip.Font = Enum.Font.GothamBold
@@ -5454,7 +5653,7 @@ local function createSpawnerCard(entry, tradable)
 	typeChip.BackgroundTransparency = 1
 	typeChip.Font = Enum.Font.GothamMedium
 	typeChip.TextSize = 11
-	typeChip.TextColor3 = Color3.fromRGB(150, 156, 170)
+	typeChip.TextColor3 = Color3.fromRGB(171, 170, 177)
 	typeChip.TextXAlignment = Enum.TextXAlignment.Left
 	typeChip.Text = entry.type
 	typeChip.Parent = metaRow
@@ -5465,7 +5664,7 @@ local function createSpawnerCard(entry, tradable)
 	valueLabel.BackgroundTransparency = 1
 	valueLabel.Font = Enum.Font.GothamBold
 	valueLabel.TextSize = 11
-	valueLabel.TextColor3 = Color3.fromRGB(171, 224, 180)
+	valueLabel.TextColor3 = Color3.fromRGB(235, 211, 154)
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
 	valueLabel.Parent = metaRow
 
@@ -5475,7 +5674,7 @@ local function createSpawnerCard(entry, tradable)
 	detailLabel.BackgroundTransparency = 1
 	detailLabel.Font = Enum.Font.GothamMedium
 	detailLabel.TextSize = 10
-	detailLabel.TextColor3 = Color3.fromRGB(108, 113, 124)
+	detailLabel.TextColor3 = Color3.fromRGB(143, 140, 148)
 	detailLabel.TextXAlignment = Enum.TextXAlignment.Left
 	detailLabel.Text = tradable and "click to spawn quickly" or "locked source item"
 	detailLabel.Parent = card
@@ -5483,7 +5682,7 @@ local function createSpawnerCard(entry, tradable)
 	local spawnButton = Instance.new("TextButton")
 	spawnButton.Size = UDim2.new(1, -16, 0, 30)
 	spawnButton.Position = UDim2.new(0, 8, 1, -38)
-	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.52)
+	spawnButton.BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 146, 108), 0.42)
 	spawnButton.BorderSizePixel = 0
 	spawnButton.Text = "Spawn"
 	spawnButton.Font = Enum.Font.GothamBold
@@ -5498,13 +5697,13 @@ local function createSpawnerCard(entry, tradable)
 
 	spawnButton.MouseEnter:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
-			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(120, 148, 255), 0.56)
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 170, 130), 0.5)
 		}):Play()
 	end)
 
 	spawnButton.MouseLeave:Connect(function()
 		TweenService:Create(spawnButton, TweenInfo.new(0.15), {
-			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(84, 119, 255), 0.45)
+			BackgroundColor3 = baseColor:Lerp(Color3.fromRGB(255, 146, 108), 0.42)
 		}):Play()
 	end)
 

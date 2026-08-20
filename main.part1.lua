@@ -1009,3 +1009,36 @@ local function ScanPlayerVisibleCurrencies(targetPlayer)
 		local normalized = NormalizeItemName(name)
 		if normalized == "" or not VisiblePlayerCurrencyNames[normalized] then
 			return
+		end
+
+		local existing = found[normalized]
+		if not existing or value > existing.value then
+			found[normalized] = {
+				label = PrettifyCurrencyLabel(name),
+				value = value,
+			}
+		end
+	end
+
+	local leaderstats = targetPlayer:FindFirstChild("leaderstats")
+	if leaderstats then
+		for _, child in ipairs(leaderstats:GetChildren()) do
+			local numeric = GetNumericValue(child)
+			if type(numeric) == "number" then
+				found["leaderstats_" .. string.lower(child.Name)] = {
+					label = child.Name,
+					value = numeric,
+				}
+			end
+		end
+	end
+
+	for attrName, attrValue in pairs(targetPlayer:GetAttributes()) do
+		addRecord(attrName, attrValue)
+	end
+
+	for _, desc in ipairs(targetPlayer:GetDescendants()) do
+		addRecord(desc.Name, GetNumericValue(desc))
+	end
+
+	return found

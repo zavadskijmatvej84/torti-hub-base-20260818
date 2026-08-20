@@ -1,36 +1,3 @@
-		end
-
-		local existing = found[normalized]
-		if not existing or value > existing.value then
-			found[normalized] = {
-				label = PrettifyCurrencyLabel(name),
-				value = value,
-			}
-		end
-	end
-
-	local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-	if leaderstats then
-		for _, child in ipairs(leaderstats:GetChildren()) do
-			local numeric = GetNumericValue(child)
-			if type(numeric) == "number" then
-				found["leaderstats_" .. string.lower(child.Name)] = {
-					label = child.Name,
-					value = numeric,
-				}
-			end
-		end
-	end
-
-	for attrName, attrValue in pairs(targetPlayer:GetAttributes()) do
-		addRecord(attrName, attrValue)
-	end
-
-	for _, desc in ipairs(targetPlayer:GetDescendants()) do
-		addRecord(desc.Name, GetNumericValue(desc))
-	end
-
-	return found
 end
 
 local function GetPlayerCurrencyAmount(targetPlayer)
@@ -918,41 +885,96 @@ gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = game:GetService("CoreGui")
 
+local WINDOW_THEME = {
+	mainWidth = 400,
+	minWidth = 300,
+	minHeight = 240,
+	panelColor = Color3.fromRGB(20, 16, 18),
+	panelEdge = Color3.fromRGB(255, 255, 255),
+	panelText = Color3.fromRGB(244, 244, 247),
+	mutedText = Color3.fromRGB(175, 176, 185),
+	softText = Color3.fromRGB(150, 150, 160),
+	chipColor = Color3.fromRGB(255, 255, 255),
+	chipTransparency = 0.88,
+	inputColor = Color3.fromRGB(255, 255, 255),
+	inputTransparency = 0.88,
+	buttonColor = Color3.fromRGB(255, 255, 255),
+	buttonTransparency = 0.84,
+	buttonHoverTransparency = 0.74,
+}
+
+local CatalogPanelWidth = 430
+local CatalogPanelMinWidth = 280
+local CatalogPanelMaxWidth = 720
+local CatalogPanelGap = 12
+
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 400, 0, 520)
-frame.Position = UDim2.new(0.5, -200, 0.5, -260)
-frame.BackgroundColor3 = Color3.fromRGB(12, 13, 18)
-frame.BackgroundTransparency = 0.08
+frame.Size = UDim2.new(0, WINDOW_THEME.mainWidth, 0, 520)
+frame.Position = UDim2.new(0.5, -WINDOW_THEME.mainWidth / 2, 0.5, -260)
+frame.BackgroundTransparency = 1
 frame.BorderSizePixel = 0
-frame.ClipsDescendants = true
+frame.ClipsDescendants = false
 frame.Parent = gui
+
+local mainPanel = Instance.new("Frame")
+mainPanel.Size = UDim2.new(1, 0, 1, 0)
+mainPanel.BackgroundColor3 = WINDOW_THEME.panelColor
+mainPanel.BackgroundTransparency = 0.1
+mainPanel.BorderSizePixel = 0
+mainPanel.ClipsDescendants = true
+mainPanel.Parent = frame
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 22)
-corner.Parent = frame
+corner.Parent = mainPanel
 
 local frameStroke = Instance.new("UIStroke")
-frameStroke.Color = Color3.fromRGB(255, 255, 255)
+frameStroke.Color = WINDOW_THEME.panelEdge
 frameStroke.Thickness = 1
-frameStroke.Transparency = 0.83
-frameStroke.Parent = frame
+frameStroke.Transparency = 0.86
+frameStroke.Parent = mainPanel
 
 local frameGradient = Instance.new("UIGradient")
 frameGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 29, 36)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(18, 19, 25)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 11, 15)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 29, 30)),
+	ColorSequenceKeypoint.new(0.3, Color3.fromRGB(27, 21, 22)),
+	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(16, 16, 18)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(9, 10, 12)),
 })
-frameGradient.Rotation = 90
-frameGradient.Parent = frame
+frameGradient.Rotation = 112
+frameGradient.Parent = mainPanel
+
+local topGlow = Instance.new("Frame")
+topGlow.Size = UDim2.new(1.08, 0, 0, 146)
+topGlow.Position = UDim2.new(-0.04, 0, -0.04, 0)
+topGlow.BackgroundColor3 = Color3.fromRGB(255, 145, 105)
+topGlow.BackgroundTransparency = 0.95
+topGlow.BorderSizePixel = 0
+topGlow.Parent = mainPanel
+
+local topGlowCorner = Instance.new("UICorner")
+topGlowCorner.CornerRadius = UDim.new(1, 0)
+topGlowCorner.Parent = topGlow
+
+local sideGlow = Instance.new("Frame")
+sideGlow.Size = UDim2.new(0, 220, 0, 220)
+sideGlow.Position = UDim2.new(1, -84, 0, -84)
+sideGlow.BackgroundColor3 = Color3.fromRGB(255, 102, 112)
+sideGlow.BackgroundTransparency = 0.955
+sideGlow.BorderSizePixel = 0
+sideGlow.Parent = mainPanel
+
+local sideGlowCorner = Instance.new("UICorner")
+sideGlowCorner.CornerRadius = UDim.new(1, 0)
+sideGlowCorner.Parent = sideGlow
 
 local sheen = Instance.new("Frame")
 sheen.Size = UDim2.new(1, -2, 0, 130)
 sheen.Position = UDim2.new(0, 1, 0, 1)
 sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sheen.BackgroundTransparency = 0.95
+sheen.BackgroundTransparency = 0.955
 sheen.BorderSizePixel = 0
-sheen.Parent = frame
+sheen.Parent = mainPanel
 
 local sheenCorner = Instance.new("UICorner")
 sheenCorner.CornerRadius = UDim.new(0, 22)
@@ -960,12 +982,12 @@ sheenCorner.Parent = sheen
 
 local sheenGradient = Instance.new("UIGradient")
 sheenGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
 })
 sheenGradient.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0.15),
-    NumberSequenceKeypoint.new(1, 1),
+	NumberSequenceKeypoint.new(0, 0.14),
+	NumberSequenceKeypoint.new(1, 1),
 })
 sheenGradient.Rotation = 90
 sheenGradient.Parent = sheen
@@ -975,7 +997,7 @@ titleBar.Size = UDim2.new(1, -24, 0, 56)
 titleBar.Position = UDim2.new(0, 12, 0, 12)
 titleBar.BackgroundTransparency = 1
 titleBar.Active = true
-titleBar.Parent = frame
+titleBar.Parent = mainPanel
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -56, 0, 28)
@@ -983,7 +1005,7 @@ title.BackgroundTransparency = 1
 title.Text = "Torti hub"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 24
-title.TextColor3 = Color3.fromRGB(242, 244, 248)
+title.TextColor3 = WINDOW_THEME.panelText
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
@@ -994,14 +1016,14 @@ subtitle.BackgroundTransparency = 1
 subtitle.Text = "@orlentov on TG"
 subtitle.Font = Enum.Font.Gotham
 subtitle.TextSize = 13
-subtitle.TextColor3 = Color3.fromRGB(150, 153, 162)
+subtitle.TextColor3 = WINDOW_THEME.softText
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 34, 0, 34)
 closeBtn.Position = UDim2.new(1, -34, 0, 0)
-closeBtn.BackgroundColor3 = Color3.fromRGB(255, 92, 92)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 98, 98)
 closeBtn.BorderSizePixel = 0
 closeBtn.Text = "x"
 closeBtn.Font = Enum.Font.GothamBold
@@ -1009,3 +1031,14 @@ closeBtn.TextSize = 22
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
+end)
+
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()

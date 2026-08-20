@@ -1,20 +1,10 @@
-	countLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	countLabel.BackgroundTransparency = 0.9
-	countLabel.BorderSizePixel = 0
-	countLabel.Text = "Loading items..."
-	countLabel.Font = Enum.Font.GothamMedium
-	countLabel.TextSize = 11
-	countLabel.TextColor3 = Color3.fromRGB(165, 170, 182)
-	countLabel.TextXAlignment = Enum.TextXAlignment.Center
-	countLabel.Parent = controls
-	SpawnerCatalogUI.countLabel = countLabel
 
 	local countCorner = Instance.new("UICorner")
 	countCorner.CornerRadius = UDim.new(1, 0)
 	countCorner.Parent = countLabel
 
 	local countStroke = Instance.new("UIStroke")
-	countStroke.Color = Color3.fromRGB(255, 255, 255)
+	countStroke.Color = WINDOW_THEME.panelEdge
 	countStroke.Thickness = 1
 	countStroke.Transparency = 0.92
 	countStroke.Parent = countLabel
@@ -23,10 +13,10 @@
 	catalogScrollFrame.Position = UDim2.new(0, 0, 0, 96)
 	catalogScrollFrame.Size = UDim2.new(1, 0, 1, -96)
 	catalogScrollFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	catalogScrollFrame.BackgroundTransparency = 0.965
+	catalogScrollFrame.BackgroundTransparency = 0.955
 	catalogScrollFrame.BorderSizePixel = 0
 	catalogScrollFrame.ScrollBarThickness = 6
-	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 255)
+	catalogScrollFrame.ScrollBarImageColor3 = Color3.fromRGB(205, 138, 118)
 	catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	catalogScrollFrame.Parent = catalogBody
 	SpawnerCatalogUI.scrollFrame = catalogScrollFrame
@@ -36,7 +26,7 @@
 	catalogScrollCorner.Parent = catalogScrollFrame
 
 	local catalogScrollStroke = Instance.new("UIStroke")
-	catalogScrollStroke.Color = Color3.fromRGB(255, 255, 255)
+	catalogScrollStroke.Color = WINDOW_THEME.panelEdge
 	catalogScrollStroke.Thickness = 1
 	catalogScrollStroke.Transparency = 0.9
 	catalogScrollStroke.Parent = catalogScrollFrame
@@ -59,11 +49,7 @@
 	local function updateCatalogGridCellSize()
 		local width = math.max(240, catalogScrollFrame.AbsoluteSize.X - 24)
 		local columns = 2
-		if width >= 1180 then
-			columns = 6
-		elseif width >= 940 then
-			columns = 5
-		elseif width >= 720 then
+		if width >= 760 then
 			columns = 4
 		elseif width >= 520 then
 			columns = 3
@@ -90,15 +76,63 @@
 		catalogScrollFrame.CanvasSize = UDim2.new(0, 0, 0, catalogGrid.AbsoluteContentSize.Y + 24)
 	end)
 
+	local catalogIsVisible = false
+
+	local function getCatalogShownPosition()
+		return UDim2.new(1, CatalogPanelGap, 0, 0)
+	end
+
+	local function getCatalogHiddenPosition()
+		return UDim2.new(1, CatalogPanelWidth + CatalogPanelGap + 20, 0, 0)
+	end
+
+	local function syncCatalogPanelWidth()
+		catalogWindow.Size = UDim2.new(0, CatalogPanelWidth, 1, 0)
+		if catalogIsVisible then
+			catalogWindow.Position = getCatalogShownPosition()
+		else
+			catalogWindow.Position = getCatalogHiddenPosition()
+		end
+		updateCatalogGridCellSize()
+	end
+
 	local function setCatalogVisible(visible)
-		catalogOverlay.Visible = visible
-		if visible and RefreshSpawnerButtons then
-			RefreshSpawnerButtons()
+		if catalogIsVisible == visible then
+			return
+		end
+
+		catalogIsVisible = visible
+		SpawnerCatalogUI.isVisible = visible
+		openCatalogButton.Text = visible and "Hide catalog" or "Open catalog"
+		spawnerStatusLabel.Text = visible and "Catalog is docked to the right. Drag the thin handle to resize its width." or "Open the catalog and it will slide out as a right-side extension of the hub."
+
+		if visible then
+			catalogWindow.Visible = true
+			TweenService:Create(catalogWindow, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Position = getCatalogShownPosition(),
+			}):Play()
+			if RefreshSpawnerButtons then
+				RefreshSpawnerButtons()
+			end
+		else
+			local tween = TweenService:Create(catalogWindow, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Position = getCatalogHiddenPosition(),
+			})
+			local connection
+			connection = tween.Completed:Connect(function()
+				if connection then
+					connection:Disconnect()
+				end
+				if not catalogIsVisible then
+					catalogWindow.Visible = false
+				end
+			end)
+			tween:Play()
 		end
 	end
 
 	openCatalogButton.MouseButton1Click:Connect(function()
-		setCatalogVisible(true)
+		setCatalogVisible(not catalogIsVisible)
 	end)
 
 	closeCatalogButton.MouseButton1Click:Connect(function()
@@ -106,14 +140,24 @@
 	end)
 
 	closeCatalogButton.MouseEnter:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 116, 116)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 126, 126)}):Play()
 	end)
 
 	closeCatalogButton.MouseLeave:Connect(function()
-		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 92, 92)}):Play()
+		TweenService:Create(closeCatalogButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(255, 98, 98)}):Play()
+	end)
+
+	catalogResizeHandle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and catalogIsVisible then
+			SpawnerCatalogUI.resizeState = {
+				startX = input.Position.X,
+				width = CatalogPanelWidth,
+			}
+		end
 	end)
 
 	task.defer(function()
+		syncCatalogPanelWidth()
 		updateCatalogScrollHeight()
 		updateCatalogGridCellSize()
 	end)
@@ -998,14 +1042,3 @@ local BuiltInValuesCatalog = {
     {name='Mummy 2018 (Gun)', rarity='Uncommon', value='5', trend='Stable', demand=1},
     {name='Potion (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
     {name='Gothic (Gun)', rarity='Uncommon', value='7', trend='Stable', demand=2},
-    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Webs', rarity='Uncommon', value='3', trend='Stable', demand=2},
-    {name='Pumpkin Pie', rarity='Uncommon', value='2', trend='Stable', demand=2},
-    {name='Holly (Gun)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Potion (2017)', rarity='Uncommon', value='3', trend='Stable', demand=1},
-    {name='Potion (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Steel (Gun)', rarity='Uncommon', value='8', trend='Stable', demand=2},
-    {name='Frozen (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
-    {name='Mummy (2017)', rarity='Uncommon', value='20', trend='Stable', demand=1},
-    {name='Mummy 2018 (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
-    {name='Zombie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},

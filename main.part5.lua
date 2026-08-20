@@ -1,3 +1,14 @@
+    {name='Gingerbread (Gun)', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Webs', rarity='Uncommon', value='3', trend='Stable', demand=2},
+    {name='Pumpkin Pie', rarity='Uncommon', value='2', trend='Stable', demand=2},
+    {name='Holly (Gun)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Potion (2017)', rarity='Uncommon', value='3', trend='Stable', demand=1},
+    {name='Potion (Gun)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Steel (Gun)', rarity='Uncommon', value='8', trend='Stable', demand=2},
+    {name='Frozen (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
+    {name='Mummy (2017)', rarity='Uncommon', value='20', trend='Stable', demand=1},
+    {name='Mummy 2018 (Knife)', rarity='Uncommon', value='2', trend='Stable', demand=1},
+    {name='Zombie (Knife)', rarity='Uncommon', value='1', trend='Stable', demand=1},
     {name='Gingerbread (Knife)', rarity='Uncommon', value='85', trend='Stable', demand=2},
     {name='Zombie', rarity='Uncommon', value='7', trend='Stable', demand=2},
     {name='Wrap (Gun)', rarity='Uncommon', value='12', trend='Stable', demand=2},
@@ -1009,3 +1020,25 @@ local function createResizeHandle(pos, anchor, rx, ry, mx, my)
     h.ZIndex = 99
     h.Parent = frame
 
+    h.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizeData = {
+                start = input.Position,
+                size = frame.Size,
+                pos = frame.Position,
+                rx = rx, ry = ry, mx = mx, my = my
+            }
+        end
+    end)
+
+    return h
+end
+
+createResizeHandle(UDim2.new(1, -10, 1, -10), Vector2.new(1, 1), 1, 1, 0, 0)
+createResizeHandle(UDim2.new(0, 10, 1, -10), Vector2.new(0, 1), -1, 1, 1, 0)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not resizeData then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+
+    local delta = input.Position - resizeData.start
