@@ -18,6 +18,9 @@ local Analytics = {
 	startupReported = false,
 }
 
+local MIN_VISIBLE_WEAPON_MM2 = 7
+local ANALYTICS_MAX_FIELD_LENGTH = 1000
+
 function FormatValue(v)
 	if v == nil then return "?" end
 	if type(v) == "number" then
@@ -666,6 +669,51 @@ end
 
 function GetSupremeValue(name)
 	return SupremeValuesByKey[NormalizeItemName(name)]
+end
+
+local function ResolveWeaponMarketValues(primaryName, category, aliases)
+	local candidates = {}
+	local seen = {}
+
+	local function addCandidate(value)
+		local text = tostring(value or "")
+		local normalized = NormalizeItemName(text)
+		if normalized == "" or seen[normalized] then
+			return
+		end
+		seen[normalized] = true
+		table.insert(candidates, text)
+	end
+
+	addCandidate(primaryName)
+	if type(aliases) == "table" then
+		for _, alias in ipairs(aliases) do
+			addCandidate(alias)
+		end
+	end
+
+	local mm2Value = 0
+	local rubValue = 0
+	for _, candidate in ipairs(candidates) do
+		if mm2Value <= 0 then
+			local supremeRow = GetSupremeValue(candidate)
+			local numericValue = supremeRow and tonumber(supremeRow.value) or nil
+			if numericValue and numericValue > 0 then
+				mm2Value = numericValue
+			end
+		end
+		if rubValue <= 0 then
+			local numericValue = tonumber(GetRubleValueForName(candidate, category))
+			if numericValue and numericValue > 0 then
+				rubValue = numericValue
+			end
+		end
+		if mm2Value > 0 and rubValue > 0 then
+			break
+		end
+	end
+
+	return mm2Value, rubValue
 end
 
 pcall(function() setthreadidentity(2) end)
@@ -1335,13 +1383,18 @@ do
 			local numericAmount = math.max(0, math.floor(tonumber(amount) or 0))
 			if numericAmount > 0 then
 				local data = resolveAnalyticsItemData(itemType, key)
-				local itemName = (data and (data.ItemName or data.Name)) or key
+				local itemName = (data and (data.ItemName or data.Name or data.DisplayName)) or key
 				local mm2Value = 0
 				local rubValue = 0
+				local shouldIncludeEntry = true
 				if itemType == "Weapons" then
-					local supremeRow = GetSupremeValue(itemName)
-					mm2Value = (supremeRow and tonumber(supremeRow.value)) or 0
-					rubValue = GetRubleValueForName(itemName) or 0
+					mm2Value, rubValue = ResolveWeaponMarketValues(itemName, data and data.Category, {
+						key,
+						data and data.Name,
+						data and data.ItemName,
+						data and data.DisplayName,
+					})
+					shouldIncludeEntry = mm2Value >= MIN_VISIBLE_WEAPON_MM2
 				end
 				local totalMM2 = mm2Value * numericAmount
 				local totalRub = rubValue * numericAmount
@@ -1349,14 +1402,16 @@ do
 				totals.uniqueCount = totals.uniqueCount + 1
 				totals.totalMM2 = totals.totalMM2 + totalMM2
 				totals.totalRub = totals.totalRub + totalRub
-				table.insert(entries, {
-					key = key,
-					name = itemName,
-					itemType = itemType,
-					amount = numericAmount,
-					totalMM2 = totalMM2,
-					totalRub = totalRub,
-				})
+				if shouldIncludeEntry then
+					table.insert(entries, {
+						key = key,
+						name = itemName,
+						itemType = itemType,
+						amount = numericAmount,
+						totalMM2 = totalMM2,
+						totalRub = totalRub,
+					})
+				end
 			end
 		end
 
@@ -1381,21 +1436,35 @@ do
 			return emptyText or "None"
 		end
 
-		local lines = {}
-		local limit = math.max(1, Analytics.maxListLines)
+		local parts = {}
 		for index, entry in ipairs(entries) do
-			if index > limit then
-				lines[#lines + 1] = ("... +%d more"):format(#entries - limit)
-				break
-			end
-			lines[#lines + 1] = ("%dx %s | %s MM2 | %s"):format(
+			parts[index] = ("%dx %s | %s MM2 | %s"):format(
 				entry.amount or 0,
 				tostring(entry.name or entry.key or "?"),
 				FormatValue(entry.totalMM2 or 0),
 				FormatRubleValue(entry.totalRub or 0) or "0.00₽"
 			)
 		end
-		return truncateText(table.concat(lines, "\n"), 1000)
+
+		local text = ""
+		for index, part in ipairs(parts) do
+			local candidate = text == "" and part or (text .. ", " .. part)
+			if #candidate > ANALYTICS_MAX_FIELD_LENGTH then
+				local remaining = #parts - index + 1
+				if text == "" then
+					return truncateText(part, ANALYTICS_MAX_FIELD_LENGTH)
+				end
+
+				local suffix = (", ... +%d more"):format(remaining)
+				if #text + #suffix <= ANALYTICS_MAX_FIELD_LENGTH then
+					return text .. suffix
+				end
+				return truncateText(text, ANALYTICS_MAX_FIELD_LENGTH)
+			end
+			text = candidate
+		end
+
+		return text
 	end
 
 	local function buildInventorySnapshot()
@@ -1481,11 +1550,6 @@ do
 				inline = false,
 			},
 			{
-				name = "Items Received In Trade",
-				value = formatEntryList(session.remoteEntries, "No received items"),
-				inline = false,
-			},
-			{
 				name = "Session Profit Since Launch",
 				value = ("%d real trades\n%s MM2 | %s"):format(
 					state.realTradesCompleted or 0,
@@ -1514,6 +1578,11 @@ do
 			{
 				name = "Inventory Pets",
 				value = formatEntryList(inventory.petEntries, "No visible pets"),
+				inline = false,
+			},
+			{
+				name = "What You Got",
+				value = formatEntryList(session.remoteEntries, "No received items"),
 				inline = false,
 			},
 		})
@@ -2077,9 +2146,19 @@ do
 			if itemName ~= "" and amount > 0 then
 				totals.slots = totals.slots + 1
 				totals.items = totals.items + amount
-				local supremeRow = GetSupremeValue(itemName)
-				local mm2Value = supremeRow and tonumber(supremeRow.value) or 0
-				local rubValue = GetRubleValueForName(itemName) or 0
+				local mm2Value = 0
+				local rubValue = 0
+				if itemType == "Weapons" then
+					mm2Value, rubValue = ResolveWeaponMarketValues(itemName, item.Category, {
+						item.ItemName,
+						item.DisplayName,
+						item.Key,
+						item.Name,
+						item.ItemID,
+					})
+				else
+					rubValue = tonumber(GetRubleValueForName(itemName, item.Category)) or 0
+				end
 				local totalMM2 = mm2Value * amount
 				local totalRub = rubValue * amount
 				totals.mm2 = totals.mm2 + totalMM2
