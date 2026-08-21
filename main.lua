@@ -3155,12 +3155,15 @@ end
 			print("[mm2run] LastTradePartner recorded from StartTrade: " .. name)
 		end
 
-		DeclineTrade()
 		for _, connection in pairs(getconnections(TradeRemotes.StartTrade)) do
 			if connection.Function then
 				connection.Function(arg1, arg2)
 			end
 		end
+
+		task.defer(function()
+			pcall(TradeMonitor.RefreshState)
+		end)
 	end)
 
 	pcall(function()
