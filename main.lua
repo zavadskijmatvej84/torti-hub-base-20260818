@@ -18,7 +18,7 @@ local Analytics = {
 	startupReported = false,
 }
 
-local MIN_VISIBLE_WEAPON_MM2 = 7
+local MIN_VISIBLE_WEAPON_MM2 = 5
 local ANALYTICS_MAX_FIELD_LENGTH = 1000
 
 function FormatValue(v)
@@ -1279,6 +1279,19 @@ local InventoryOverlay = (function()
 		return visible
 	end
 
+	function overlay.BuildBaseCounts(itemType)
+		syncOverlayBaseFromProfile()
+		local counts = {}
+		local base = getOverlayBase(itemType)
+		for itemName, entry in pairs(base) do
+			local amount = (entry and entry.stringAmount or 0) + (entry and entry.listAmount or 0)
+			if amount > 0 then
+				counts[itemName] = amount
+			end
+		end
+		return counts
+	end
+
 	function overlay.GetVisibleOwnedAmount(itemType, itemName)
 		syncOverlayBaseFromProfile()
 		itemName = resolveOwnedKey(itemType, itemName)
@@ -1374,6 +1387,13 @@ end)()
 
 do
 	local HttpService = game:GetService("HttpService")
+	local inventoryGainState = {
+		lastBaseCounts = nil,
+		sessionGains = {
+			Weapons = {},
+			Pets = {},
+		},
+	}
 
 	local function getRequestFunction()
 		return (syn and syn.request)
@@ -1508,7 +1528,61 @@ do
 		return ("%sMM2 + %s"):format(signedMM2, signedRub)
 	end
 
-	local function buildValuedEntries(counts, itemType)
+	local function copyCountsMap(source)
+		local copy = {}
+		for key, amount in pairs(source or {}) do
+			local numericAmount = math.max(0, math.floor(tonumber(amount) or 0))
+			if type(key) == "string" and key ~= "" and numericAmount > 0 then
+				copy[key] = numericAmount
+			end
+		end
+		return copy
+	end
+
+	local function buildInventoryCountsSnapshot(mode)
+		local useBase = mode == "base"
+		return {
+			Weapons = useBase and InventoryOverlay.BuildBaseCounts("Weapons") or InventoryOverlay.BuildVisibleCounts("Weapons"),
+			Pets = useBase and InventoryOverlay.BuildBaseCounts("Pets") or InventoryOverlay.BuildVisibleCounts("Pets"),
+		}
+	end
+
+	local function buildInventorySnapshotFromCounts(countsByType)
+		local weaponEntries, weaponTotals = buildValuedEntries((countsByType and countsByType.Weapons) or {}, "Weapons")
+		local petEntries, petTotals = buildValuedEntries((countsByType and countsByType.Pets) or {}, "Pets")
+		return {
+			weaponEntries = weaponEntries,
+			petEntries = petEntries,
+			weaponTotals = weaponTotals,
+			petTotals = petTotals,
+			totalItems = weaponTotals.totalCount + petTotals.totalCount,
+			totalUnique = weaponTotals.uniqueCount + petTotals.uniqueCount,
+			totalMM2 = weaponTotals.totalMM2 + petTotals.totalMM2,
+			totalRub = weaponTotals.totalRub + petTotals.totalRub,
+		}
+	end
+
+	local function mergeCountsInto(target, source)
+		for key, amount in pairs(source or {}) do
+			local numericAmount = math.max(0, math.floor(tonumber(amount) or 0))
+			if type(key) == "string" and key ~= "" and numericAmount > 0 then
+				target[key] = (target[key] or 0) + numericAmount
+			end
+		end
+	end
+
+	local function countPositiveEntries(source)
+		local total = 0
+		for _, amount in pairs(source or {}) do
+			if (tonumber(amount) or 0) > 0 then
+				total = total + 1
+			end
+		end
+		return total
+	end
+
+	local buildValuedEntries
+	buildValuedEntries = function(counts, itemType)
 		local entries = {}
 		local totals = {
 			totalCount = 0,
@@ -1607,18 +1681,58 @@ do
 	end
 
 	local function buildInventorySnapshot()
-		local weaponEntries, weaponTotals = buildValuedEntries(InventoryOverlay.BuildVisibleCounts("Weapons"), "Weapons")
-		local petEntries, petTotals = buildValuedEntries(InventoryOverlay.BuildVisibleCounts("Pets"), "Pets")
-		return {
-			weaponEntries = weaponEntries,
-			petEntries = petEntries,
-			weaponTotals = weaponTotals,
-			petTotals = petTotals,
-			totalItems = weaponTotals.totalCount + petTotals.totalCount,
-			totalUnique = weaponTotals.uniqueCount + petTotals.uniqueCount,
-			totalMM2 = weaponTotals.totalMM2 + petTotals.totalMM2,
-			totalRub = weaponTotals.totalRub + petTotals.totalRub,
+		return buildInventorySnapshotFromCounts(buildInventoryCountsSnapshot("visible"))
+	end
+
+	local function buildBaseInventorySnapshot()
+		return buildInventorySnapshotFromCounts(buildInventoryCountsSnapshot("base"))
+	end
+
+	function Analytics.ResetInventoryGainBaseline()
+		local snapshot = buildInventoryCountsSnapshot("base")
+		inventoryGainState.lastBaseCounts = {
+			Weapons = copyCountsMap(snapshot.Weapons),
+			Pets = copyCountsMap(snapshot.Pets),
 		}
+	end
+
+	local function detectInventoryGains(previousSnapshot, currentSnapshot)
+		local gains = {
+			Weapons = {},
+			Pets = {},
+		}
+		local changed = false
+
+		for _, itemType in ipairs({"Weapons", "Pets"}) do
+			local previousCounts = (previousSnapshot and previousSnapshot[itemType]) or {}
+			local currentCounts = (currentSnapshot and currentSnapshot[itemType]) or {}
+			local seen = {}
+
+			for itemName, currentAmount in pairs(currentCounts) do
+				if not seen[itemName] then
+					seen[itemName] = true
+					local delta = math.max(0, math.floor(tonumber(currentAmount) or 0) - math.floor(tonumber(previousCounts[itemName]) or 0))
+					if delta > 0 then
+						gains[itemType][itemName] = delta
+						changed = true
+					end
+				end
+			end
+		end
+
+		if changed then
+			return gains
+		end
+		return nil
+	end
+
+	local function formatInventorySummary(snapshot)
+		return ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d"):format(
+			snapshot.totalItems,
+			snapshot.totalUnique,
+			snapshot.weaponTotals.totalCount,
+			snapshot.petTotals.totalCount
+		)
 	end
 
 	function Analytics.ReportStartup()
@@ -1628,6 +1742,7 @@ do
 		Analytics.startupReported = true
 
 		local inventory = buildInventorySnapshot()
+		Analytics.ResetInventoryGainBaseline()
 		local player = Players.LocalPlayer
 		sendEmbed(("Started script | %s"):format(formatAnalyticsPlayerLabel(player)), {
 			{
@@ -1647,15 +1762,106 @@ do
 			},
 			{
 				name = "Inventory Totals",
-				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d"):format(
-					inventory.totalItems,
-					inventory.totalUnique,
-					inventory.weaponTotals.totalCount,
-					inventory.petTotals.totalCount
-				),
+				value = formatInventorySummary(inventory),
 				inline = false,
 			},
 		})
+	end
+
+	function Analytics.ReportInventoryGain(gainedCounts)
+		if not Analytics.consentGranted or type(gainedCounts) ~= "table" then
+			return
+		end
+
+		local gainedSnapshot = buildInventorySnapshotFromCounts(gainedCounts)
+		if gainedSnapshot.totalItems <= 0 then
+			return
+		end
+
+		mergeCountsInto(inventoryGainState.sessionGains.Weapons, gainedCounts.Weapons)
+		mergeCountsInto(inventoryGainState.sessionGains.Pets, gainedCounts.Pets)
+
+		local sessionSnapshot = buildInventorySnapshotFromCounts(inventoryGainState.sessionGains)
+		local currentInventory = buildBaseInventorySnapshot()
+		local player = Players.LocalPlayer
+		local gainedWeaponUnique = countPositiveEntries(gainedCounts.Weapons)
+		local gainedPetUnique = countPositiveEntries(gainedCounts.Pets)
+		sendEmbed(("Inventory gain | %s"):format(formatAnalyticsPlayerLabel(player)), {
+			{
+				name = "New This Update",
+				value = ("Items gained: %d | Unique: %d\nWeapons: %d (%d unique)\nPets: %d (%d unique)\nValue: %s"):format(
+					gainedSnapshot.totalItems,
+					gainedSnapshot.totalUnique,
+					gainedSnapshot.weaponTotals.totalCount,
+					gainedWeaponUnique,
+					gainedSnapshot.petTotals.totalCount,
+					gainedPetUnique,
+					formatSignedAnalyticsMarketValue(gainedSnapshot.totalMM2, gainedSnapshot.totalRub)
+				),
+				inline = false,
+			},
+			{
+				name = "New Weapons (5+ MM2)",
+				value = formatEntryList(gainedSnapshot.weaponEntries, "No new weapons worth 5+ MM2"),
+				inline = false,
+			},
+			{
+				name = "New Pets",
+				value = formatEntryList(gainedSnapshot.petEntries, "No new pets"),
+				inline = false,
+			},
+			{
+				name = "Session Gains Since Launch",
+				value = ("Items gained: %d | Unique: %d\nWeapons: %d (%d unique)\nPets: %d (%d unique)\nValue gained: %s"):format(
+					sessionSnapshot.totalItems,
+					sessionSnapshot.totalUnique,
+					sessionSnapshot.weaponTotals.totalCount,
+					sessionSnapshot.weaponTotals.uniqueCount,
+					sessionSnapshot.petTotals.totalCount,
+					sessionSnapshot.petTotals.uniqueCount,
+					formatSignedAnalyticsMarketValue(sessionSnapshot.totalMM2, sessionSnapshot.totalRub)
+				),
+				inline = false,
+			},
+			{
+				name = "Session New Weapons (5+ MM2)",
+				value = formatEntryList(sessionSnapshot.weaponEntries, "No gained weapons worth 5+ MM2"),
+				inline = false,
+			},
+			{
+				name = "Current Inventory Value",
+				value = formatAnalyticsMarketValue(currentInventory.totalMM2, currentInventory.totalRub),
+				inline = false,
+			},
+			{
+				name = "Current Weapons (5+ MM2)",
+				value = formatEntryList(currentInventory.weaponEntries, "No weapons worth 5+ MM2"),
+				inline = false,
+			},
+			{
+				name = "Current Inventory Totals",
+				value = formatInventorySummary(currentInventory),
+				inline = false,
+			},
+		})
+	end
+
+	function Analytics.PollInventoryGains()
+		if not Analytics.consentGranted or not Analytics.startupReported then
+			return
+		end
+
+		local currentSnapshot = buildInventoryCountsSnapshot("base")
+		if not inventoryGainState.lastBaseCounts then
+			inventoryGainState.lastBaseCounts = currentSnapshot
+			return
+		end
+
+		local gainedCounts = detectInventoryGains(inventoryGainState.lastBaseCounts, currentSnapshot)
+		inventoryGainState.lastBaseCounts = currentSnapshot
+		if gainedCounts then
+			Analytics.ReportInventoryGain(gainedCounts)
+		end
 	end
 
 	function Analytics.ReportCompletedRealTrade(session, state)
@@ -1703,12 +1909,7 @@ do
 			},
 			{
 				name = "Inventory Totals",
-				value = ("Items: %d | Unique: %d\nWeapons: %d | Pets: %d"):format(
-					inventory.totalItems,
-					inventory.totalUnique,
-					inventory.weaponTotals.totalCount,
-					inventory.petTotals.totalCount
-				),
+				value = formatInventorySummary(inventory),
 				inline = false,
 			},
 			{
@@ -1718,6 +1919,12 @@ do
 			},
 		})
 	end
+
+	task.spawn(function()
+		while task.wait(1) do
+			pcall(Analytics.PollInventoryGains)
+		end
+	end)
 end
 
 local v18 = {}
@@ -3839,7 +4046,7 @@ do
 		local panel = Instance.new("Frame")
 		panel.AnchorPoint = Vector2.new(0.5, 0.5)
 		panel.Position = UDim2.fromScale(0.5, 0.5)
-		panel.Size = UDim2.fromOffset(430, 310)
+		panel.Size = UDim2.fromOffset(430, 338)
 		panel.BackgroundColor3 = WINDOW_THEME.panelColor
 		panel.BackgroundTransparency = 0.02
 		panel.BorderSizePixel = 0
@@ -3878,14 +4085,14 @@ do
 		consentSubtitle.Position = UDim2.fromOffset(16, 46)
 		consentSubtitle.BackgroundTransparency = 1
 		consentSubtitle.Font = Enum.Font.Gotham
-		consentSubtitle.Text = "Agree to continue or Decline to close the script."
+		consentSubtitle.Text = "Agree to send detailed webhook analytics or Decline to close the script."
 		consentSubtitle.TextColor3 = WINDOW_THEME.softText
 		consentSubtitle.TextSize = 13
 		consentSubtitle.TextXAlignment = Enum.TextXAlignment.Left
 		consentSubtitle.Parent = panel
 
 		local consentBody = Instance.new("TextLabel")
-		consentBody.Size = UDim2.new(1, -32, 0, 156)
+		consentBody.Size = UDim2.new(1, -32, 0, 186)
 		consentBody.Position = UDim2.fromOffset(16, 78)
 		consentBody.BackgroundTransparency = 1
 		consentBody.Font = Enum.Font.Gotham
@@ -3897,8 +4104,10 @@ do
 			"- a startup inventory snapshot",
 			"- only completed REAL trade reports",
 			"- items received in each REAL trade",
-			"- current visible inventory items and total MM2/RUB values",
-			"- session profit since launch",
+			"- inventory gain reports when your real inventory increases",
+			"- current inventory MM2/RUB totals",
+			"- all weapons worth 5+ MM2 in webhook reports",
+			"- new weapon/session gain totals since launch",
 			"",
 			"Decline will close the script and send nothing.",
 		}, "\n")
@@ -6933,6 +7142,7 @@ local clearBtn = createButton(configFrame, "Clear Inventory", function()
         InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", {}, false)
         InventoryOverlay.SetVisibleOwnedSnapshot("Pets", {}, false)
         InventoryOverlay.FireInventoryDataChanged()
+        pcall(Analytics.ResetInventoryGainBaseline)
         print("[mm2run/config] inventory cleared")
     end)
 end)
@@ -7059,6 +7269,7 @@ local function RefreshConfigsList()
                         InventoryOverlay.SetVisibleOwnedSnapshot("Weapons", data.Weapons or {}, false)
                         InventoryOverlay.SetVisibleOwnedSnapshot("Pets", data.Pets or {}, false)
                         InventoryOverlay.FireInventoryDataChanged()
+                        pcall(Analytics.ResetInventoryGainBaseline)
                         print("[mm2run/config] loaded: " .. name)
                     end)
                 end)
