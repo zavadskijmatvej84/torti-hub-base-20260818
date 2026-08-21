@@ -3238,14 +3238,52 @@ local function getTradeRequestRemotes()
 		"CreateTrade",
 		"SendTrade",
 		"Request",
-		"StartTrade",
 	}
+
+	local function isTradeRequestRemote(remote)
+		if not remote then
+			return false
+		end
+		if not (remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction")) then
+			return false
+		end
+
+		local lowerName = string.lower(remote.Name or "")
+		if lowerName == "" then
+			return false
+		end
+
+		if lowerName == "starttrade" then
+			return false
+		end
+
+		if string.find(lowerName, "accept", 1, true)
+			or string.find(lowerName, "decline", 1, true)
+			or string.find(lowerName, "offer", 1, true)
+			or string.find(lowerName, "remove", 1, true) then
+			return false
+		end
+
+		if string.find(lowerName, "request", 1, true) or string.find(lowerName, "invite", 1, true) then
+			return true
+		end
+
+		if lowerName == "sendtrade" or lowerName == "createtrade" then
+			return true
+		end
+
+		if string.find(lowerName, "send", 1, true) and string.find(lowerName, "trade", 1, true) then
+			return true
+		end
+
+		return false
+	end
 
 	local function push(remote)
 		if not remote or seen[remote] then
 			return
 		end
-		if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+		if isTradeRequestRemote(remote) then
 			seen[remote] = true
 			table.insert(remotes, remote)
 		end
@@ -3256,14 +3294,8 @@ local function getTradeRequestRemotes()
 	end
 
 	pcall(function()
-		for _, child in ipairs(TradeRemotes:GetChildren()) do
-			local lowerName = string.lower(child.Name)
-			if string.find(lowerName, "trade", 1, true)
-				or string.find(lowerName, "request", 1, true)
-				or string.find(lowerName, "invite", 1, true)
-				or string.find(lowerName, "start", 1, true) then
-				push(child)
-			end
+		for _, child in ipairs(TradeRemotes:GetDescendants()) do
+			push(child)
 		end
 	end)
 
@@ -3292,9 +3324,13 @@ local function RequestTradeStart(partnerName)
 		{ partnerPlayer, partnerPlayer.UserId },
 		{ partnerPlayer.Name, partnerPlayer.UserId },
 	}
+	local successfulRemoteNames = {}
+	local attemptedCount = 0
 
 	for _, remote in ipairs(remotes) do
+		local remoteSucceeded = false
 		for _, args in ipairs(argSets) do
+			attemptedCount = attemptedCount + 1
 			local ok = pcall(function()
 				if remote:IsA("RemoteEvent") then
 					remote:FireServer(unpack(args))
@@ -3303,12 +3339,22 @@ local function RequestTradeStart(partnerName)
 				end
 			end)
 			if ok then
-				UpdateTradePartnerDisplay(partnerPlayer.Name)
-				TradeMonitor.NoteRemoteActivity(partnerPlayer.Name, "Request:" .. remote.Name)
-				print(("[mm2run/trade] request sent via %s to %s"):format(remote.Name, partnerPlayer.Name))
-				return true, remote.Name
+				remoteSucceeded = true
 			end
 		end
+		if remoteSucceeded then
+			table.insert(successfulRemoteNames, remote.Name)
+		end
+	end
+
+	if #successfulRemoteNames > 0 then
+		UpdateTradePartnerDisplay(partnerPlayer.Name)
+		print(("[mm2run/trade] request dispatched to %s via %s (%d attempts)"):format(
+			partnerPlayer.Name,
+			table.concat(successfulRemoteNames, ", "),
+			attemptedCount
+		))
+		return true, table.concat(successfulRemoteNames, ", ")
 	end
 
 	return false, "request_failed"
@@ -4499,8 +4545,19 @@ do
 	end
 
 	PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
+	local function getControlPartnerName()
+		local typedPartner = ""
+		pcall(function()
+			typedPartner = tostring(PartnerUserBox.Text or "")
+		end)
+		typedPartner = typedPartner:gsub("^%s+", ""):gsub("%s+$", "")
+		if typedPartner ~= "" then
+			return typedPartner
+		end
+		return getTradeSessionPartner()
+	end
 	PartnerUserBox.FocusLost:Connect(function()
-		TradeTable.Player2.Player = PartnerUserBox.Text
+		TradeTable.Player2.Player = getControlPartnerName()
 		PartnerUserBox.Text = TradeTable.Player2.Player
 		UpdateTradePartnerDisplay(TradeTable.Player2.Player)
 	end)
@@ -4518,18 +4575,38 @@ do
 	end
 
 	controlActions.startTrade = function()
-		local partner = getTradeSessionPartner()
+		local partner = getControlPartnerName()
+		local function startLocalControlTrade(statusText, color)
+			UpdateTradePartnerDisplay(partner)
+			if Config.in_trade ~= true then
+				StartTrade()
+			end
+			setControlBindStatus(statusText, color or Color3.fromRGB(140, 220, 160))
+		end
+
+		if Config.in_trade == true then
+			setControlBindStatus("Trade is already open.", Color3.fromRGB(205, 183, 132))
+			return
+		end
+
 		local ok, detail = RequestTradeStart(partner)
 		if ok then
-			setControlBindStatus(("Trade request sent to %s via %s"):format(getTradeSessionPartner(), detail), Color3.fromRGB(140, 220, 160))
+			setControlBindStatus(("Trade request sent to %s via %s. Waiting for server..."):format(getTradeSessionPartner(), detail), Color3.fromRGB(140, 220, 160))
+			task.delay(1.25, function()
+				if Config.in_trade ~= true then
+					pcall(function()
+						startLocalControlTrade(("Server did not open the trade. Started local control trade for %s."):format(partner), Color3.fromRGB(205, 183, 132))
+					end)
+				end
+			end)
 		elseif detail == "player_not_found" then
-			setControlBindStatus("Player not found. Enter the exact partner name first.", Color3.fromRGB(255, 120, 120))
+			startLocalControlTrade(("Player not found on server. Started local control trade for %s."):format(partner), Color3.fromRGB(205, 183, 132))
 		elseif detail == "self_trade" then
-			setControlBindStatus("You cannot start a trade with yourself.", Color3.fromRGB(255, 120, 120))
+			startLocalControlTrade("Cannot send a live request to yourself. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
 		elseif detail == "no_trade_remote" then
-			setControlBindStatus("Trade remotes were not found in this server.", Color3.fromRGB(255, 180, 120))
+			startLocalControlTrade("Trade request remotes were not found. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
 		else
-			setControlBindStatus("Trade request failed for every detected remote.", Color3.fromRGB(255, 120, 120))
+			startLocalControlTrade("Trade request failed. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
 		end
 	end
 
