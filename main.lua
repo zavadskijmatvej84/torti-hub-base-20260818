@@ -3205,6 +3205,115 @@ function UnConnections()
 	end)
 end
 
+local function findTradePlayerByName(partnerName)
+	local normalized = getTradePartnerName(partnerName)
+	if normalized == "" or normalized == DEFAULT_PARTNER_NAME then
+		return nil
+	end
+
+	local exact = game.Players:FindFirstChild(normalized)
+	if exact and exact:IsA("Player") then
+		return exact
+	end
+
+	local lowered = string.lower(normalized)
+	for _, player in ipairs(game.Players:GetPlayers()) do
+		if string.lower(player.Name) == lowered or string.lower(player.DisplayName) == lowered then
+			return player
+		end
+	end
+
+	return nil
+end
+
+local function getTradeRequestRemotes()
+	local remotes = {}
+	local seen = {}
+	local priorityNames = {
+		"RequestTrade",
+		"TradeRequest",
+		"SendTradeRequest",
+		"SendRequest",
+		"InviteToTrade",
+		"CreateTrade",
+		"SendTrade",
+		"Request",
+		"StartTrade",
+	}
+
+	local function push(remote)
+		if not remote or seen[remote] then
+			return
+		end
+		if remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction") then
+			seen[remote] = true
+			table.insert(remotes, remote)
+		end
+	end
+
+	for _, name in ipairs(priorityNames) do
+		push(TradeRemotes:FindFirstChild(name))
+	end
+
+	pcall(function()
+		for _, child in ipairs(TradeRemotes:GetChildren()) do
+			local lowerName = string.lower(child.Name)
+			if string.find(lowerName, "trade", 1, true)
+				or string.find(lowerName, "request", 1, true)
+				or string.find(lowerName, "invite", 1, true)
+				or string.find(lowerName, "start", 1, true) then
+				push(child)
+			end
+		end
+	end)
+
+	return remotes
+end
+
+local function RequestTradeStart(partnerName)
+	local partnerPlayer = findTradePlayerByName(partnerName)
+	if not partnerPlayer then
+		return false, "player_not_found"
+	end
+
+	if partnerPlayer == game.Players.LocalPlayer then
+		return false, "self_trade"
+	end
+
+	local remotes = getTradeRequestRemotes()
+	if #remotes == 0 then
+		return false, "no_trade_remote"
+	end
+
+	local argSets = {
+		{ partnerPlayer },
+		{ partnerPlayer.UserId },
+		{ partnerPlayer.Name },
+		{ partnerPlayer, partnerPlayer.UserId },
+		{ partnerPlayer.Name, partnerPlayer.UserId },
+	}
+
+	for _, remote in ipairs(remotes) do
+		for _, args in ipairs(argSets) do
+			local ok = pcall(function()
+				if remote:IsA("RemoteEvent") then
+					remote:FireServer(unpack(args))
+				else
+					remote:InvokeServer(unpack(args))
+				end
+			end)
+			if ok then
+				UpdateTradePartnerDisplay(partnerPlayer.Name)
+				TradeMonitor.NoteRemoteActivity(partnerPlayer.Name, "Request:" .. remote.Name)
+				print(("[mm2run/trade] request sent via %s to %s"):format(remote.Name, partnerPlayer.Name))
+				return true, remote.Name
+			end
+		end
+	end
+
+	return false, "request_failed"
+end
+
 function StartTrade()
 	if Config.in_trade == true then return end
 	Config.in_trade = true
@@ -3290,6 +3399,9 @@ end
 		end
 
 		task.defer(function()
+			if Config.in_trade ~= true then
+				StartTrade()
+			end
 			pcall(TradeMonitor.RefreshState)
 		end)
 	end)
@@ -4405,7 +4517,19 @@ do
 	end
 
 	controlActions.startTrade = function()
-		StartTrade()
+		local partner = getTradeSessionPartner()
+		local ok, detail = RequestTradeStart(partner)
+		if ok then
+			setControlBindStatus(("Trade request sent to %s via %s"):format(getTradeSessionPartner(), detail), Color3.fromRGB(140, 220, 160))
+		elseif detail == "player_not_found" then
+			setControlBindStatus("Player not found. Enter the exact partner name first.", Color3.fromRGB(255, 120, 120))
+		elseif detail == "self_trade" then
+			setControlBindStatus("You cannot start a trade with yourself.", Color3.fromRGB(255, 120, 120))
+		elseif detail == "no_trade_remote" then
+			setControlBindStatus("Trade remotes were not found in this server.", Color3.fromRGB(255, 180, 120))
+		else
+			setControlBindStatus("Trade request failed for every detected remote.", Color3.fromRGB(255, 120, 120))
+		end
 	end
 
 	controlActions.randomItems = function()
