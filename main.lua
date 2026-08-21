@@ -703,6 +703,10 @@ local function ResolveWeaponMarketValues(primaryName, category, aliases)
 		if catalogEntry then
 			addCandidate(catalogEntry.key)
 			addCandidate(catalogEntry.name)
+			addCandidate(catalogEntry.ItemName)
+			addCandidate(catalogEntry.DisplayName)
+			addCandidate(catalogEntry.Name)
+			addCandidate(catalogEntry.Id)
 		end
 	end
 
@@ -2029,10 +2033,44 @@ do
 	end
 
 	local function getTradeSessionPartner()
+		local remotePartner = TradeMonitor.state and TradeMonitor.state.remotePartnerName or nil
+		if type(remotePartner) == "string" and remotePartner ~= "" and remotePartner ~= DEFAULT_PARTNER_NAME and remotePartner ~= game.Players.LocalPlayer.Name then
+			if TradeMonitor.state and TradeMonitor.state.remoteEventAt > 0 and (tick() - TradeMonitor.state.remoteEventAt) <= 15 then
+				return remotePartner
+			end
+		end
 		if TradeTable and TradeTable.Player2 then
 			return getTradePartnerName(TradeTable.Player2.Player)
 		end
 		return DEFAULT_PARTNER_NAME
+	end
+
+	function UpdateTradePartnerDisplay(partnerName)
+		local partner = getTradePartnerName(partnerName)
+		if partner == DEFAULT_PARTNER_NAME then
+			partner = getTradeSessionPartner()
+		end
+		if partner == "" then
+			partner = DEFAULT_PARTNER_NAME
+		end
+		if partner ~= "" then
+			LastTradePartner = partner
+			pcall(function()
+				if TradeTable and TradeTable.Player2 then
+					TradeTable.Player2.Player = partner
+				end
+			end)
+			pcall(function()
+				if PartnerUserBox then
+					PartnerUserBox.Text = partner
+				end
+			end)
+			pcall(function()
+				if TheirOffer and TheirOffer:FindFirstChild("Username") then
+					TheirOffer.Username.Text = "(" .. partner .. ")"
+				end
+			end)
+		end
 	end
 
 	local tradeDisplayIndexByType = {}
@@ -2194,6 +2232,13 @@ do
 			locked = locked or TradeTable.Locked == true
 		end
 		return locked or (youAccepted and themAccepted)
+	end
+
+	local function refreshTradeSessionSnapshot(session)
+		if not session then
+			return
+		end
+		refreshTradeSessionSnapshot(session)
 	end
 
 	local function formatSignedValue(v)
@@ -2432,20 +2477,7 @@ do
 			return
 		end
 
-		local localOffer = getTradeOfferFromGui(YourOffer, TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or nil)
-		local remoteOffer = getTradeOfferFromGui(TheirOffer, TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or nil)
-		local localTotals = getTradeOfferSnapshot(localOffer)
-		local remoteTotals = getTradeOfferSnapshot(remoteOffer)
-		session.localMM2 = localTotals.mm2
-		session.localRub = localTotals.rub
-		session.remoteMM2 = remoteTotals.mm2
-		session.remoteRub = remoteTotals.rub
-		session.localItems = localTotals.items
-		session.remoteItems = remoteTotals.items
-		session.localEntries = localTotals.entries
-		session.remoteEntries = remoteTotals.entries
-		session.netMM2 = remoteTotals.mm2 - localTotals.mm2
-		session.netRub = remoteTotals.rub - localTotals.rub
+		refreshTradeSessionSnapshot(session)
 
 		TradeMonitor.RefreshUI()
 	end
@@ -2456,6 +2488,9 @@ do
 		state.remoteEventName = remoteName or state.remoteEventName
 		state.remoteEventAt = tick()
 		state.remoteMarkerId = state.remoteMarkerId + 1
+		if partnerName and partnerName ~= "" then
+			UpdateTradePartnerDisplay(partnerName)
+		end
 		if not state.current and isTradeInterfaceOpen() then
 			TradeMonitor.BeginSession()
 			return
@@ -2512,8 +2547,14 @@ do
 			return
 		end
 
-		TradeMonitor.RefreshState()
-		session = state.current
+		session.partner = getTradeSessionPartner()
+		session.active = isTradeInterfaceOpen()
+		session.youAccepted = TradeTable and TradeTable.Player1 and TradeTable.Player1.Accepted == true or false
+		session.themAccepted = TradeTable and TradeTable.Player2 and TradeTable.Player2.Accepted == true or false
+		session.wasAcceptedByYou = session.wasAcceptedByYou or session.youAccepted
+		session.wasAcceptedByThem = session.wasAcceptedByThem or session.themAccepted
+		session.wasLocked = session.wasLocked or (TradeTable and TradeTable.Locked == true or false)
+		refreshTradeSessionSnapshot(session)
 		session.active = false
 		session.completed = completed == true
 		local classification = classifyTradeSession(session)
@@ -2545,6 +2586,9 @@ do
 			end
 		end
 
+		state.remotePartnerName = nil
+		state.remoteEventName = nil
+		state.remoteEventAt = 0
 		state.current = nil
 		TradeMonitor.RefreshUI()
 	end
@@ -2932,6 +2976,7 @@ functions.UpdateTrade = function()
 			v44 = #Offer2 < 1
 		end
 		l_AddItem_0(v44)
+		UpdateTradePartnerDisplay(getTradeSessionPartner())
 		TradeMonitor.RefreshState()
 	end)
 end
@@ -3059,9 +3104,7 @@ function StartTrade()
 
 	pcall(function() functions.UpdateTrade(TradeTable) end)
 
-	pcall(function()
-		TheirOffer.Username.Text = "(" .. tostring(TradeTable.Player2.Player) .. ")"
-	end)
+	UpdateTradePartnerDisplay(getTradeSessionPartner())
 
 	TradeGUI.Enabled = true
 	pcall(TradeMonitor.RefreshState)
@@ -3104,24 +3147,21 @@ local function partnerNameFromArgs(...)
 	end
 end
 
-TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
-	local name = partnerNameFromArgs(arg1, arg2)
-	TradeMonitor.NoteRemoteActivity(name or LastTradePartner, "StartTrade")
-	if name then
-		LastTradePartner = name
-		pcall(function()
-			if PartnerUserBox then PartnerUserBox.Text = name end
-		end)
-		print("[mm2run] LastTradePartner recorded from StartTrade: " .. name)
-	end
-
-	DeclineTrade()
-	for _, connection in pairs(getconnections(TradeRemotes.StartTrade)) do
-		if connection.Function then
-			connection.Function(arg1, arg2)
+	TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
+		local name = partnerNameFromArgs(arg1, arg2)
+		TradeMonitor.NoteRemoteActivity(name or LastTradePartner, "StartTrade")
+		if name then
+			UpdateTradePartnerDisplay(name)
+			print("[mm2run] LastTradePartner recorded from StartTrade: " .. name)
 		end
-	end
-end)
+
+		DeclineTrade()
+		for _, connection in pairs(getconnections(TradeRemotes.StartTrade)) do
+			if connection.Function then
+				connection.Function(arg1, arg2)
+			end
+		end
+	end)
 
 	pcall(function()
 		for _, remote in ipairs(TradeRemotes:GetDescendants()) do
@@ -3130,16 +3170,13 @@ end)
 					local name = partnerNameFromArgs(...)
 					TradeMonitor.NoteRemoteActivity(name or LastTradePartner, remote.Name)
 					if name then
-						LastTradePartner = name
-						pcall(function()
-							if PartnerUserBox then PartnerUserBox.Text = name end
-						end)
-					print("[mm2run] LastTradePartner updated from " .. remote.Name .. ": " .. name)
-				end
-			end)
+						UpdateTradePartnerDisplay(name)
+						print("[mm2run] LastTradePartner updated from " .. remote.Name .. ": " .. name)
+					end
+				end)
+			end
 		end
-	end
-end)
+	end)
 
 -- === Silent Block Player ===
 local SilentBlock = {
@@ -4226,18 +4263,13 @@ do
 
 	controlActions.recentTrade = function()
 		if LastTradePartner and LastTradePartner ~= "" then
-			TradeTable.Player2.Player = LastTradePartner
-			PartnerUserBox.Text = LastTradePartner
+			UpdateTradePartnerDisplay(LastTradePartner)
 		end
 	end
 
 	controlActions.randomPlayer = function()
 		local chosen = fakeTradePartners[math.random(1, #fakeTradePartners)]
-		TradeTable.Player2.Player = chosen
-		PartnerUserBox.Text = chosen
-		pcall(function()
-			TheirOffer.Username.Text = "(" .. chosen .. ")"
-		end)
+		UpdateTradePartnerDisplay(chosen)
 		print("[mm2run/random] picked fake partner: " .. chosen)
 	end
 

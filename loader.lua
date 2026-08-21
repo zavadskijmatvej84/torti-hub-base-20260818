@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 
-local RAW_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818/main/main-copy.lua?v=5012d9d"
+local RAW_URL = "https://raw.githubusercontent.com/zavadskijmatvej84/torti-hub-base-20260818-copy/main/main.lua?v=20260820-live-main-v1"
 
 local function resolveGuiParent()
 	local candidates = {
