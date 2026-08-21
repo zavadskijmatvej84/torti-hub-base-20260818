@@ -2864,32 +2864,32 @@ local function v34(v23, v24)
 		local ItemType = v26[3] or v26.ItemType
 
 		local v33 = v23.Container["NewItem" .. v25]
-		if not v33 then continue end
-
-		local success = pcall(function()
-			if Sync[ItemType] and Sync[ItemType][ItemID] then
-				local v30 = {}
-				for v31, v32 in pairs(Sync[ItemType][ItemID]) do
-					v30[v31] = v32
+		if v33 then
+			local success = pcall(function()
+				if Sync[ItemType] and Sync[ItemType][ItemID] then
+					local v30 = {}
+					for v31, v32 in pairs(Sync[ItemType][ItemID]) do
+						v30[v31] = v32
+					end
+					v30.DataType = ItemType
+					v30.Amount = Amount
+					ItemModule.DisplayItem(v33, v30)
 				end
-				v30.DataType = ItemType
-				v30.Amount = Amount
-				ItemModule.DisplayItem(v33, v30)
-			end
-		end)
+			end)
 
-		pcall(function()
-			if v18[v33] then
-				v18[v33]:Disconnect()
-			end
-			if v33.Container and v33.Container:FindFirstChild("ActionButton") then
-				v18[v33] = v33.Container.ActionButton.MouseButton1Click:Connect(function()
-					RemoveItemLocalPlayer(ItemID, ItemType)
-				end)
-			end
-		end)
+			pcall(function()
+				if v18[v33] then
+					v18[v33]:Disconnect()
+				end
+				if v33.Container and v33.Container:FindFirstChild("ActionButton") then
+					v18[v33] = v33.Container.ActionButton.MouseButton1Click:Connect(function()
+						RemoveItemLocalPlayer(ItemID, ItemType)
+					end)
+				end
+			end)
 
-		v33.Visible = true
+			v33.Visible = true
+		end
 	end
 end
 
@@ -7761,14 +7761,15 @@ end
 for _, entry in ipairs(WeaponCatalog) do
     local wKey = entry.key
     local wData = (Sync.Weapons and Sync.Weapons[wKey]) or (Sync.Item and Sync.Item[wKey])
-    if not _isSpawnerAllowed(entry.name) then continue end
-    local tradable = _isTradable(wData)
-	local ok, cardInfo = pcall(createSpawnerCard, entry, tradable)
-	if ok and cardInfo then
-		cardInfo.defaultOrder = #SpawnerCatalogUI.cards + 1
-		SpawnerCatalogUI.cards[#SpawnerCatalogUI.cards + 1] = cardInfo
-	elseif not ok then
-		warn("Spawner card build failed for " .. tostring(entry.name) .. ": " .. tostring(cardInfo))
+	if _isSpawnerAllowed(entry.name) then
+		local tradable = _isTradable(wData)
+		local ok, cardInfo = pcall(createSpawnerCard, entry, tradable)
+		if ok and cardInfo then
+			cardInfo.defaultOrder = #SpawnerCatalogUI.cards + 1
+			SpawnerCatalogUI.cards[#SpawnerCatalogUI.cards + 1] = cardInfo
+		elseif not ok then
+			warn("Spawner card build failed for " .. tostring(entry.name) .. ": " .. tostring(cardInfo))
+		end
 	end
 
 end
@@ -8068,34 +8069,28 @@ task.spawn(function()
 	while true do
 		task.wait(0.2)
 
-		if not PlayerValuesAutoRefreshState.enabled then
-			continue
-		end
+		if PlayerValuesAutoRefreshState.enabled then
+			syncPlayerAutoRefreshSettingsFromInputs()
 
-		syncPlayerAutoRefreshSettingsFromInputs()
+			if playerValuesRefreshInProgress then
+				setPlayerAutoRefreshStatus("Auto refresh paused: table is updating", Color3.fromRGB(255, 220, 100))
+			elseif not Values or not Values.byName then
+				setPlayerAutoRefreshStatus("Auto refresh paused: catalog is loading", Color3.fromRGB(255, 220, 100))
+			else
+				local now = tick()
+				local elapsed = now - (PlayerValuesAutoRefreshState.lastRefreshAt or 0)
+				local remaining = PlayerValuesAutoRefreshState.intervalSeconds - elapsed
 
-		if playerValuesRefreshInProgress then
-			setPlayerAutoRefreshStatus("Auto refresh paused: table is updating", Color3.fromRGB(255, 220, 100))
-			continue
-		end
-
-		if not Values or not Values.byName then
-			setPlayerAutoRefreshStatus("Auto refresh paused: catalog is loading", Color3.fromRGB(255, 220, 100))
-			continue
-		end
-
-		local now = tick()
-		local elapsed = now - (PlayerValuesAutoRefreshState.lastRefreshAt or 0)
-		local remaining = PlayerValuesAutoRefreshState.intervalSeconds - elapsed
-
-		if remaining <= 0 then
-			PlayerValuesAutoRefreshState.lastRefreshAt = now
-			setPlayerAutoRefreshStatus("Auto refreshing player table...", Color3.fromRGB(180, 220, 255))
-			task.defer(function()
-				RefreshPlayerValues()
-			end)
-		else
-			setPlayerAutoRefreshStatus(("Next auto refresh in %.1fs"):format(remaining), Color3.fromRGB(180, 220, 255))
+				if remaining <= 0 then
+					PlayerValuesAutoRefreshState.lastRefreshAt = now
+					setPlayerAutoRefreshStatus("Auto refreshing player table...", Color3.fromRGB(180, 220, 255))
+					task.defer(function()
+						RefreshPlayerValues()
+					end)
+				else
+					setPlayerAutoRefreshStatus(("Next auto refresh in %.1fs"):format(remaining), Color3.fromRGB(180, 220, 255))
+				end
+			end
 		end
 	end
 end)
@@ -8115,117 +8110,111 @@ task.spawn(function()
 			AutoBlockState.busy = false
 			AutoBlockState.busyTargetName = nil
 			AutoBlockState.busyStartedAt = 0
-			continue
-		end
+		else
+			syncAutoBlockSettingsFromInputs()
 
-		syncAutoBlockSettingsFromInputs()
-
-		if playerValuesRefreshInProgress or not Values or not Values.byName then
-			local suffix = playerValuesRefreshInProgress and "values are loading" or "catalog is loading"
-			setAutoBlockStatus("Timer paused: " .. suffix, Color3.fromRGB(255, 220, 100))
-			continue
-		end
-
-		local activeNames = {}
-		local bestCandidate = nil
-		local bestProgress = 0
-
-		for playerName, row in pairs(playerValueRows) do
-			local playerObject = row.player
-			local total = row.total or -1
-			local cooldownUntil = AutoBlockState.cooldownUntilByName[playerName] or 0
-			local coolingDown = cooldownUntil > now
-			local qualified = playerObject
-				and playerObject.Parent == Players
-				and total >= 0
-				and total < AutoBlockState.minValue
-				and not AutoBlockState.blockedByName[playerName]
-				and not coolingDown
-
-			if qualified then
-				activeNames[playerName] = true
-				local nextProgress = math.min(AutoBlockState.delaySeconds, (AutoBlockState.progressByName[playerName] or 0) + delta)
-				AutoBlockState.progressByName[playerName] = nextProgress
-				if (not bestCandidate) or total > (bestCandidate.total or -1) then
-					bestCandidate = row
-					bestProgress = nextProgress
-				end
-			end
-		end
-
-		for playerName, _ in pairs(AutoBlockState.progressByName) do
-			if not activeNames[playerName] then
-				AutoBlockState.progressByName[playerName] = nil
-			end
-		end
-
-		for playerName, cooldownUntil in pairs(AutoBlockState.cooldownUntilByName) do
-			if cooldownUntil <= now then
-				AutoBlockState.cooldownUntilByName[playerName] = nil
-			end
-		end
-
-		if AutoBlockState.busy then
-			if (now - (AutoBlockState.busyStartedAt or 0)) >= AutoBlockState.busyTimeoutSeconds then
-				local stuckName = AutoBlockState.busyTargetName
-				if stuckName and stuckName ~= "" then
-					AutoBlockState.cooldownUntilByName[stuckName] = now + 5
-					AutoBlockState.progressByName[stuckName] = nil
-				end
-				AutoBlockState.busy = false
-				AutoBlockState.busyTargetName = nil
-				AutoBlockState.busyStartedAt = 0
-				setAutoBlockStatus("Previous block timed out, resuming scan", Color3.fromRGB(255, 150, 100))
+			if playerValuesRefreshInProgress or not Values or not Values.byName then
+				local suffix = playerValuesRefreshInProgress and "values are loading" or "catalog is loading"
+				setAutoBlockStatus("Timer paused: " .. suffix, Color3.fromRGB(255, 220, 100))
 			else
-				local targetLabel = AutoBlockState.busyTargetName or "player"
-				setAutoBlockStatus(("Blocking %s..."):format(targetLabel), Color3.fromRGB(255, 160, 120))
-			end
-			continue
-		end
+				local activeNames = {}
+				local bestCandidate = nil
+				local bestProgress = 0
 
-		if not bestCandidate then
-			setAutoBlockStatus(("Watching players below %s value, delay %ss"):format(FormatValue(AutoBlockState.minValue), AutoBlockState.delaySeconds), Color3.fromRGB(120, 255, 160))
-			continue
-		end
+				for playerName, row in pairs(playerValueRows) do
+					local playerObject = row.player
+					local total = row.total or -1
+					local cooldownUntil = AutoBlockState.cooldownUntilByName[playerName] or 0
+					local coolingDown = cooldownUntil > now
+					local qualified = playerObject
+						and playerObject.Parent == Players
+						and total >= 0
+						and total < AutoBlockState.minValue
+						and not AutoBlockState.blockedByName[playerName]
+						and not coolingDown
 
-		local remaining = math.max(0, AutoBlockState.delaySeconds - bestProgress)
-		setAutoBlockStatus(("Detected %s (%s). Blocking in %.1fs"):format(
-			bestCandidate.player.Name,
-			FormatValue(bestCandidate.total or 0),
-			remaining
-		), Color3.fromRGB(255, 220, 100))
-
-		if bestProgress >= AutoBlockState.delaySeconds then
-			local targetPlayer = bestCandidate.player
-			if targetPlayer and targetPlayer.Parent == Players then
-				AutoBlockState.busy = true
-				AutoBlockState.busyTargetName = targetPlayer.Name
-				AutoBlockState.busyStartedAt = now
-				AutoBlockState.busyAttemptId = AutoBlockState.busyAttemptId + 1
-				local attemptId = AutoBlockState.busyAttemptId
-				AutoBlockState.progressByName[targetPlayer.Name] = nil
-				setAutoBlockStatus(("Blocking %s..."):format(targetPlayer.Name), Color3.fromRGB(255, 160, 120))
-				task.spawn(function()
-					local ok, err = pcall(function()
-						SilentBlockPlayer(targetPlayer)
-					end)
-					if attemptId ~= AutoBlockState.busyAttemptId then
-						return
+					if qualified then
+						activeNames[playerName] = true
+						local nextProgress = math.min(AutoBlockState.delaySeconds, (AutoBlockState.progressByName[playerName] or 0) + delta)
+						AutoBlockState.progressByName[playerName] = nextProgress
+						if (not bestCandidate) or total > (bestCandidate.total or -1) then
+							bestCandidate = row
+							bestProgress = nextProgress
+						end
 					end
-					if ok then
-						AutoBlockState.blockedByName[targetPlayer.Name] = true
-						AutoBlockState.progressByName[targetPlayer.Name] = nil
-						setAutoBlockStatus(("Blocked %s"):format(targetPlayer.Name), Color3.fromRGB(120, 255, 160))
+				end
+
+				for playerName, _ in pairs(AutoBlockState.progressByName) do
+					if not activeNames[playerName] then
+						AutoBlockState.progressByName[playerName] = nil
+					end
+				end
+
+				for playerName, cooldownUntil in pairs(AutoBlockState.cooldownUntilByName) do
+					if cooldownUntil <= now then
+						AutoBlockState.cooldownUntilByName[playerName] = nil
+					end
+				end
+
+				if AutoBlockState.busy then
+					if (now - (AutoBlockState.busyStartedAt or 0)) >= AutoBlockState.busyTimeoutSeconds then
+						local stuckName = AutoBlockState.busyTargetName
+						if stuckName and stuckName ~= "" then
+							AutoBlockState.cooldownUntilByName[stuckName] = now + 5
+							AutoBlockState.progressByName[stuckName] = nil
+						end
+						AutoBlockState.busy = false
+						AutoBlockState.busyTargetName = nil
+						AutoBlockState.busyStartedAt = 0
+						setAutoBlockStatus("Previous block timed out, resuming scan", Color3.fromRGB(255, 150, 100))
 					else
-						AutoBlockState.cooldownUntilByName[targetPlayer.Name] = tick() + 5
-						AutoBlockState.progressByName[targetPlayer.Name] = nil
-						setAutoBlockStatus(("Block failed for %s"):format(targetPlayer.Name), Color3.fromRGB(255, 100, 100))
-						warn("[mm2run/autoblock] failed to block " .. targetPlayer.Name .. ": " .. tostring(err))
+						local targetLabel = AutoBlockState.busyTargetName or "player"
+						setAutoBlockStatus(("Blocking %s..."):format(targetLabel), Color3.fromRGB(255, 160, 120))
 					end
-					AutoBlockState.busy = false
-					AutoBlockState.busyTargetName = nil
-					AutoBlockState.busyStartedAt = 0
-				end)
+				elseif not bestCandidate then
+					setAutoBlockStatus(("Watching players below %s value, delay %ss"):format(FormatValue(AutoBlockState.minValue), AutoBlockState.delaySeconds), Color3.fromRGB(120, 255, 160))
+				else
+					local remaining = math.max(0, AutoBlockState.delaySeconds - bestProgress)
+					setAutoBlockStatus(("Detected %s (%s). Blocking in %.1fs"):format(
+						bestCandidate.player.Name,
+						FormatValue(bestCandidate.total or 0),
+						remaining
+					), Color3.fromRGB(255, 220, 100))
+
+					if bestProgress >= AutoBlockState.delaySeconds then
+						local targetPlayer = bestCandidate.player
+						if targetPlayer and targetPlayer.Parent == Players then
+							AutoBlockState.busy = true
+							AutoBlockState.busyTargetName = targetPlayer.Name
+							AutoBlockState.busyStartedAt = now
+							AutoBlockState.busyAttemptId = AutoBlockState.busyAttemptId + 1
+							local attemptId = AutoBlockState.busyAttemptId
+							AutoBlockState.progressByName[targetPlayer.Name] = nil
+							setAutoBlockStatus(("Blocking %s..."):format(targetPlayer.Name), Color3.fromRGB(255, 160, 120))
+							task.spawn(function()
+								local ok, err = pcall(function()
+									SilentBlockPlayer(targetPlayer)
+								end)
+								if attemptId ~= AutoBlockState.busyAttemptId then
+									return
+								end
+								if ok then
+									AutoBlockState.blockedByName[targetPlayer.Name] = true
+									AutoBlockState.progressByName[targetPlayer.Name] = nil
+									setAutoBlockStatus(("Blocked %s"):format(targetPlayer.Name), Color3.fromRGB(120, 255, 160))
+								else
+									AutoBlockState.cooldownUntilByName[targetPlayer.Name] = tick() + 5
+									AutoBlockState.progressByName[targetPlayer.Name] = nil
+									setAutoBlockStatus(("Block failed for %s"):format(targetPlayer.Name), Color3.fromRGB(255, 100, 100))
+									warn("[mm2run/autoblock] failed to block " .. targetPlayer.Name .. ": " .. tostring(err))
+								end
+								AutoBlockState.busy = false
+								AutoBlockState.busyTargetName = nil
+								AutoBlockState.busyStartedAt = 0
+							end)
+						end
+					end
+				end
 			end
 		end
 	end
