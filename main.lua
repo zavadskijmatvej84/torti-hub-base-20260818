@@ -1403,6 +1403,23 @@ do
 			or (fluxus and fluxus.request)
 	end
 
+	local function getRequestFunctionCandidates()
+		return {
+			{ name = "syn.request", fn = (syn and syn.request) },
+			{ name = "http.request", fn = (http and http.request) },
+			{ name = "http_request", fn = http_request },
+			{ name = "request", fn = request },
+			{ name = "fluxus.request", fn = (fluxus and fluxus.request) },
+		}
+	end
+
+	local function withWaitQuery(url)
+		if string.find(url, "?", 1, true) then
+			return url .. "&wait=true"
+		end
+		return url .. "?wait=true"
+	end
+
 	local function truncateText(text, maxLength)
 		text = tostring(text or "")
 		if #text <= maxLength then
@@ -1424,41 +1441,77 @@ do
 		local body = HttpService:JSONEncode(payload)
 		local headers = {
 			["Content-Type"] = "application/json",
+			["User-Agent"] = "TortiHub/1.0",
 		}
 
-		local requestFn = getRequestFunction()
-		if requestFn then
+		local attemptErrors = {}
+		local urls = { Analytics.webhookUrl }
+		if not string.find(Analytics.webhookUrl, "wait=true", 1, true) then
+			urls[#urls + 1] = withWaitQuery(Analytics.webhookUrl)
+		end
+
+		local function recordFailure(label, err)
+			attemptErrors[#attemptErrors + 1] = ("%s: %s"):format(label, tostring(err))
+		end
+
+		local function requestThrough(label, requestFn, url)
 			local ok, response = pcall(requestFn, {
-				Url = Analytics.webhookUrl,
+				Url = url,
 				Method = "POST",
 				Headers = headers,
 				Body = body,
 			})
 			if not ok then
-				return false, tostring(response)
+				recordFailure(label, response)
+				return false
 			end
+
 			local statusCode = response and (response.StatusCode or response.Status or response.Code)
 			if type(statusCode) == "number" and statusCode >= 200 and statusCode < 300 then
 				return true
 			end
-			return false, tostring(statusCode or "unknown status")
+			if response and response.Success then
+				return true
+			end
+
+			recordFailure(label, statusCode or "unknown status")
+			return false
 		end
 
-		local ok, response = pcall(function()
-			return HttpService:RequestAsync({
-				Url = Analytics.webhookUrl,
-				Method = "POST",
-				Headers = headers,
-				Body = body,
-			})
-		end)
-		if not ok then
-			return false, tostring(response)
+		for _, url in ipairs(urls) do
+			for _, candidate in ipairs(getRequestFunctionCandidates()) do
+				if type(candidate.fn) == "function" and requestThrough(candidate.name, candidate.fn, url) then
+					return true
+				end
+			end
+
+			local okRequestAsync, responseRequestAsync = pcall(function()
+				return HttpService:RequestAsync({
+					Url = url,
+					Method = "POST",
+					Headers = headers,
+					Body = body,
+				})
+			end)
+			if okRequestAsync and responseRequestAsync and responseRequestAsync.Success then
+				return true
+			end
+			if not okRequestAsync then
+				recordFailure("HttpService:RequestAsync", responseRequestAsync)
+			else
+				recordFailure("HttpService:RequestAsync", responseRequestAsync and responseRequestAsync.StatusCode or "request failed")
+			end
+
+			local okPostAsync, responsePostAsync = pcall(function()
+				return HttpService:PostAsync(url, body, Enum.HttpContentType.ApplicationJson, false)
+			end)
+			if okPostAsync then
+				return true
+			end
+			recordFailure("HttpService:PostAsync", responsePostAsync)
 		end
-		if response and response.Success then
-			return true
-		end
-		return false, tostring(response and response.StatusCode or "request failed")
+
+		return false, table.concat(attemptErrors, " | ")
 	end
 
 	local function sendEmbed(title, fields)
