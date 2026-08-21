@@ -7563,6 +7563,10 @@ RefreshSpawnerButtons = function()
 	end
 end
 
+end
+
+do
+
 for _, entry in ipairs(WeaponCatalog) do
     local wKey = entry.key
     local wData = (Sync.Weapons and Sync.Weapons[wKey]) or (Sync.Item and Sync.Item[wKey])
