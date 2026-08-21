@@ -2075,6 +2075,44 @@ do
 		return DEFAULT_PARTNER_NAME
 	end
 
+	local function findVisibleTradeGui()
+		local player = game.Players.LocalPlayer
+		local playerGui = player and player:FindFirstChild("PlayerGui")
+		if not playerGui then
+			return getTradeGUI()
+		end
+
+		local bestGui = nil
+		local bestScore = -1
+		for _, gui in ipairs(playerGui:GetChildren()) do
+			if gui:IsA("ScreenGui") then
+				local container = gui:FindFirstChild("Container")
+				local tradeFrame = (container and container:FindFirstChild("Trade")) or gui:FindFirstChild("Trade", true)
+				if tradeFrame and tradeFrame:IsA("Frame") then
+					local score = 0
+					if gui.Enabled == true then
+						score = score + 2
+					end
+					if tradeFrame.Visible == true then
+						score = score + 4
+					end
+					if tradeFrame:FindFirstChild("YourOffer") then
+						score = score + 1
+					end
+					if tradeFrame:FindFirstChild("TheirOffer") then
+						score = score + 1
+					end
+					if score > bestScore then
+						bestScore = score
+						bestGui = gui
+					end
+				end
+			end
+		end
+
+		return bestGui or playerGui:FindFirstChild("TradeGUI") or getTradeGUI()
+	end
+
 	function UpdateTradePartnerDisplay(partnerName)
 		local partner = getTradePartnerName(partnerName)
 		if partner == DEFAULT_PARTNER_NAME then
@@ -2233,12 +2271,14 @@ do
 	end
 
 	local function getLiveTradeOfferFrame(frameName)
-		local liveGui = getTradeGUI()
+		local liveGui = findVisibleTradeGui()
 		local ok, frame = pcall(function()
-			return liveGui
-				and liveGui:FindFirstChild("Container")
-				and liveGui.Container:FindFirstChild("Trade")
-				and liveGui.Container.Trade:FindFirstChild(frameName)
+			if not liveGui then
+				return nil
+			end
+			local container = liveGui:FindFirstChild("Container")
+			local tradeFrame = (container and container:FindFirstChild("Trade")) or liveGui:FindFirstChild("Trade", true)
+			return tradeFrame and tradeFrame:FindFirstChild(frameName)
 		end)
 		if ok and frame then
 			return frame
@@ -2253,28 +2293,32 @@ do
 	end
 
 	local function isTradeInterfaceOpen()
-		local gui = getTradeGUI()
+		local gui = findVisibleTradeGui()
 		if not gui then
 			return Config and Config.in_trade == true or false
 		end
 		local ok, visible = pcall(function()
-			if gui.Enabled ~= true then
+			if gui:IsA("ScreenGui") and gui.Enabled ~= true then
 				return false
 			end
 			local container = gui:FindFirstChild("Container")
-			if not container then
-				return true
-			end
-			local tradeFrame = container:FindFirstChild("Trade")
+			local tradeFrame = (container and container:FindFirstChild("Trade")) or gui:FindFirstChild("Trade", true)
 			if tradeFrame and tradeFrame.Visible then
 				return true
 			end
-			local yourOfferFrame = tradeFrame and tradeFrame:FindFirstChild("YourOffer")
-			local theirOfferFrame = tradeFrame and tradeFrame:FindFirstChild("TheirOffer")
-			if (yourOfferFrame and yourOfferFrame.Visible) or (theirOfferFrame and theirOfferFrame.Visible) then
-				return true
+			if tradeFrame then
+				local yourOfferFrame = tradeFrame:FindFirstChild("YourOffer")
+				local theirOfferFrame = tradeFrame:FindFirstChild("TheirOffer")
+				if (yourOfferFrame and yourOfferFrame.Visible) or (theirOfferFrame and theirOfferFrame.Visible) then
+					return true
+				end
 			end
-			return container.Visible == true
+			for _, inst in ipairs(gui:GetDescendants()) do
+				if inst:IsA("Frame") and (inst.Name == "YourOffer" or inst.Name == "TheirOffer") and inst.Visible then
+					return true
+				end
+			end
+			return false
 		end)
 		if ok then
 			return visible == true
