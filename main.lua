@@ -7822,6 +7822,7 @@ do
 	playersScrollLayout.Padding = UDim.new(0, 4)
 	playersScrollLayout.Parent = playersScroll2
 end
+end
 
 local function ClearPlayerValueRows()
 	for _, child in pairs(playersScroll2:GetChildren()) do
