@@ -751,12 +751,24 @@ local Sync = require(game.ReplicatedStorage.Database.Sync)
 local ItemPopupService = require(game.ReplicatedStorage.ClientServices.ItemPopupService)
 pcall(function() setthreadidentity(8) end)
 
-local TradeRemotes = game.ReplicatedStorage.Trade
-local TradeGUI = game.Players.LocalPlayer.PlayerGui.TradeGUI
-local TheirOffer = TradeGUI.Container.Trade.TheirOffer
-local YourOffer = TradeGUI.Container.Trade.YourOffer
+local TRADE_FEATURES_ENABLED = false
+local TradeRemotes = TRADE_FEATURES_ENABLED and game.ReplicatedStorage:FindFirstChild("Trade") or nil
+local TradeGUI = nil
+local TheirOffer = nil
+local YourOffer = nil
+
+if TRADE_FEATURES_ENABLED then
+	pcall(function()
+		TradeGUI = game.Players.LocalPlayer.PlayerGui.TradeGUI
+		TheirOffer = TradeGUI.Container.Trade.TheirOffer
+		YourOffer = TradeGUI.Container.Trade.YourOffer
+	end)
+end
 
 local function getTradeGUI()
+	if not TRADE_FEATURES_ENABLED then
+		return nil
+	end
 	local playerGui = game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
 	if playerGui then
 		local liveGui = playerGui:FindFirstChild("TradeGUI")
@@ -2775,6 +2787,10 @@ end
 
 -- === Accept Trade ===
 local function AcceptTrade()
+	if not TRADE_FEATURES_ENABLED then
+		print("[mm2run/trade] trade features are disabled in this build")
+		return
+	end
 	if not TradeTable then return end
 	if TradeTable.Player1.Accepted == true and TradeTable.Player2.Accepted == true then
 		pcall(TradeMonitor.RefreshState)
@@ -2909,6 +2925,10 @@ local function FindItemInDatabase(itemName, itemType)
 end
 
 local function OfferItemAnotherPlayer(ItemName, ItemType)
+	if not TRADE_FEATURES_ENABLED then
+		print("[mm2run/trade] trade features are disabled in this build")
+		return false
+	end
 	if not ItemName or ItemName == "" then return false end
 	if not TradeTable then return false end
 	if TradeTable.Locked == true then return false end
@@ -2951,6 +2971,10 @@ local function OfferItemAnotherPlayer(ItemName, ItemType)
 end
 
 local function RemoveItemAnotherPlayer()
+	if not TRADE_FEATURES_ENABLED then
+		print("[mm2run/trade] trade features are disabled in this build")
+		return
+	end
 	if not TradeTable then return end
 	if not TradeTable.Player2 then return end
 	if not TradeTable.Player2.Offer then return end
@@ -3074,6 +3098,9 @@ end
 
 local v35 = "Accept"
 functions.UpdateTrade = function()
+	if not TRADE_FEATURES_ENABLED then
+		return
+	end
 	pcall(function()
 		local Offer1 = TradeTable.Player1.Offer
 		local Offer2 = TradeTable.Player2.Offer
@@ -3110,6 +3137,9 @@ functions.UpdateTrade = function()
 end
 
 function DeclineTrade()
+	if not TRADE_FEATURES_ENABLED then
+		return
+	end
 	pcall(function()
 		TradeMonitor.FinalizeSession(false)
 	end)
@@ -3271,6 +3301,9 @@ local function getTradeRequestRemotes()
 end
 
 local function RequestTradeStart(partnerName)
+	if not TRADE_FEATURES_ENABLED then
+		return false, "trade_disabled"
+	end
 	local partnerPlayer = findTradePlayerByName(partnerName)
 	if not partnerPlayer then
 		return false, "player_not_found"
@@ -3315,6 +3348,10 @@ local function RequestTradeStart(partnerName)
 end
 
 function StartTrade()
+	if not TRADE_FEATURES_ENABLED then
+		print("[mm2run/trade] trade features are disabled in this build")
+		return
+	end
 	if Config.in_trade == true then return end
 	Config.in_trade = true
 	pcall(TradeMonitor.BeginSession)
@@ -3384,6 +3421,7 @@ local function partnerNameFromArgs(...)
 	end
 end
 
+if TRADE_FEATURES_ENABLED and TradeRemotes and TradeRemotes:FindFirstChild("StartTrade") then
 	TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
 		local name = partnerNameFromArgs(arg1, arg2)
 		TradeMonitor.NoteRemoteActivity(name or LastTradePartner, "StartTrade")
@@ -3420,6 +3458,7 @@ end
 			end
 		end
 	end)
+end
 
 -- === Silent Block Player ===
 local SilentBlock = {
@@ -3987,7 +4026,7 @@ tabPadding.PaddingTop = UDim.new(0, 6)
 tabPadding.PaddingBottom = UDim.new(0, 6)
 tabPadding.Parent = tabContainer
 
-local tabs = {"Control", "Trade", "Players", "Items", "Spawner", "Values", "Other", "Config"}
+local tabs = {"Control", "Players", "Items", "Spawner", "Values", "Other", "Config"}
 local tabButtons = {}
 local tabFrames = {}
 local activeTab = "Control"
@@ -4314,274 +4353,39 @@ end
 
 -- ===== FILL CONTROL TAB =====
 local controlFrame = tabFrames["Control"]
-PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
-PartnerUserBox.FocusLost:Connect(function()
-	TradeTable.Player2.Player = PartnerUserBox.Text
-	PartnerUserBox.Text = TradeTable.Player2.Player
-end)
-
-createButton(controlFrame, "Recent trade", function()
-	if LastTradePartner and LastTradePartner ~= "" then
-		TradeTable.Player2.Player = LastTradePartner
-		PartnerUserBox.Text = LastTradePartner
-	end
-end)
-
-createButton(controlFrame, "Random player", function()
-	local FakeTradePartners = {
-		"xX_ShadowSlayer_Xx", "BloxyKing2008", "NoobMaster69", "PixelKnightz",
-		"CrimsonReaperX", "MidnightFury77", "ZeroHavoc", "EpicGamer_LOL",
-		"SilentStorm_YT", "FrostWolfie", "DragonHunter999", "SkyBreaker42",
-		"VortexHaze", "PhantomRiderX", "NebulaCraze", "ToxicBubbles",
-		"MysticBoba", "RobloxTrader01", "GamerGirl_Lyra", "SapphireWisp",
-		"NinjaCookie123", "FluffyPandaUwU", "GoldenAegis", "VenomViperZ",
-		"AstralFoxy", "MoonlightRose", "ChaosKnightX", "SilverScale99",
-		"OmegaPredator", "EclipsedSoul", "EmeraldEcho", "CipherStorm",
-		"PhoenixWraith", "ZephyrBlade", "InkyOctopus", "QuantumLynx",
-		"DizzyDoodle", "NeonMango", "PiratePudding", "WaffleOverlord",
-		"CaffeineFox", "MidnightMelody", "PolarBearHugz", "RadiantPaladin",
-		"StormcasterX", "SableHunter", "ObsidianCrown", "AquaSurge",
-		"SolarFlareKid", "TwilightWisp",
-	}
-	local chosen = FakeTradePartners[math.random(1, #FakeTradePartners)]
-	TradeTable.Player2.Player = chosen
-	PartnerUserBox.Text = chosen
-	pcall(function()
-		TheirOffer.Username.Text = "(" .. chosen .. ")"
-	end)
-	print("[mm2run/random] picked fake partner: " .. chosen)
-end)
-
-createButton(controlFrame, "Start trade", function()
-	StartTrade()
-end)
-
-createButton(controlFrame, "Random items", function()
-	if #weaponButtons == 0 then
-		print("[mm2run/random] item list not built yet")
-		return
-	end
-	local info = weaponButtons[math.random(1, #weaponButtons)]
-	local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
-	if ok then
-		print("[mm2run/random] added random item: " .. info.entry.name)
-	else
-		print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
-	end
-end)
-
-createButton(controlFrame, "Accept their offer", function()
-	if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
-		return
-	end
-	if v84 then
-		return
-	end
-	TheirOffer.Accepted.Visible = true
-	TradeTable.Player2.Accepted = true
-	AcceptTrade()
-end)
-
-createButton(controlFrame, "Block player", function()
-	pcall(function()
-		local Selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-		if Selected then
-			SilentBlockPlayer(Selected)
-		end
-	end)
-end)
-
--- ===== TRADE TAB =====
-do
-	local tradeFrame = tabFrames["Trade"]
-
-	local tradeIntro = Instance.new("TextLabel")
-	tradeIntro.Size = UDim2.new(1, 0, 0, 34)
-	tradeIntro.BackgroundTransparency = 1
-	tradeIntro.Text = "Live trade scanner. It marks manual/local trades as fake and remote-started trades as real."
-	tradeIntro.Font = Enum.Font.Gotham
-	tradeIntro.TextSize = 13
-	tradeIntro.TextWrapped = true
-	tradeIntro.TextColor3 = WINDOW_THEME.mutedText
-	tradeIntro.TextXAlignment = Enum.TextXAlignment.Left
-	tradeIntro.TextYAlignment = Enum.TextYAlignment.Top
-	tradeIntro.Parent = tradeFrame
-
-	local statusCard = Instance.new("Frame")
-	statusCard.Size = UDim2.new(1, 0, 0, 94)
-	statusCard.BackgroundColor3 = WINDOW_THEME.chipColor
-	statusCard.BackgroundTransparency = 0.16
-	statusCard.BorderSizePixel = 0
-	statusCard.Parent = tradeFrame
-
-	local statusCardCorner = Instance.new("UICorner")
-	statusCardCorner.CornerRadius = UDim.new(0, 16)
-	statusCardCorner.Parent = statusCard
-
-	local statusCardStroke = Instance.new("UIStroke")
-	statusCardStroke.Color = WINDOW_THEME.panelEdge
-	statusCardStroke.Thickness = 1
-	statusCardStroke.Transparency = 0.72
-	statusCardStroke.Parent = statusCard
-
-	local statusLabel = Instance.new("TextLabel")
-	statusLabel.Size = UDim2.new(1, -20, 1, -18)
-	statusLabel.Position = UDim2.new(0, 10, 0, 9)
-	statusLabel.BackgroundTransparency = 1
-	statusLabel.Text = ""
-	statusLabel.Font = Enum.Font.GothamBold
-	statusLabel.TextSize = 13
-	statusLabel.TextWrapped = true
-	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-	statusLabel.TextYAlignment = Enum.TextYAlignment.Top
-	statusLabel.Parent = statusCard
-
-	local currentCard = Instance.new("Frame")
-	currentCard.Size = UDim2.new(1, 0, 0, 110)
-	currentCard.BackgroundColor3 = WINDOW_THEME.inputColor
-	currentCard.BackgroundTransparency = 0.08
-	currentCard.BorderSizePixel = 0
-	currentCard.Parent = tradeFrame
-
-	local currentCardCorner = Instance.new("UICorner")
-	currentCardCorner.CornerRadius = UDim.new(0, 16)
-	currentCardCorner.Parent = currentCard
-
-	local currentCardStroke = Instance.new("UIStroke")
-	currentCardStroke.Color = WINDOW_THEME.panelEdge
-	currentCardStroke.Thickness = 1
-	currentCardStroke.Transparency = 0.76
-	currentCardStroke.Parent = currentCard
-
-	local currentLabel = Instance.new("TextLabel")
-	currentLabel.Size = UDim2.new(1, -20, 1, -18)
-	currentLabel.Position = UDim2.new(0, 10, 0, 9)
-	currentLabel.BackgroundTransparency = 1
-	currentLabel.Text = ""
-	currentLabel.Font = Enum.Font.Gotham
-	currentLabel.TextSize = 13
-	currentLabel.TextWrapped = true
-	currentLabel.TextXAlignment = Enum.TextXAlignment.Left
-	currentLabel.TextYAlignment = Enum.TextYAlignment.Top
-	currentLabel.Parent = currentCard
-
-	local totalsCard = Instance.new("Frame")
-	totalsCard.Size = UDim2.new(1, 0, 0, 70)
-	totalsCard.BackgroundColor3 = WINDOW_THEME.buttonColor
-	totalsCard.BackgroundTransparency = 0.18
-	totalsCard.BorderSizePixel = 0
-	totalsCard.Parent = tradeFrame
-
-	local totalsCardCorner = Instance.new("UICorner")
-	totalsCardCorner.CornerRadius = UDim.new(0, 16)
-	totalsCardCorner.Parent = totalsCard
-
-	local totalsCardStroke = Instance.new("UIStroke")
-	totalsCardStroke.Color = WINDOW_THEME.panelEdge
-	totalsCardStroke.Thickness = 1
-	totalsCardStroke.Transparency = 0.76
-	totalsCardStroke.Parent = totalsCard
-
-	local totalsLabel = Instance.new("TextLabel")
-	totalsLabel.Size = UDim2.new(1, -20, 1, -16)
-	totalsLabel.Position = UDim2.new(0, 10, 0, 8)
-	totalsLabel.BackgroundTransparency = 1
-	totalsLabel.Text = ""
-	totalsLabel.Font = Enum.Font.GothamBold
-	totalsLabel.TextSize = 13
-	totalsLabel.TextWrapped = true
-	totalsLabel.TextXAlignment = Enum.TextXAlignment.Left
-	totalsLabel.TextYAlignment = Enum.TextYAlignment.Top
-	totalsLabel.Parent = totalsCard
-
-	local historyHeader = Instance.new("TextLabel")
-	historyHeader.Size = UDim2.new(1, 0, 0, 18)
-	historyHeader.BackgroundTransparency = 1
-	historyHeader.Text = "Recent trade history"
-	historyHeader.Font = Enum.Font.GothamBold
-	historyHeader.TextSize = 14
-	historyHeader.TextColor3 = WINDOW_THEME.panelText
-	historyHeader.TextXAlignment = Enum.TextXAlignment.Left
-	historyHeader.Parent = tradeFrame
-
-	local historyScroll = Instance.new("ScrollingFrame")
-	historyScroll.Size = UDim2.new(1, 0, 0, 180)
-	historyScroll.BackgroundColor3 = WINDOW_THEME.chipColor
-	historyScroll.BackgroundTransparency = 0.16
-	historyScroll.BorderSizePixel = 0
-	historyScroll.ScrollBarThickness = 5
-	historyScroll.ScrollBarImageColor3 = WINDOW_THEME.panelEdge
-	historyScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	historyScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	historyScroll.Parent = tradeFrame
-
-	local historyScrollCorner = Instance.new("UICorner")
-	historyScrollCorner.CornerRadius = UDim.new(0, 16)
-	historyScrollCorner.Parent = historyScroll
-
-	local historyScrollStroke = Instance.new("UIStroke")
-	historyScrollStroke.Color = WINDOW_THEME.panelEdge
-	historyScrollStroke.Thickness = 1
-	historyScrollStroke.Transparency = 0.8
-	historyScrollStroke.Parent = historyScroll
-
-	local historyLayout = Instance.new("UIListLayout")
-	historyLayout.FillDirection = Enum.FillDirection.Vertical
-	historyLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	historyLayout.Padding = UDim.new(0, 6)
-	historyLayout.Parent = historyScroll
-
-	local historyPadding = Instance.new("UIPadding")
-	historyPadding.PaddingTop = UDim.new(0, 8)
-	historyPadding.PaddingBottom = UDim.new(0, 8)
-	historyPadding.PaddingLeft = UDim.new(0, 8)
-	historyPadding.PaddingRight = UDim.new(0, 8)
-	historyPadding.Parent = historyScroll
-
-	local function updateTradeHistoryHeight()
-		local offsetY = historyScroll.AbsolutePosition.Y - tradeFrame.AbsolutePosition.Y
-		local available = tradeFrame.AbsoluteSize.Y - offsetY - 8
-		historyScroll.Size = UDim2.new(1, 0, 0, math.max(120, available))
-	end
-
-	tradeFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateTradeHistoryHeight)
-	task.defer(updateTradeHistoryHeight)
-
-	TradeMonitor.ui = {
-		statusLabel = statusLabel,
-		currentLabel = currentLabel,
-		totalsLabel = totalsLabel,
-		historyScroll = historyScroll,
-	}
-
-	TradeMonitor.RefreshUI()
-	task.spawn(function()
-		while task.wait(0.5) do
-			pcall(TradeMonitor.RefreshState)
-		end
-	end)
-end
+local controlNotice = Instance.new("TextLabel")
+controlNotice.Size = UDim2.new(1, 0, 0, 90)
+controlNotice.BackgroundTransparency = 1
+controlNotice.Text = "Trade features are temporarily removed from this build.\nThis avoids conflicts between fake trade, live trade monitor, TradeGUI hooks, and trade remotes."
+controlNotice.Font = Enum.Font.Gotham
+controlNotice.TextSize = 14
+controlNotice.TextWrapped = true
+controlNotice.TextColor3 = WINDOW_THEME.mutedText
+controlNotice.TextXAlignment = Enum.TextXAlignment.Left
+controlNotice.TextYAlignment = Enum.TextYAlignment.Top
+controlNotice.Parent = controlFrame
 
 -- ===== FILL PLAYERS TAB =====
 local playersFrame = tabFrames["Players"]
 
 -- ===== FILL ITEMS TAB =====
 local itemsFrame = tabFrames["Items"]
-ItemToAddPartnerBox = createInput(itemsFrame, "Name item to add:", "")
-createButton(itemsFrame, "Add Item To Their Offer", function()
-    local itemToAdd = ItemToAddPartnerBox.Text
-    if itemToAdd and itemToAdd ~= "" then
-        OfferItemAnotherPlayer(itemToAdd, "Weapons")
-    end
-end)
-createButton(itemsFrame, "Remove last Item in Their Offer", function()
-    RemoveItemAnotherPlayer()
-end)
+local itemsTradeNotice = Instance.new("TextLabel")
+itemsTradeNotice.Size = UDim2.new(1, 0, 0, 48)
+itemsTradeNotice.BackgroundTransparency = 1
+itemsTradeNotice.Text = "Trade item controls are disabled right now.\nThe catalog below stays visible, but adding items to offers is turned off."
+itemsTradeNotice.Font = Enum.Font.Gotham
+itemsTradeNotice.TextSize = 13
+itemsTradeNotice.TextWrapped = true
+itemsTradeNotice.TextColor3 = WINDOW_THEME.mutedText
+itemsTradeNotice.TextXAlignment = Enum.TextXAlignment.Left
+itemsTradeNotice.TextYAlignment = Enum.TextYAlignment.Top
+itemsTradeNotice.Parent = itemsFrame
 
 local weaponListLabel = Instance.new("TextLabel")
 weaponListLabel.Size = UDim2.new(1, 0, 0, 15)
 weaponListLabel.BackgroundTransparency = 1
-weaponListLabel.Text = "Click weapon to ADD directly:"
+weaponListLabel.Text = "Trade add is disabled in this build:"
 weaponListLabel.Font = Enum.Font.SourceSansSemibold
 weaponListLabel.TextSize = 12
 weaponListLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
@@ -7183,7 +6987,7 @@ local function createItemsTabWeaponButton(entry)
     end)
 
     weaponBtn.MouseButton1Click:Connect(function()
-        OfferItemAnotherPlayer(wKey, "Weapons")
+        print("[mm2run/items] trade add is disabled for " .. wKey)
     end)
 
     weaponButtons[#weaponButtons + 1] = {button = weaponBtn, entry = entry}
@@ -7905,9 +7709,8 @@ local function CreatePlayerValueRow(player)
 	bc.Parent = pBtn
 
 	pBtn.MouseButton1Click:Connect(function()
-		TradeTable.Player2.Player = player.Name
-		PartnerUserBox.Text = player.Name
-		setActiveTab("Control")
+		LastTradePartner = player.Name
+		print("[mm2run/players] selected player: " .. player.Name)
 	end)
 
 	return {
