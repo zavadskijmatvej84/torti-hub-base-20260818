@@ -5141,6 +5141,11 @@ end
 local RefreshPlayerValues = function() end
 
 local Values
+local FetchPlayerInventory
+local findCatalogValueForInventoryItem
+local CalculateInventoryValue
+
+do
 
 local function resolveInventoryItemData(key)
 	if key == nil then return nil end
@@ -5216,7 +5221,7 @@ local function harvestProfile(raw)
 	return out
 end
 
-local function FetchPlayerInventory(player)
+FetchPlayerInventory = function(player)
 	if not player then return nil end
 
 	if player == game.Players.LocalPlayer then
@@ -5312,7 +5317,7 @@ local function catalogRarityMatchesInventory(item, inventoryItem)
 	return itemRarity == inventoryRarity
 end
 
-local function findCatalogValueForInventoryItem(w)
+findCatalogValueForInventoryItem = function(w)
 	if not Values or not Values.byName then return nil end
 
 	local candidates, seen = {}, {}
@@ -5369,7 +5374,7 @@ local function findCatalogValueForInventoryItem(w)
 	return nil
 end
 
-local function CalculateInventoryValue(inv, playerNameForLog)
+CalculateInventoryValue = function(inv, playerNameForLog)
 	if not inv then return 0, {} end
 	if not Values or not Values.byName then
 		if playerNameForLog then
@@ -6709,6 +6714,7 @@ valueSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 task.spawn(function() LoadFullCatalog(false) end)
+end
 
 -- ===== CONFIG TAB =====
 local configFrame = tabFrames["Config"]
@@ -7219,6 +7225,22 @@ end
 for _, entry in ipairs(allWeaponsList) do
 	createItemsTabWeaponButton(entry)
 end
+
+end
+
+do
+local RarityTint = {
+	Chroma    = Color3.fromRGB(70, 40, 95),
+	Godly     = Color3.fromRGB(110, 70, 30),
+	Ancient   = Color3.fromRGB(60, 25, 90),
+	Unique    = Color3.fromRGB(140, 50, 90),
+	Legendary = Color3.fromRGB(95, 55, 25),
+	Classic   = Color3.fromRGB(70, 70, 90),
+	Vintage   = Color3.fromRGB(80, 75, 30),
+	Rare      = Color3.fromRGB(35, 60, 95),
+	Uncommon  = Color3.fromRGB(35, 70, 50),
+	Common    = Color3.fromRGB(50, 50, 70),
+}
 
 local function GetSpawnerCatalogItem(entry)
 	return findCatalogValueForInventoryItem({
@@ -7782,6 +7804,8 @@ end)
 
 if RefreshSpawnerButtons then
 	RefreshSpawnerButtons()
+end
+
 end
 
 do
