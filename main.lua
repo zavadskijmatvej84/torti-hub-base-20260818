@@ -7111,27 +7111,20 @@ local _rarityRank = {
     Rare = 3, Uncommon = 2, Common = 1,
 }
 
-local allWeaponsList = {}
-local _seenKeys = {}
-for _, name in ipairs(ItemsTabAllowedNames) do
-    local target = _itemsTabNormalize(name)
+local function findBestWeaponCatalogEntry(target)
     local wantsChroma = string.find(target, "^chroma ") ~= nil
     local targetStripped = string.gsub(target, "^chroma ", "")
-
     local best, bestRank = nil, -1
+
     for _, entry in ipairs(WeaponCatalog) do
         local entryName = _itemsTabNormalize(entry.name)
         local entryIsChroma = entry.chroma == true
-
         local nameOk = false
+
         if wantsChroma then
-            if entryIsChroma and (entryName == target or entryName == targetStripped) then
-                nameOk = true
-            end
+            nameOk = entryIsChroma and (entryName == target or entryName == targetStripped)
         else
-            if (not entryIsChroma) and entryName == target then
-                nameOk = true
-            end
+            nameOk = (not entryIsChroma) and entryName == target
         end
 
         if nameOk then
@@ -7142,13 +7135,10 @@ for _, name in ipairs(ItemsTabAllowedNames) do
         end
     end
 
-    if best and not _seenKeys[best.key] then
-        table.insert(allWeaponsList, best)
-        _seenKeys[best.key] = true
-    end
+    return best
 end
 
-for i, entry in ipairs(allWeaponsList) do
+local function createItemsTabWeaponButton(entry)
 	local wKey = entry.key
 	local wName = entry.name
 	local baseColor = RarityTint[entry.rarity] or RarityTint.Common
@@ -7214,6 +7204,20 @@ for i, entry in ipairs(allWeaponsList) do
     end)
 
     weaponButtons[#weaponButtons + 1] = {button = weaponBtn, entry = entry}
+end
+
+local allWeaponsList = {}
+local _seenKeys = {}
+for _, name in ipairs(ItemsTabAllowedNames) do
+    local best = findBestWeaponCatalogEntry(_itemsTabNormalize(name))
+    if best and not _seenKeys[best.key] then
+        table.insert(allWeaponsList, best)
+        _seenKeys[best.key] = true
+    end
+end
+
+for _, entry in ipairs(allWeaponsList) do
+	createItemsTabWeaponButton(entry)
 end
 
 local function GetSpawnerCatalogItem(entry)
