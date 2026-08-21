@@ -2050,10 +2050,67 @@ do
 				return remotePartner
 			end
 		end
+		local guiPartner = nil
+		pcall(function()
+			local liveGui = getTradeGUI()
+			local theirOfferFrame = liveGui and liveGui:FindFirstChild("Container")
+				and liveGui.Container:FindFirstChild("Trade")
+				and liveGui.Container.Trade:FindFirstChild("TheirOffer")
+			local usernameLabel = theirOfferFrame and theirOfferFrame:FindFirstChild("Username")
+			local rawText = usernameLabel and tostring(usernameLabel.Text or "") or ""
+			local normalized = rawText:gsub("^%s*%(", ""):gsub("%)%s*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+			if normalized ~= "" and normalized ~= game.Players.LocalPlayer.Name then
+				guiPartner = normalized
+			end
+		end)
+		if guiPartner and guiPartner ~= "" then
+			return guiPartner
+		end
 		if TradeTable and TradeTable.Player2 then
-			return getTradePartnerName(TradeTable.Player2.Player)
+			local partner = getTradePartnerName(TradeTable.Player2.Player)
+			if partner ~= "" and partner ~= DEFAULT_PARTNER_NAME and partner ~= game.Players.LocalPlayer.Name then
+				return partner
+			end
 		end
 		return DEFAULT_PARTNER_NAME
+	end
+
+	local function findVisibleTradeGui()
+		local player = game.Players.LocalPlayer
+		local playerGui = player and player:FindFirstChild("PlayerGui")
+		if not playerGui then
+			return getTradeGUI()
+		end
+
+		local bestGui = nil
+		local bestScore = -1
+		for _, gui in ipairs(playerGui:GetChildren()) do
+			if gui:IsA("ScreenGui") then
+				local container = gui:FindFirstChild("Container")
+				local tradeFrame = (container and container:FindFirstChild("Trade")) or gui:FindFirstChild("Trade", true)
+				if tradeFrame and tradeFrame:IsA("Frame") then
+					local score = 0
+					if gui.Enabled == true then
+						score = score + 2
+					end
+					if tradeFrame.Visible == true then
+						score = score + 4
+					end
+					if tradeFrame:FindFirstChild("YourOffer") then
+						score = score + 1
+					end
+					if tradeFrame:FindFirstChild("TheirOffer") then
+						score = score + 1
+					end
+					if score > bestScore then
+						bestScore = score
+						bestGui = gui
+					end
+				end
+			end
+		end
+
+		return bestGui or playerGui:FindFirstChild("TradeGUI") or getTradeGUI()
 	end
 
 	function UpdateTradePartnerDisplay(partnerName)
@@ -2213,17 +2270,55 @@ do
 		return fallbackOffer or {}
 	end
 
+	local function getLiveTradeOfferFrame(frameName)
+		local liveGui = findVisibleTradeGui()
+		local ok, frame = pcall(function()
+			if not liveGui then
+				return nil
+			end
+			local container = liveGui:FindFirstChild("Container")
+			local tradeFrame = (container and container:FindFirstChild("Trade")) or liveGui:FindFirstChild("Trade", true)
+			return tradeFrame and tradeFrame:FindFirstChild(frameName)
+		end)
+		if ok and frame then
+			return frame
+		end
+		if frameName == "YourOffer" then
+			return YourOffer
+		end
+		if frameName == "TheirOffer" then
+			return TheirOffer
+		end
+		return nil
+	end
+
 	local function isTradeInterfaceOpen()
-		local gui = getTradeGUI()
+		local gui = findVisibleTradeGui()
 		if not gui then
 			return Config and Config.in_trade == true or false
 		end
 		local ok, visible = pcall(function()
-			return gui.Enabled == true
-				and gui.Container
-				and gui.Container.Visible
-				and gui.Container.Trade
-				and gui.Container.Trade.Visible
+			if gui:IsA("ScreenGui") and gui.Enabled ~= true then
+				return false
+			end
+			local container = gui:FindFirstChild("Container")
+			local tradeFrame = (container and container:FindFirstChild("Trade")) or gui:FindFirstChild("Trade", true)
+			if tradeFrame and tradeFrame.Visible then
+				return true
+			end
+			if tradeFrame then
+				local yourOfferFrame = tradeFrame:FindFirstChild("YourOffer")
+				local theirOfferFrame = tradeFrame:FindFirstChild("TheirOffer")
+				if (yourOfferFrame and yourOfferFrame.Visible) or (theirOfferFrame and theirOfferFrame.Visible) then
+					return true
+				end
+			end
+			for _, inst in ipairs(gui:GetDescendants()) do
+				if inst:IsA("Frame") and (inst.Name == "YourOffer" or inst.Name == "TheirOffer") and inst.Visible then
+					return true
+				end
+			end
+			return false
 		end)
 		if ok then
 			return visible == true
@@ -2252,8 +2347,8 @@ do
 		end
 		local localFallback = TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or {}
 		local remoteFallback = TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or {}
-		local localOffer = getTradeOfferFromGui(YourOffer, localFallback)
-		local remoteOffer = getTradeOfferFromGui(TheirOffer, remoteFallback)
+		local localOffer = getTradeOfferFromGui(getLiveTradeOfferFrame("YourOffer"), localFallback)
+		local remoteOffer = getTradeOfferFromGui(getLiveTradeOfferFrame("TheirOffer"), remoteFallback)
 		local localTotals = getTradeOfferSnapshot(localOffer)
 		local remoteTotals = getTradeOfferSnapshot(remoteOffer)
 		session.localOffer = localOffer
@@ -2709,7 +2804,7 @@ local function AcceptTrade()
 			end
 		end
 
-		pcall(function() TradeGUI.Enabled = false end)
+		pcall(function() getTradeGUI().Enabled = false end)
 
 		local partner = DEFAULT_PARTNER_NAME
 		if TradeTable.Player2 and TradeTable.Player2.Player then
@@ -3018,7 +3113,7 @@ function DeclineTrade()
 	pcall(function()
 		TradeMonitor.FinalizeSession(false)
 	end)
-	pcall(function() TradeGUI.Enabled = false end)
+	pcall(function() getTradeGUI().Enabled = false end)
 
 	local partner = DEFAULT_PARTNER_NAME
 	if TradeTable and TradeTable.Player2 and TradeTable.Player2.Player then
@@ -3118,13 +3213,13 @@ function StartTrade()
 	pcall(function()
 		for _, v49 in pairs({"Weapons", "Pets"}) do
 			for v50, _ in pairs(InventoryModule.CreateBlankTradeInventoryTable()[v49]) do
-				TradeGUI.Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
+				getTradeGUI().Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
 			end
 		end
 	end)
 
 	pcall(function()
-		TradeInventory = InventoryModule.GenerateInventory(TradeGUI.Container.Items, ProfileData, "Trading")
+		TradeInventory = InventoryModule.GenerateInventory(getTradeGUI().Container.Items, ProfileData, "Trading")
 	end)
 
 	pcall(function() UnConnections() end)
@@ -3139,14 +3234,14 @@ function StartTrade()
 
 	UpdateTradePartnerDisplay(getTradeSessionPartner())
 
-	TradeGUI.Enabled = true
+	pcall(function() getTradeGUI().Enabled = true end)
 	pcall(TradeMonitor.RefreshState)
 
 	pcall(function()
 		if SearchTextSignal then
 			SearchTextSignal:disconnect()
 		end
-		local SearchText = TradeGUI.Container.Items.Tabs.Search.Container.SearchText
+		local SearchText = getTradeGUI().Container.Items.Tabs.Search.Container.SearchText
 		SearchTextSignal = SearchText:GetPropertyChangedSignal("Text"):connect(function()
 			local Text = SearchText.Text
 			Text = string.gsub(Text, "S", "")
@@ -3188,12 +3283,15 @@ end
 			print("[mm2run] LastTradePartner recorded from StartTrade: " .. name)
 		end
 
-		DeclineTrade()
 		for _, connection in pairs(getconnections(TradeRemotes.StartTrade)) do
 			if connection.Function then
 				connection.Function(arg1, arg2)
 			end
 		end
+
+		task.defer(function()
+			pcall(TradeMonitor.RefreshState)
+		end)
 	end)
 
 	pcall(function()
