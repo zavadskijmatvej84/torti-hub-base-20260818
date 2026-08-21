@@ -4297,6 +4297,26 @@ do
 		setControlBindStatus("Press any key to bind. Esc cancels, Backspace clears.", Color3.fromRGB(187, 198, 213))
 	end
 
+	local function getControlPartnerName()
+		local raw = ""
+		pcall(function()
+			if PartnerUserBox then
+				raw = tostring(PartnerUserBox.Text or "")
+			end
+		end)
+		raw = raw:gsub("^%s+", ""):gsub("%s+$", "")
+		return raw
+	end
+
+	local function syncControlPartnerFromInput()
+		local partner = getControlPartnerName()
+		if partner == "" then
+			return nil
+		end
+		UpdateTradePartnerDisplay(partner)
+		return partner
+	end
+
 	local function triggerControlAction(actionId)
 		local callback = controlActions[actionId]
 		if not callback then
@@ -4388,62 +4408,107 @@ do
 
 	PartnerUserBox = createInput(controlFrame, "Partner user:", TradeTable.Player2.Player)
 	PartnerUserBox.FocusLost:Connect(function()
-		TradeTable.Player2.Player = PartnerUserBox.Text
-		PartnerUserBox.Text = TradeTable.Player2.Player
+		local partner = syncControlPartnerFromInput()
+		if partner then
+			setControlBindStatus(("Partner set to %s"):format(partner), Color3.fromRGB(140, 220, 160))
+		else
+			TradeTable.Player2.Player = DEFAULT_PARTNER_NAME
+			PartnerUserBox.Text = ""
+			setControlBindStatus("Partner name is empty.", Color3.fromRGB(255, 180, 120))
+		end
 	end)
 
 	controlActions.recentTrade = function()
 		if LastTradePartner and LastTradePartner ~= "" then
 			UpdateTradePartnerDisplay(LastTradePartner)
+			setControlBindStatus(("Loaded recent trade partner: %s"):format(LastTradePartner), Color3.fromRGB(140, 220, 160))
+		else
+			setControlBindStatus("No recent trade partner yet.", Color3.fromRGB(255, 180, 120))
 		end
 	end
 
 	controlActions.randomPlayer = function()
 		local chosen = fakeTradePartners[math.random(1, #fakeTradePartners)]
 		UpdateTradePartnerDisplay(chosen)
+		setControlBindStatus(("Picked random partner: %s"):format(chosen), Color3.fromRGB(140, 220, 160))
 		print("[mm2run/random] picked fake partner: " .. chosen)
 	end
 
 	controlActions.startTrade = function()
+		local partner = syncControlPartnerFromInput()
+		if not partner then
+			setControlBindStatus("Enter a partner name before starting trade.", Color3.fromRGB(255, 120, 120))
+			return
+		end
 		StartTrade()
+		setControlBindStatus(("Started control trade with %s"):format(partner), Color3.fromRGB(140, 220, 160))
 	end
 
 	controlActions.randomItems = function()
+		local partner = syncControlPartnerFromInput()
+		if not partner then
+			setControlBindStatus("Enter a partner name before adding items.", Color3.fromRGB(255, 120, 120))
+			return
+		end
+		if Config.in_trade ~= true then
+			setControlBindStatus("Start trade first before adding items.", Color3.fromRGB(255, 180, 120))
+			return
+		end
 		if #weaponButtons == 0 then
 			print("[mm2run/random] item list not built yet")
+			setControlBindStatus("Weapon list is not ready yet.", Color3.fromRGB(255, 180, 120))
 			return
 		end
 		local info = weaponButtons[math.random(1, #weaponButtons)]
 		local ok = OfferItemAnotherPlayer(info.entry.key, "Weapons")
 		if ok then
+			setControlBindStatus(("Added random item: %s"):format(info.entry.name), Color3.fromRGB(140, 220, 160))
 			print("[mm2run/random] added random item: " .. info.entry.name)
 		else
+			setControlBindStatus("Could not add random item. Trade may be locked or full.", Color3.fromRGB(255, 180, 120))
 			print("[mm2run/random] couldn't add " .. info.entry.name .. " (trade locked, full, or not started)")
 		end
 	end
 
 	controlActions.acceptOffer = function()
+		if Config.in_trade ~= true then
+			setControlBindStatus("Start trade first before accepting.", Color3.fromRGB(255, 180, 120))
+			return
+		end
 		if not next(TradeTable.Player1.Offer) and not next(TradeTable.Player2.Offer) then
+			setControlBindStatus("There is no trade offer to accept yet.", Color3.fromRGB(255, 180, 120))
 			return
 		end
 		if v84 then
+			setControlBindStatus("Trade is busy right now.", Color3.fromRGB(255, 180, 120))
 			return
 		end
-		TheirOffer.Accepted.Visible = true
+		pcall(function()
+			if TheirOffer and TheirOffer:FindFirstChild("Accepted") then
+				TheirOffer.Accepted.Visible = true
+			end
+		end)
 		TradeTable.Player2.Accepted = true
 		if TradeMonitor and TradeMonitor.state and TradeMonitor.state.current then
 			TradeMonitor.state.current.wasAcceptedByThem = true
 		end
 		AcceptTrade()
+		setControlBindStatus("Accepted current offer.", Color3.fromRGB(140, 220, 160))
 	end
 
 	controlActions.blockPlayer = function()
-		pcall(function()
-			local selected = game.Players:FindFirstChild(TradeTable.Player2.Player)
-			if selected then
-				SilentBlockPlayer(selected)
-			end
-		end)
+		local partner = syncControlPartnerFromInput()
+		if not partner then
+			setControlBindStatus("Enter a partner name before blocking.", Color3.fromRGB(255, 120, 120))
+			return
+		end
+		local selected = game.Players:FindFirstChild(partner)
+		if not selected then
+			setControlBindStatus(("Player not found: %s"):format(partner), Color3.fromRGB(255, 180, 120))
+			return
+		end
+		SilentBlockPlayer(selected)
+		setControlBindStatus(("Blocked player: %s"):format(partner), Color3.fromRGB(140, 220, 160))
 	end
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
