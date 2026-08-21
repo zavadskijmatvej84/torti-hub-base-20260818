@@ -7226,8 +7226,6 @@ for _, entry in ipairs(allWeaponsList) do
 	createItemsTabWeaponButton(entry)
 end
 
-end
-
 do
 local RarityTint = {
 	Chroma    = Color3.fromRGB(70, 40, 95),
