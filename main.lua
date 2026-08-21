@@ -3438,18 +3438,12 @@ TradeRemotes.StartTrade.OnClientEvent:Connect(function(arg1, arg2)
 		print("[mm2run] LastTradePartner recorded from StartTrade: " .. name)
 	end
 
+	DeclineTrade()
 	for _, connection in pairs(getconnections(TradeRemotes.StartTrade)) do
 		if connection.Function then
 			connection.Function(arg1, arg2)
 		end
 	end
-
-	task.defer(function()
-		if Config.in_trade ~= true then
-			StartTrade()
-		end
-		pcall(TradeMonitor.RefreshState)
-	end)
 end)
 
 pcall(function()
@@ -4576,38 +4570,13 @@ do
 
 	controlActions.startTrade = function()
 		local partner = getControlPartnerName()
-		local function startLocalControlTrade(statusText, color)
-			UpdateTradePartnerDisplay(partner)
-			if Config.in_trade ~= true then
-				StartTrade()
-			end
-			setControlBindStatus(statusText, color or Color3.fromRGB(140, 220, 160))
-		end
-
 		if Config.in_trade == true then
 			setControlBindStatus("Trade is already open.", Color3.fromRGB(205, 183, 132))
 			return
 		end
-
-		local ok, detail = RequestTradeStart(partner)
-		if ok then
-			setControlBindStatus(("Trade request sent to %s via %s. Waiting for server..."):format(getTradeSessionPartner(), detail), Color3.fromRGB(140, 220, 160))
-			task.delay(1.25, function()
-				if Config.in_trade ~= true then
-					pcall(function()
-						startLocalControlTrade(("Server did not open the trade. Started local control trade for %s."):format(partner), Color3.fromRGB(205, 183, 132))
-					end)
-				end
-			end)
-		elseif detail == "player_not_found" then
-			startLocalControlTrade(("Player not found on server. Started local control trade for %s."):format(partner), Color3.fromRGB(205, 183, 132))
-		elseif detail == "self_trade" then
-			startLocalControlTrade("Cannot send a live request to yourself. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
-		elseif detail == "no_trade_remote" then
-			startLocalControlTrade("Trade request remotes were not found. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
-		else
-			startLocalControlTrade("Trade request failed. Started local control trade instead.", Color3.fromRGB(205, 183, 132))
-		end
+		UpdateTradePartnerDisplay(partner)
+		StartTrade()
+		setControlBindStatus(("Started local trade for %s"):format(partner), Color3.fromRGB(140, 220, 160))
 	end
 
 	controlActions.randomItems = function()
