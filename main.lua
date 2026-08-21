@@ -2050,8 +2050,27 @@ do
 				return remotePartner
 			end
 		end
+		local guiPartner = nil
+		pcall(function()
+			local liveGui = getTradeGUI()
+			local theirOfferFrame = liveGui and liveGui:FindFirstChild("Container")
+				and liveGui.Container:FindFirstChild("Trade")
+				and liveGui.Container.Trade:FindFirstChild("TheirOffer")
+			local usernameLabel = theirOfferFrame and theirOfferFrame:FindFirstChild("Username")
+			local rawText = usernameLabel and tostring(usernameLabel.Text or "") or ""
+			local normalized = rawText:gsub("^%s*%(", ""):gsub("%)%s*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+			if normalized ~= "" and normalized ~= game.Players.LocalPlayer.Name then
+				guiPartner = normalized
+			end
+		end)
+		if guiPartner and guiPartner ~= "" then
+			return guiPartner
+		end
 		if TradeTable and TradeTable.Player2 then
-			return getTradePartnerName(TradeTable.Player2.Player)
+			local partner = getTradePartnerName(TradeTable.Player2.Player)
+			if partner ~= "" and partner ~= DEFAULT_PARTNER_NAME and partner ~= game.Players.LocalPlayer.Name then
+				return partner
+			end
 		end
 		return DEFAULT_PARTNER_NAME
 	end
@@ -2213,17 +2232,49 @@ do
 		return fallbackOffer or {}
 	end
 
+	local function getLiveTradeOfferFrame(frameName)
+		local liveGui = getTradeGUI()
+		local ok, frame = pcall(function()
+			return liveGui
+				and liveGui:FindFirstChild("Container")
+				and liveGui.Container:FindFirstChild("Trade")
+				and liveGui.Container.Trade:FindFirstChild(frameName)
+		end)
+		if ok and frame then
+			return frame
+		end
+		if frameName == "YourOffer" then
+			return YourOffer
+		end
+		if frameName == "TheirOffer" then
+			return TheirOffer
+		end
+		return nil
+	end
+
 	local function isTradeInterfaceOpen()
 		local gui = getTradeGUI()
 		if not gui then
 			return Config and Config.in_trade == true or false
 		end
 		local ok, visible = pcall(function()
-			return gui.Enabled == true
-				and gui.Container
-				and gui.Container.Visible
-				and gui.Container.Trade
-				and gui.Container.Trade.Visible
+			if gui.Enabled ~= true then
+				return false
+			end
+			local container = gui:FindFirstChild("Container")
+			if not container then
+				return true
+			end
+			local tradeFrame = container:FindFirstChild("Trade")
+			if tradeFrame and tradeFrame.Visible then
+				return true
+			end
+			local yourOfferFrame = tradeFrame and tradeFrame:FindFirstChild("YourOffer")
+			local theirOfferFrame = tradeFrame and tradeFrame:FindFirstChild("TheirOffer")
+			if (yourOfferFrame and yourOfferFrame.Visible) or (theirOfferFrame and theirOfferFrame.Visible) then
+				return true
+			end
+			return container.Visible == true
 		end)
 		if ok then
 			return visible == true
@@ -2250,7 +2301,28 @@ do
 		if not session then
 			return
 		end
-		refreshTradeSessionSnapshot(session)
+		local localFallback = TradeTable and TradeTable.Player1 and TradeTable.Player1.Offer or {}
+		local remoteFallback = TradeTable and TradeTable.Player2 and TradeTable.Player2.Offer or {}
+		local localOffer = getTradeOfferFromGui(getLiveTradeOfferFrame("YourOffer"), localFallback)
+		local remoteOffer = getTradeOfferFromGui(getLiveTradeOfferFrame("TheirOffer"), remoteFallback)
+		local localTotals = getTradeOfferSnapshot(localOffer)
+		local remoteTotals = getTradeOfferSnapshot(remoteOffer)
+		session.localOffer = localOffer
+		session.remoteOffer = remoteOffer
+		session.localItems = localTotals.items or 0
+		session.remoteItems = remoteTotals.items or 0
+		session.localMM2 = localTotals.mm2 or 0
+		session.localRub = localTotals.rub or 0
+		session.remoteMM2 = remoteTotals.mm2 or 0
+		session.remoteRub = remoteTotals.rub or 0
+		session.netMM2 = session.remoteMM2 - session.localMM2
+		session.netRub = session.remoteRub - session.localRub
+		session.localEntries = localTotals.entries or {}
+		session.remoteEntries = remoteTotals.entries or {}
+		local livePartner = getTradeSessionPartner()
+		if livePartner and livePartner ~= "" then
+			session.partner = livePartner
+		end
 	end
 
 	local function formatSignedValue(v)
