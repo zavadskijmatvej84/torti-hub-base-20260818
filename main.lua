@@ -767,6 +767,58 @@ local function getTradeGUI()
 	return TradeGUI
 end
 
+local function syncTradeGuiReferences()
+	local liveGui = getTradeGUI()
+	if liveGui then
+		TradeGUI = liveGui
+	end
+
+	local container = TradeGUI and TradeGUI:FindFirstChild("Container")
+	local tradeFrame = container and container:FindFirstChild("Trade")
+	if tradeFrame then
+		TheirOffer = tradeFrame:FindFirstChild("TheirOffer") or TheirOffer
+		YourOffer = tradeFrame:FindFirstChild("YourOffer") or YourOffer
+	end
+
+	return TradeGUI, TheirOffer, YourOffer
+end
+
+local function forceTradeGuiOpen()
+	local liveGui = syncTradeGuiReferences()
+	pcall(function()
+		if not liveGui then
+			return
+		end
+		liveGui.Enabled = true
+
+		local container = liveGui:FindFirstChild("Container")
+		if container and container:IsA("GuiObject") then
+			container.Visible = true
+		end
+
+		local tradeFrame = container and container:FindFirstChild("Trade")
+		if tradeFrame and tradeFrame:IsA("GuiObject") then
+			tradeFrame.Visible = true
+		end
+
+		local itemsFrame = container and container:FindFirstChild("Items")
+		if itemsFrame and itemsFrame:IsA("GuiObject") then
+			itemsFrame.Visible = true
+		end
+
+		local itemsMain = itemsFrame and itemsFrame:FindFirstChild("Main")
+		if itemsMain and itemsMain:IsA("GuiObject") then
+			itemsMain.Visible = true
+		end
+
+		local itemsTabs = itemsFrame and itemsFrame:FindFirstChild("Tabs")
+		if itemsTabs and itemsTabs:IsA("GuiObject") then
+			itemsTabs.Visible = true
+		end
+	end)
+	return liveGui
+end
+
 local SearchTextSignal
 local TradeInventory
 local functions = {}
@@ -2114,6 +2166,7 @@ do
 	end
 
 	function UpdateTradePartnerDisplay(partnerName)
+		syncTradeGuiReferences()
 		local partner = getTradePartnerName(partnerName)
 		if partner == DEFAULT_PARTNER_NAME then
 			partner = getTradeSessionPartner()
@@ -2777,6 +2830,7 @@ end
 local function AcceptTrade()
 	if not TradeTable then return end
 	if TradeTable.Player1.Accepted == true and TradeTable.Player2.Accepted == true then
+		syncTradeGuiReferences()
 		pcall(TradeMonitor.RefreshState)
 		TradeTable.Locked = true
 		if TradeMonitor and TradeMonitor.state and TradeMonitor.state.current then
@@ -2804,7 +2858,11 @@ local function AcceptTrade()
 			end
 		end
 
-		pcall(function() getTradeGUI().Enabled = false end)
+		pcall(function()
+			if TradeGUI then
+				TradeGUI.Enabled = false
+			end
+		end)
 
 		local partner = DEFAULT_PARTNER_NAME
 		if TradeTable.Player2 and TradeTable.Player2.Player then
@@ -3012,6 +3070,7 @@ end
 -- === Cooldown ===
 local v85 = 6
 local function ResetCooldown(arg1)
+	syncTradeGuiReferences()
 	if arg1 then
 		TradeGUI.Container.Trade.Actions.Accept.Cooldown.Visible = false
 		v85 = 0
@@ -3075,6 +3134,7 @@ end
 local v35 = "Accept"
 functions.UpdateTrade = function()
 	pcall(function()
+		syncTradeGuiReferences()
 		local Offer1 = TradeTable.Player1.Offer
 		local Offer2 = TradeTable.Player2.Offer
 
@@ -3110,10 +3170,15 @@ functions.UpdateTrade = function()
 end
 
 function DeclineTrade()
+	syncTradeGuiReferences()
 	pcall(function()
 		TradeMonitor.FinalizeSession(false)
 	end)
-	pcall(function() getTradeGUI().Enabled = false end)
+	pcall(function()
+		if TradeGUI then
+			TradeGUI.Enabled = false
+		end
+	end)
 
 	local partner = DEFAULT_PARTNER_NAME
 	if TradeTable and TradeTable.Player2 and TradeTable.Player2.Player then
@@ -3142,6 +3207,7 @@ local v87 = time()
 local Connections = {}
 
 function SetupConnections(v76)
+	syncTradeGuiReferences()
 	pcall(function()
 		if v76 and v76.Data then
 			for v77, v78 in pairs(v76.Data) do
@@ -3364,17 +3430,18 @@ function StartTrade()
 	if Config.in_trade == true then return end
 	Config.in_trade = true
 	pcall(TradeMonitor.BeginSession)
+	local liveGui = forceTradeGuiOpen() or TradeGUI
 
 	pcall(function()
 		for _, v49 in pairs({"Weapons", "Pets"}) do
 			for v50, _ in pairs(InventoryModule.CreateBlankTradeInventoryTable()[v49]) do
-				getTradeGUI().Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
+				liveGui.Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
 			end
 		end
 	end)
 
 	pcall(function()
-		TradeInventory = InventoryModule.GenerateInventory(getTradeGUI().Container.Items, ProfileData, "Trading")
+		TradeInventory = InventoryModule.GenerateInventory(liveGui.Container.Items, ProfileData, "Trading")
 	end)
 
 	pcall(function() UnConnections() end)
@@ -3387,16 +3454,18 @@ function StartTrade()
 
 	pcall(function() functions.UpdateTrade(TradeTable) end)
 
-	UpdateTradePartnerDisplay(getTradeSessionPartner())
+	UpdateTradePartnerDisplay(TradeTable and TradeTable.Player2 and TradeTable.Player2.Player or getTradeSessionPartner())
 
-	pcall(function() getTradeGUI().Enabled = true end)
+	pcall(function()
+		forceTradeGuiOpen()
+	end)
 	pcall(TradeMonitor.RefreshState)
 
 	pcall(function()
 		if SearchTextSignal then
 			SearchTextSignal:disconnect()
 		end
-		local SearchText = getTradeGUI().Container.Items.Tabs.Search.Container.SearchText
+		local SearchText = liveGui.Container.Items.Tabs.Search.Container.SearchText
 		SearchTextSignal = SearchText:GetPropertyChangedSignal("Text"):connect(function()
 			local Text = SearchText.Text
 			Text = string.gsub(Text, "S", "")
