@@ -756,6 +756,17 @@ local TradeGUI = game.Players.LocalPlayer.PlayerGui.TradeGUI
 local TheirOffer = TradeGUI.Container.Trade.TheirOffer
 local YourOffer = TradeGUI.Container.Trade.YourOffer
 
+local function getTradeGUI()
+	local playerGui = game.Players.LocalPlayer and game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+	if playerGui then
+		local liveGui = playerGui:FindFirstChild("TradeGUI")
+		if liveGui then
+			return liveGui
+		end
+	end
+	return TradeGUI
+end
+
 local SearchTextSignal
 local TradeInventory
 local functions = {}
@@ -2203,15 +2214,16 @@ do
 	end
 
 	local function isTradeInterfaceOpen()
-		if not TradeGUI then
+		local gui = getTradeGUI()
+		if not gui then
 			return Config and Config.in_trade == true or false
 		end
 		local ok, visible = pcall(function()
-			return TradeGUI.Enabled == true
-				and TradeGUI.Container
-				and TradeGUI.Container.Visible
-				and TradeGUI.Container.Trade
-				and TradeGUI.Container.Trade.Visible
+			return gui.Enabled == true
+				and gui.Container
+				and gui.Container.Visible
+				and gui.Container.Trade
+				and gui.Container.Trade.Visible
 		end)
 		if ok then
 			return visible == true
@@ -2676,7 +2688,7 @@ local function AcceptTrade()
 			end
 		end
 
-		pcall(function() TradeGUI.Enabled = false end)
+		pcall(function() getTradeGUI().Enabled = false end)
 
 		local partner = DEFAULT_PARTNER_NAME
 		if TradeTable.Player2 and TradeTable.Player2.Player then
@@ -2985,7 +2997,7 @@ function DeclineTrade()
 	pcall(function()
 		TradeMonitor.FinalizeSession(false)
 	end)
-	pcall(function() TradeGUI.Enabled = false end)
+	pcall(function() getTradeGUI().Enabled = false end)
 
 	local partner = DEFAULT_PARTNER_NAME
 	if TradeTable and TradeTable.Player2 and TradeTable.Player2.Player then
@@ -3085,13 +3097,13 @@ function StartTrade()
 	pcall(function()
 		for _, v49 in pairs({"Weapons", "Pets"}) do
 			for v50, _ in pairs(InventoryModule.CreateBlankTradeInventoryTable()[v49]) do
-				TradeGUI.Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
+				getTradeGUI().Container.Items.Main:FindFirstChild(v49).Items.Container:FindFirstChild(v50).Container:ClearAllChildren()
 			end
 		end
 	end)
 
 	pcall(function()
-		TradeInventory = InventoryModule.GenerateInventory(TradeGUI.Container.Items, ProfileData, "Trading")
+		TradeInventory = InventoryModule.GenerateInventory(getTradeGUI().Container.Items, ProfileData, "Trading")
 	end)
 
 	pcall(function() UnConnections() end)
@@ -3106,14 +3118,14 @@ function StartTrade()
 
 	UpdateTradePartnerDisplay(getTradeSessionPartner())
 
-	TradeGUI.Enabled = true
+	pcall(function() getTradeGUI().Enabled = true end)
 	pcall(TradeMonitor.RefreshState)
 
 	pcall(function()
 		if SearchTextSignal then
 			SearchTextSignal:disconnect()
 		end
-		local SearchText = TradeGUI.Container.Items.Tabs.Search.Container.SearchText
+		local SearchText = getTradeGUI().Container.Items.Tabs.Search.Container.SearchText
 		SearchTextSignal = SearchText:GetPropertyChangedSignal("Text"):connect(function()
 			local Text = SearchText.Text
 			Text = string.gsub(Text, "S", "")
