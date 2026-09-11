@@ -8700,63 +8700,106 @@ end
 print("[mm2run] System merged and running successfully!")
 
 -- ============================================================
--- INVENTORY INJECTION SYSTEM (adds weapons to ProfileData)
+-- VISUAL WEAPON DISPLAY ON CHARACTER (no inventory injection)
 -- ============================================================
 
-local InventoryInjector = (function()
-	local ProfileData = require(ReplicatedStorage.Modules.ProfileData)
+local WeaponDisplaySystem = (function()
+	local LocalPlayer = Players.LocalPlayer
+	local activeDisplays = {}
 
-	local function addWeaponToInventory(weaponKey)
-		-- Add to owned weapons if not already owned
-		if ProfileData.Weapons and ProfileData.Weapons.Owned then
-			local alreadyOwned = false
-			for _, ownedWeapon in pairs(ProfileData.Weapons.Owned) do
-				if type(ownedWeapon) == "table" and ownedWeapon[1] == weaponKey then
-					alreadyOwned = true
-					break
-				elseif ownedWeapon == weaponKey then
-					alreadyOwned = true
-					break
-				end
-			end
-
-			if not alreadyOwned then
-				table.insert(ProfileData.Weapons.Owned, {weaponKey, 1})
-			end
-		end
-
-		-- Fire inventory update event
-		local InventoryDataChanged = ReplicatedStorage.Remotes.Inventory:FindFirstChild("InventoryDataChanged")
-		if InventoryDataChanged then
-			InventoryDataChanged:Fire("Weapons", weaponKey, 1)
-		end
-	end
-
-	local function equipWeapon(weaponKey, weaponType)
-		-- Set as equipped
-		if ProfileData.Weapons and ProfileData.Weapons.Equipped then
-			if weaponType == "Knife" or weaponType == "Gun" then
-				ProfileData.Weapons.Equipped[weaponType] = weaponKey
-			end
-		end
-
-		-- Update the display on character
-		if _G.WeldWeapons then
-			task.spawn(function()
-				_G.WeldWeapons(Players.LocalPlayer)
+	local function clearDisplay(weaponName)
+		if activeDisplays[weaponName] then
+			pcall(function()
+				activeDisplays[weaponName]:Destroy()
 			end)
-		end
-
-		-- Fire equip event to update UI
-		local ProfileDataChanged = ReplicatedStorage.Remotes.Inventory:FindFirstChild("ProfileDataChanged")
-		if ProfileDataChanged then
-			ProfileDataChanged:Fire("Weapons", ProfileData.Weapons)
+			activeDisplays[weaponName] = nil
 		end
 	end
+
+	local function createWeaponDisplay(weaponKey, weaponData)
+		local character = LocalPlayer.Character
+		if not character then return end
+
+		clearDisplay(weaponKey)
+
+		local upperTorso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+		if not upperTorso then return end
+
+		-- Create Handle with mesh
+		local handle = Instance.new("Part")
+		handle.Name = "WeaponDisplay_" .. weaponKey
+		handle.Size = Vector3.new(0.4, 3, 0.7)
+		handle.CanCollide = false
+		handle.Massless = true
+		handle.Transparency = 0
+		handle.Material = Enum.Material.Plastic
+
+		-- Add SpecialMesh
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.FileMesh
+		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
+		mesh.TextureId = "http://www.roblox.com/asset/?id=121944805"
+		mesh.Scale = Vector3.new(1, 1, 1)
+		mesh.Parent = handle
+
+		-- Set texture from weapon data
+		if weaponData and weaponData.imageId then
+			local imageStr = tostring(weaponData.imageId)
+			local textureId = tonumber(string.match(imageStr, "%d+"))
+			if textureId then
+				mesh.TextureId = "rbxassetid://" .. textureId
+			elseif imageStr:match("^http") then
+				mesh.TextureId = imageStr
+			end
+		end
+
+		handle.Parent = character
+
+		-- Weld to torso (back/side position like MM2)
+		local weld = Instance.new("Weld")
+		weld.Part0 = upperTorso
+		weld.Part1 = handle
+		-- Position: slightly to the side and back, angled
+		weld.C0 = CFrame.new(-0.5, 0.3, -0.6) * CFrame.Angles(math.rad(-30), math.rad(50), math.rad(10))
+		weld.Parent = handle
+
+		activeDisplays[weaponKey] = handle
+
+		-- Clean up on character death
+		character.Destroying:Connect(function()
+			pcall(function() handle:Destroy() end)
+		end)
+
+		return handle
+	end
+
+	local function equipWeapon(weaponKey)
+		local weaponData = WeaponByKey and WeaponByKey[weaponKey]
+		if not weaponData then
+			weaponData = WeaponByName and WeaponByName[string.lower(weaponKey)]
+		end
+		createWeaponDisplay(weaponKey, weaponData)
+	end
+
+	local function unequipWeapon(weaponKey)
+		clearDisplay(weaponKey)
+	end
+
+	local function clearAll()
+		for name, handle in pairs(activeDisplays) do
+			pcall(function() handle:Destroy() end)
+		end
+		activeDisplays = {}
+	end
+
+	LocalPlayer.CharacterAdded:Connect(function()
+		clearAll()
+	end)
 
 	return {
-		AddWeapon = addWeaponToInventory,
 		Equip = equipWeapon,
+		Unequip = unequipWeapon,
+		ClearAll = clearAll,
 	}
 end)()
 
@@ -9108,7 +9151,7 @@ local FakeTradeSystem = (function()
 end)()
 
 -- ============================================================
--- WEAPON INJECTION HOOK
+-- WEAPON DISPLAY HOOK
 -- ============================================================
 
 local originalSpawnItem = SpawnItem
@@ -9117,10 +9160,7 @@ SpawnItem = function(ItemName, Amount, ItemType)
 	if ItemType == "Weapons" or not ItemType then
 		task.delay(0.1, function()
 			pcall(function()
-				InventoryInjector.AddWeapon(ItemName)
-				-- Determine weapon type (default to Knife for now)
-				local weaponType = "Knife"
-				InventoryInjector.Equip(ItemName, weaponType)
+				WeaponDisplaySystem.Equip(ItemName)
 			end)
 		end)
 	end
@@ -9130,22 +9170,26 @@ end
 -- EXPOSE GLOBAL FUNCTIONS
 -- ============================================================
 
-_G.AddWeaponToInventory = function(weaponKey)
-	InventoryInjector.AddWeapon(weaponKey)
+_G.EquipWeaponDisplay = function(weaponKey)
+	WeaponDisplaySystem.Equip(weaponKey)
 end
 
-_G.EquipWeapon = function(weaponKey, weaponType)
-	weaponType = weaponType or "Knife"
-	InventoryInjector.AddWeapon(weaponKey)
-	InventoryInjector.Equip(weaponKey, weaponType)
+_G.UnequipWeaponDisplay = function(weaponKey)
+	WeaponDisplaySystem.Unequip(weaponKey)
+end
+
+_G.ClearAllWeaponDisplays = function()
+	WeaponDisplaySystem.ClearAll()
 end
 
 _G.SendFakeTrade = function(traderName, items)
 	FakeTradeSystem.SendRequest(traderName, items)
 end
 
-print("[Torti Hub Extended] Inventory injection system loaded!")
-print("Usage: _G.EquipWeapon('Batwing', 'Knife') | _G.AddWeaponToInventory('Icebreaker')")
+print("[Torti Hub Extended] Visual weapon display system loaded!")
+print("Usage: _G.EquipWeaponDisplay('Batwing') - shows weapon on character")
+print("       _G.UnequipWeaponDisplay('Batwing') - removes weapon")
+print("       _G.ClearAllWeaponDisplays() - removes all weapons")
 
 
 
