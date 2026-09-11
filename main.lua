@@ -8716,25 +8716,25 @@ local FakeWeaponVisualizer = (function()
 		end
 	end
 
-	local function createFakeWeaponAttachment(weaponName, weaponData)
+	local function createFakeWeaponDisplay(weaponName, weaponData)
 		local character = LocalPlayer.Character
 		if not character then return end
 
 		clearFakeWeapon(weaponName)
 
-		-- Create accessory that attaches to character like MM2 weapons
-		local accessory = Instance.new("Accessory")
-		accessory.Name = "FakeWeapon_" .. weaponName
+		local upperTorso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+		if not upperTorso then return end
 
+		-- Create Handle like MM2 does
 		local handle = Instance.new("Part")
-		handle.Name = "Handle"
+		handle.Name = "KnifeDisplay"
 		handle.Size = Vector3.new(0.4, 3, 0.7)
 		handle.CanCollide = false
-		handle.Massless = true
+		handle.Massless = false
 		handle.Transparency = 0
-		handle.Parent = accessory
+		handle.Material = Enum.Material.Plastic
 
-		-- Create SpecialMesh like MM2 weapons
+		-- Create SpecialMesh
 		local mesh = Instance.new("SpecialMesh")
 		mesh.MeshType = Enum.MeshType.FileMesh
 		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
@@ -8753,35 +8753,49 @@ local FakeWeaponVisualizer = (function()
 			end
 		end
 
-		-- Create attachment point (attach to lower torso/back)
-		local attachment = Instance.new("Attachment")
-		attachment.Name = "WeaponAttachment"
+		-- Create Attachment on UpperTorso (like MM2)
+		local torsoAttachment = Instance.new("Attachment")
+		torsoAttachment.Name = "KnifeTorsoAttachment"
+		-- Default knife position from MM2: CFrame.new(-0.1, 0, 0.5) * CFrame.Angles(-math.pi/2, math.pi/4, math.pi/2)
+		torsoAttachment.CFrame = CFrame.new(-0.1, 0, 0.5) * CFrame.Angles(-math.pi/2, math.pi/4, math.pi/2)
+		torsoAttachment.Parent = upperTorso
 
-		-- Find where to attach (prefer LowerTorso for R15, Torso for R6)
-		local attachPoint = character:FindFirstChild("LowerTorso") or character:FindFirstChild("Torso")
-		if attachPoint then
-			-- Position on back/side
-			attachment.Position = Vector3.new(0.5, 0, -0.5)
-			attachment.Rotation = Vector3.new(-30, 45, 0)
-			attachment.Parent = attachPoint
+		-- Create Attachment on weapon
+		local weaponAttachment = Instance.new("Attachment")
+		weaponAttachment.Name = "KnifeWeaponAttachment"
+		weaponAttachment.Parent = handle
 
-			accessory.AttachmentPoint = CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(0), math.rad(0), math.rad(0))
+		-- Create RigidConstraint (like MM2)
+		local constraint = Instance.new("RigidConstraint")
+		constraint.Attachment0 = torsoAttachment
+		constraint.Attachment1 = weaponAttachment
+		constraint.Name = "KnifeRigidConstraint"
+		constraint.Parent = handle
+
+		-- Put in workspace (MM2 uses WeaponDisplays folder)
+		local weaponDisplays = workspace:FindFirstChild("WeaponDisplays")
+		if not weaponDisplays then
+			weaponDisplays = Instance.new("Folder")
+			weaponDisplays.Name = "WeaponDisplays"
+			weaponDisplays.Parent = workspace
 		end
+		handle.Parent = weaponDisplays
 
-		-- Add to character
-		accessory.Parent = character
-		equippedTools[weaponName] = accessory
+		-- Create ObjectValue reference in character (like MM2)
+		local displayRef = Instance.new("ObjectValue")
+		displayRef.Name = "DisplayRefKnife"
+		displayRef.Value = handle
+		displayRef.Parent = character
 
-		-- If attachment exists, weld it properly
-		if attachment then
-			local weld = Instance.new("Weld")
-			weld.Part0 = attachPoint
-			weld.Part1 = handle
-			weld.C0 = CFrame.new(0.5, 0.2, -0.6) * CFrame.Angles(math.rad(-30), math.rad(50), math.rad(10))
-			weld.Parent = handle
-		end
+		-- Clean up on character death
+		character.Destroying:Connect(function()
+			pcall(function() handle:Destroy() end)
+			pcall(function() displayRef:Destroy() end)
+		end)
 
-		return accessory
+		equippedTools[weaponName] = handle
+
+		return handle
 	end
 
 	local function equipFakeWeapon(weaponName)
@@ -8789,7 +8803,7 @@ local FakeWeaponVisualizer = (function()
 		if not weaponData then
 			weaponData = WeaponByName and WeaponByName[string.lower(weaponName)]
 		end
-		createFakeWeaponAttachment(weaponName, weaponData)
+		createFakeWeaponDisplay(weaponName, weaponData)
 	end
 
 	local function unequipFakeWeapon(weaponName)
