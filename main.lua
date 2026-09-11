@@ -8716,64 +8716,71 @@ local FakeWeaponVisualizer = (function()
 		end
 	end
 
-	local function createFakeWeaponModel(weaponName, weaponData)
+	local function createFakeWeaponTool(weaponName, weaponData)
 		local character = LocalPlayer.Character
-		if not character then return end
+		local backpack = LocalPlayer.Backpack
+		if not character or not backpack then return end
 
 		clearFakeWeapon(weaponName)
 
-		-- Find torso/upperTorso for attachment
-		local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
-		if not torso then return end
+		-- Create Tool like MM2 does
+		local tool = Instance.new("Tool")
+		tool.Name = weaponName
+		tool.CanBeDropped = false
+		tool.RequiresHandle = true
+		tool.Grip = CFrame.new(0, -1, -0.1)
 
-		-- Create weapon model that attaches to back
-		local weaponModel = Instance.new("Model")
-		weaponModel.Name = "FakeWeapon_" .. weaponName
-
+		-- Create Handle
 		local handle = Instance.new("Part")
 		handle.Name = "Handle"
-		handle.Size = Vector3.new(0.4, 0.4, 1.8)
+		handle.Size = Vector3.new(0.4, 3, 0.7)
 		handle.CanCollide = false
-		handle.Anchored = false
+		handle.Massless = true
 		handle.Transparency = 0
-		handle.Material = Enum.Material.SmoothPlastic
-		handle.Color = Color3.fromRGB(45, 45, 55)
-		handle.Parent = weaponModel
+		handle.Material = Enum.Material.Plastic
+		handle.Parent = tool
 
+		-- Create SpecialMesh like MM2
 		local mesh = Instance.new("SpecialMesh")
 		mesh.MeshType = Enum.MeshType.FileMesh
-		mesh.MeshId = "rbxassetid://10470609"
-		mesh.TextureId = "rbxassetid://10470600"
+		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
+		mesh.TextureId = "http://www.roblox.com/asset/?id=121944805"
 		mesh.Scale = Vector3.new(1, 1, 1)
 		mesh.Parent = handle
 
+		-- Set texture from weapon data
 		if weaponData and weaponData.imageId then
-			local textureId = tonumber(string.match(tostring(weaponData.imageId), "%d+"))
+			local imageStr = tostring(weaponData.imageId)
+			local textureId = tonumber(string.match(imageStr, "%d+"))
 			if textureId then
 				mesh.TextureId = "rbxassetid://" .. textureId
+				tool.TextureId = "rbxassetid://" .. textureId
+			elseif imageStr:match("^http") then
+				mesh.TextureId = imageStr
+				tool.TextureId = imageStr
 			end
 		end
 
-		-- Add glow effect
-		local light = Instance.new("PointLight")
-		light.Brightness = 0.8
-		light.Range = 8
-		light.Color = Color3.fromRGB(255, 200, 100)
-		light.Parent = handle
+		-- Add weapon tag (like MM2 does)
+		local CollectionService = game:GetService("CollectionService")
+		CollectionService:AddTag(tool, "Weapon_Knife")
 
-		weaponModel.Parent = character
+		-- Put in backpack
+		tool.Parent = backpack
+		equippedTools[weaponName] = tool
 
-		-- Weld to back (behind torso)
-		local weld = Instance.new("Weld")
-		weld.Part0 = torso
-		weld.Part1 = handle
-		-- Position on back: behind torso, slightly up and to the side
-		weld.C0 = CFrame.new(0.6, 0.3, -0.8) * CFrame.Angles(math.rad(-25), math.rad(45), math.rad(0))
-		weld.Parent = handle
+		-- Auto-equip after small delay
+		task.spawn(function()
+			task.wait(0.1)
+			if tool.Parent == backpack then
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid:EquipTool(tool)
+				end
+			end
+		end)
 
-		equippedTools[weaponName] = weaponModel
-
-		return weaponModel
+		return tool
 	end
 
 	local function equipFakeWeapon(weaponName)
@@ -8781,7 +8788,7 @@ local FakeWeaponVisualizer = (function()
 		if not weaponData then
 			weaponData = WeaponByName and WeaponByName[string.lower(weaponName)]
 		end
-		createFakeWeaponModel(weaponName, weaponData)
+		createFakeWeaponTool(weaponName, weaponData)
 	end
 
 	local function unequipFakeWeapon(weaponName)
