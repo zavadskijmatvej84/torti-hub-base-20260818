@@ -9207,12 +9207,14 @@ end
 -- EXPOSE GLOBAL FUNCTIONS
 -- ============================================================
 
-_G.EquipWeaponDisplay = function(weaponKey)
-	WeaponDisplaySystem.Equip(weaponKey)
+_G.EquipWeaponDisplay = function(weaponKey, weaponType)
+	weaponType = weaponType or "Knife"
+	WeaponDisplaySystem.Equip(weaponKey, weaponType)
 end
 
-_G.UnequipWeaponDisplay = function(weaponKey)
-	WeaponDisplaySystem.Unequip(weaponKey)
+_G.UnequipWeaponDisplay = function(weaponType)
+	weaponType = weaponType or "Knife"
+	WeaponDisplaySystem.Unequip(weaponType)
 end
 
 _G.ClearAllWeaponDisplays = function()
@@ -9224,8 +9226,8 @@ _G.SendFakeTrade = function(traderName, items)
 end
 
 print("[Torti Hub Extended] Visual weapon display system loaded!")
-print("Usage: _G.EquipWeaponDisplay('Batwing') - shows weapon on character")
-print("       _G.UnequipWeaponDisplay('Batwing') - removes weapon")
+print("Usage: _G.EquipWeaponDisplay('Batwing', 'Knife') - shows weapon on character")
+print("       _G.UnequipWeaponDisplay('Knife') - removes weapon")
 print("       _G.ClearAllWeaponDisplays() - removes all weapons")
 
 
