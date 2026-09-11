@@ -8699,6 +8699,496 @@ end
 
 print("[mm2run] System merged and running successfully!")
 
+-- ============================================================
+-- FAKE WEAPON VISUALIZATION ON CHARACTER
+-- ============================================================
+
+local FakeWeaponVisualizer = (function()
+	local LocalPlayer = Players.LocalPlayer
+	local equippedTools = {}
+
+	local function clearFakeWeapon(weaponName)
+		if equippedTools[weaponName] then
+			pcall(function()
+				equippedTools[weaponName]:Destroy()
+			end)
+			equippedTools[weaponName] = nil
+		end
+	end
+
+	local function createFakeWeaponModel(weaponName, weaponData)
+		local character = LocalPlayer.Character
+		if not character then return end
+
+		clearFakeWeapon(weaponName)
+
+		-- Find torso/upperTorso for attachment
+		local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+		if not torso then return end
+
+		-- Create weapon model that attaches to back
+		local weaponModel = Instance.new("Model")
+		weaponModel.Name = "FakeWeapon_" .. weaponName
+
+		local handle = Instance.new("Part")
+		handle.Name = "Handle"
+		handle.Size = Vector3.new(0.4, 0.4, 1.8)
+		handle.CanCollide = false
+		handle.Anchored = false
+		handle.Transparency = 0
+		handle.Material = Enum.Material.SmoothPlastic
+		handle.Color = Color3.fromRGB(45, 45, 55)
+		handle.Parent = weaponModel
+
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.FileMesh
+		mesh.MeshId = "rbxassetid://10470609"
+		mesh.TextureId = "rbxassetid://10470600"
+		mesh.Scale = Vector3.new(1, 1, 1)
+		mesh.Parent = handle
+
+		if weaponData and weaponData.imageId then
+			local textureId = tonumber(string.match(tostring(weaponData.imageId), "%d+"))
+			if textureId then
+				mesh.TextureId = "rbxassetid://" .. textureId
+			end
+		end
+
+		-- Add glow effect
+		local light = Instance.new("PointLight")
+		light.Brightness = 0.8
+		light.Range = 8
+		light.Color = Color3.fromRGB(255, 200, 100)
+		light.Parent = handle
+
+		weaponModel.Parent = character
+
+		-- Weld to back (behind torso)
+		local weld = Instance.new("Weld")
+		weld.Part0 = torso
+		weld.Part1 = handle
+		-- Position on back: behind torso, slightly up and to the side
+		weld.C0 = CFrame.new(0.6, 0.3, -0.8) * CFrame.Angles(math.rad(-25), math.rad(45), math.rad(0))
+		weld.Parent = handle
+
+		equippedTools[weaponName] = weaponModel
+
+		return weaponModel
+	end
+
+	local function equipFakeWeapon(weaponName)
+		local weaponData = WeaponByKey and WeaponByKey[weaponName]
+		if not weaponData then
+			weaponData = WeaponByName and WeaponByName[string.lower(weaponName)]
+		end
+		createFakeWeaponModel(weaponName, weaponData)
+	end
+
+	local function unequipFakeWeapon(weaponName)
+		clearFakeWeapon(weaponName)
+	end
+
+	local function unequipAll()
+		for name, model in pairs(equippedTools) do
+			pcall(function() model:Destroy() end)
+		end
+		equippedTools = {}
+	end
+
+	Players.LocalPlayer.CharacterAdded:Connect(function()
+		unequipAll()
+	end)
+
+	return {
+		Equip = equipFakeWeapon,
+		Unequip = unequipFakeWeapon,
+		UnequipAll = unequipAll,
+	}
+end)()
+
+-- ============================================================
+-- FAKE TRADE NOTIFICATION & INTERFACE
+-- ============================================================
+
+local FakeTradeSystem = (function()
+	local LocalPlayer = Players.LocalPlayer
+	local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+	local function createFakeTradeNotification(traderName, items)
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "FakeTradeNotification"
+		screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		screenGui.ResetOnSpawn = false
+		screenGui.Parent = PlayerGui
+
+		local notifFrame = Instance.new("Frame")
+		notifFrame.Size = UDim2.new(0, 380, 0, 120)
+		notifFrame.Position = UDim2.new(0.5, -190, 0, -150)
+		notifFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+		notifFrame.BorderSizePixel = 0
+		notifFrame.Parent = screenGui
+
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 12)
+		corner.Parent = notifFrame
+
+		local glow = Instance.new("ImageLabel")
+		glow.Size = UDim2.new(1, 40, 1, 40)
+		glow.Position = UDim2.new(0.5, -20, 0.5, -20)
+		glow.AnchorPoint = Vector2.new(0.5, 0.5)
+		glow.BackgroundTransparency = 1
+		glow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+		glow.ImageColor3 = Color3.fromRGB(59, 130, 246)
+		glow.ImageTransparency = 0.7
+		glow.ScaleType = Enum.ScaleType.Slice
+		glow.SliceCenter = Rect.new(10, 10, 118, 118)
+		glow.Parent = notifFrame
+
+		local titleLabel = Instance.new("TextLabel")
+		titleLabel.Size = UDim2.new(1, -20, 0, 30)
+		titleLabel.Position = UDim2.new(0, 10, 0, 10)
+		titleLabel.BackgroundTransparency = 1
+		titleLabel.Text = "📥 Incoming Trade Request"
+		titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		titleLabel.TextSize = 16
+		titleLabel.Font = Enum.Font.GothamBold
+		titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+		titleLabel.Parent = notifFrame
+
+		local fromLabel = Instance.new("TextLabel")
+		fromLabel.Size = UDim2.new(1, -20, 0, 20)
+		fromLabel.Position = UDim2.new(0, 10, 0, 40)
+		fromLabel.BackgroundTransparency = 1
+		fromLabel.Text = "From: " .. traderName
+		fromLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		fromLabel.TextSize = 14
+		fromLabel.Font = Enum.Font.Gotham
+		fromLabel.TextXAlignment = Enum.TextXAlignment.Left
+		fromLabel.Parent = notifFrame
+
+		local acceptButton = Instance.new("TextButton")
+		acceptButton.Size = UDim2.new(0, 160, 0, 32)
+		acceptButton.Position = UDim2.new(0, 15, 1, -42)
+		acceptButton.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
+		acceptButton.BorderSizePixel = 0
+		acceptButton.Text = "✓ Accept Trade"
+		acceptButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		acceptButton.TextSize = 14
+		acceptButton.Font = Enum.Font.GothamBold
+		acceptButton.Parent = notifFrame
+
+		local acceptCorner = Instance.new("UICorner")
+		acceptCorner.CornerRadius = UDim.new(0, 8)
+		acceptCorner.Parent = acceptButton
+
+		local declineButton = Instance.new("TextButton")
+		declineButton.Size = UDim2.new(0, 160, 0, 32)
+		declineButton.Position = UDim2.new(1, -175, 1, -42)
+		declineButton.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+		declineButton.BorderSizePixel = 0
+		declineButton.Text = "✕ Decline"
+		declineButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		declineButton.TextSize = 14
+		declineButton.Font = Enum.Font.GothamBold
+		declineButton.Parent = notifFrame
+
+		local declineCorner = Instance.new("UICorner")
+		declineCorner.CornerRadius = UDim.new(0, 8)
+		declineCorner.Parent = declineButton
+
+		notifFrame:TweenPosition(UDim2.new(0.5, -190, 0, 20), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.4, true)
+
+		acceptButton.MouseButton1Click:Connect(function()
+			screenGui:Destroy()
+			createFakeTradeWindow(traderName, items)
+		end)
+
+		declineButton.MouseButton1Click:Connect(function()
+			notifFrame:TweenPosition(UDim2.new(0.5, -190, 0, -150), Enum.EasingDirection.In, Enum.EasingStyle.Back, 0.3, true, function()
+				screenGui:Destroy()
+			end)
+		end)
+
+		task.delay(15, function()
+			if screenGui.Parent then
+				notifFrame:TweenPosition(UDim2.new(0.5, -190, 0, -150), Enum.EasingDirection.In, Enum.EasingStyle.Back, 0.3, true, function()
+					screenGui:Destroy()
+				end)
+			end
+		end)
+	end
+
+	local function createFakeTradeWindow(traderName, items)
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "FakeTradeWindow"
+		screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		screenGui.ResetOnSpawn = false
+		screenGui.Parent = PlayerGui
+
+		local backdrop = Instance.new("Frame")
+		backdrop.Size = UDim2.new(1, 0, 1, 0)
+		backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		backdrop.BackgroundTransparency = 0.5
+		backdrop.BorderSizePixel = 0
+		backdrop.Parent = screenGui
+
+		local tradeWindow = Instance.new("Frame")
+		tradeWindow.Size = UDim2.new(0, 700, 0, 500)
+		tradeWindow.Position = UDim2.new(0.5, -350, 0.5, -250)
+		tradeWindow.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+		tradeWindow.BorderSizePixel = 0
+		tradeWindow.Parent = screenGui
+
+		local windowCorner = Instance.new("UICorner")
+		windowCorner.CornerRadius = UDim.new(0, 16)
+		windowCorner.Parent = tradeWindow
+
+		local headerBar = Instance.new("Frame")
+		headerBar.Size = UDim2.new(1, 0, 0, 50)
+		headerBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+		headerBar.BorderSizePixel = 0
+		headerBar.Parent = tradeWindow
+
+		local headerCorner = Instance.new("UICorner")
+		headerCorner.CornerRadius = UDim.new(0, 16)
+		headerCorner.Parent = headerBar
+
+		local headerMask = Instance.new("Frame")
+		headerMask.Size = UDim2.new(1, 0, 0, 20)
+		headerMask.Position = UDim2.new(0, 0, 1, -20)
+		headerMask.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+		headerMask.BorderSizePixel = 0
+		headerMask.Parent = headerBar
+
+		local headerTitle = Instance.new("TextLabel")
+		headerTitle.Size = UDim2.new(1, -60, 1, 0)
+		headerTitle.Position = UDim2.new(0, 15, 0, 0)
+		headerTitle.BackgroundTransparency = 1
+		headerTitle.Text = "Trade with " .. traderName
+		headerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+		headerTitle.TextSize = 18
+		headerTitle.Font = Enum.Font.GothamBold
+		headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+		headerTitle.Parent = headerBar
+
+		local closeButton = Instance.new("TextButton")
+		closeButton.Size = UDim2.new(0, 36, 0, 36)
+		closeButton.Position = UDim2.new(1, -43, 0, 7)
+		closeButton.BackgroundColor3 = Color3.fromRGB(220, 38, 38)
+		closeButton.BorderSizePixel = 0
+		closeButton.Text = "✕"
+		closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		closeButton.TextSize = 18
+		closeButton.Font = Enum.Font.GothamBold
+		closeButton.Parent = headerBar
+
+		local closeCorner = Instance.new("UICorner")
+		closeCorner.CornerRadius = UDim.new(0, 8)
+		closeCorner.Parent = closeButton
+
+		closeButton.MouseButton1Click:Connect(function()
+			screenGui:Destroy()
+		end)
+
+		local yourSide = Instance.new("Frame")
+		yourSide.Size = UDim2.new(0.48, 0, 1, -120)
+		yourSide.Position = UDim2.new(0.02, 0, 0, 65)
+		yourSide.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+		yourSide.BorderSizePixel = 0
+		yourSide.Parent = tradeWindow
+
+		local yourCorner = Instance.new("UICorner")
+		yourCorner.CornerRadius = UDim.new(0, 12)
+		yourCorner.Parent = yourSide
+
+		local yourLabel = Instance.new("TextLabel")
+		yourLabel.Size = UDim2.new(1, 0, 0, 30)
+		yourLabel.BackgroundTransparency = 1
+		yourLabel.Text = "Your Offer (Empty)"
+		yourLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		yourLabel.TextSize = 14
+		yourLabel.Font = Enum.Font.GothamBold
+		yourLabel.Parent = yourSide
+
+		local theirSide = Instance.new("Frame")
+		theirSide.Size = UDim2.new(0.48, 0, 1, -120)
+		theirSide.Position = UDim2.new(0.50, 0, 0, 65)
+		theirSide.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+		theirSide.BorderSizePixel = 0
+		theirSide.Parent = tradeWindow
+
+		local theirCorner = Instance.new("UICorner")
+		theirCorner.CornerRadius = UDim.new(0, 12)
+		theirCorner.Parent = theirSide
+
+		local theirLabel = Instance.new("TextLabel")
+		theirLabel.Size = UDim2.new(1, 0, 0, 30)
+		theirLabel.BackgroundTransparency = 1
+		theirLabel.Text = traderName .. "'s Offer"
+		theirLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+		theirLabel.TextSize = 14
+		theirLabel.Font = Enum.Font.GothamBold
+		theirLabel.Parent = theirSide
+
+		local theirScrolling = Instance.new("ScrollingFrame")
+		theirScrolling.Size = UDim2.new(1, -10, 1, -40)
+		theirScrolling.Position = UDim2.new(0, 5, 0, 35)
+		theirScrolling.BackgroundTransparency = 1
+		theirScrolling.BorderSizePixel = 0
+		theirScrolling.ScrollBarThickness = 4
+		theirScrolling.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+		theirScrolling.Parent = theirSide
+
+		local listLayout = Instance.new("UIListLayout")
+		listLayout.Padding = UDim.new(0, 8)
+		listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		listLayout.Parent = theirScrolling
+
+		items = items or {"Batwing", "Icebreaker", "Frostbite"}
+
+		for i, itemName in ipairs(items) do
+			local itemCard = Instance.new("Frame")
+			itemCard.Size = UDim2.new(1, -10, 0, 70)
+			itemCard.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+			itemCard.BorderSizePixel = 0
+			itemCard.Parent = theirScrolling
+
+			local itemCorner = Instance.new("UICorner")
+			itemCorner.CornerRadius = UDim.new(0, 10)
+			itemCorner.Parent = itemCard
+
+			local itemIcon = Instance.new("ImageLabel")
+			itemIcon.Size = UDim2.new(0, 60, 0, 60)
+			itemIcon.Position = UDim2.new(0, 5, 0, 5)
+			itemIcon.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+			itemIcon.BorderSizePixel = 0
+			itemIcon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+			itemIcon.Parent = itemCard
+
+			local iconCorner = Instance.new("UICorner")
+			iconCorner.CornerRadius = UDim.new(0, 8)
+			iconCorner.Parent = itemIcon
+
+			local itemNameLabel = Instance.new("TextLabel")
+			itemNameLabel.Size = UDim2.new(1, -75, 0, 25)
+			itemNameLabel.Position = UDim2.new(0, 70, 0, 10)
+			itemNameLabel.BackgroundTransparency = 1
+			itemNameLabel.Text = itemName
+			itemNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			itemNameLabel.TextSize = 14
+			itemNameLabel.Font = Enum.Font.GothamBold
+			itemNameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			itemNameLabel.Parent = itemCard
+
+			local itemValue = Instance.new("TextLabel")
+			itemValue.Size = UDim2.new(1, -75, 0, 20)
+			itemValue.Position = UDim2.new(0, 70, 0, 35)
+			itemValue.BackgroundTransparency = 1
+			itemValue.Text = "Value: " .. math.random(1000, 50000)
+			itemValue.TextColor3 = Color3.fromRGB(150, 150, 150)
+			itemValue.TextSize = 12
+			itemValue.Font = Enum.Font.Gotham
+			itemValue.TextXAlignment = Enum.TextXAlignment.Left
+			itemValue.Parent = itemCard
+		end
+
+		theirScrolling.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+
+		local acceptTradeButton = Instance.new("TextButton")
+		acceptTradeButton.Size = UDim2.new(0, 200, 0, 40)
+		acceptTradeButton.Position = UDim2.new(0.5, -100, 1, -50)
+		acceptTradeButton.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
+		acceptTradeButton.BorderSizePixel = 0
+		acceptTradeButton.Text = "Accept Trade"
+		acceptTradeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		acceptTradeButton.TextSize = 16
+		acceptTradeButton.Font = Enum.Font.GothamBold
+		acceptTradeButton.Parent = tradeWindow
+
+		local acceptBtnCorner = Instance.new("UICorner")
+		acceptBtnCorner.CornerRadius = UDim.new(0, 10)
+		acceptBtnCorner.Parent = acceptTradeButton
+
+		acceptTradeButton.MouseButton1Click:Connect(function()
+			for _, itemName in ipairs(items) do
+				pcall(function()
+					GiveItem(itemName, 1, "Weapons")
+				end)
+			end
+
+			local successNotif = Instance.new("Frame")
+			successNotif.Size = UDim2.new(0, 300, 0, 80)
+			successNotif.Position = UDim2.new(0.5, -150, 0.5, -40)
+			successNotif.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+			successNotif.BorderSizePixel = 0
+			successNotif.Parent = screenGui
+
+			local successCorner = Instance.new("UICorner")
+			successCorner.CornerRadius = UDim.new(0, 12)
+			successCorner.Parent = successNotif
+
+			local successText = Instance.new("TextLabel")
+			successText.Size = UDim2.new(1, -20, 1, -20)
+			successText.Position = UDim2.new(0, 10, 0, 10)
+			successText.BackgroundTransparency = 1
+			successText.Text = "✓ Trade Accepted!\nItems added to inventory"
+			successText.TextColor3 = Color3.fromRGB(34, 197, 94)
+			successText.TextSize = 16
+			successText.Font = Enum.Font.GothamBold
+			successText.Parent = successNotif
+
+			task.delay(2, function()
+				screenGui:Destroy()
+			end)
+		end)
+	end
+
+	local function sendFakeTradeRequest(traderName, items)
+		traderName = traderName or "ProTrader2024"
+		createFakeTradeNotification(traderName, items)
+	end
+
+	return {
+		SendRequest = sendFakeTradeRequest,
+	}
+end)()
+
+-- ============================================================
+-- FAKE WEAPON EQUIP HOOK
+-- ============================================================
+
+local originalSpawnItem = SpawnItem
+SpawnItem = function(ItemName, Amount, ItemType)
+	originalSpawnItem(ItemName, Amount, ItemType)
+	if ItemType == "Weapons" or not ItemType then
+		task.delay(0.1, function()
+			pcall(function()
+				FakeWeaponVisualizer.Equip(ItemName)
+			end)
+		end)
+	end
+end
+
+-- ============================================================
+-- EXPOSE GLOBAL FUNCTIONS
+-- ============================================================
+
+_G.EquipFakeWeapon = function(weaponName)
+	FakeWeaponVisualizer.Equip(weaponName)
+end
+
+_G.UnequipFakeWeapon = function(weaponName)
+	FakeWeaponVisualizer.Unequip(weaponName)
+end
+
+_G.SendFakeTrade = function(traderName, items)
+	FakeTradeSystem.SendRequest(traderName, items)
+end
+
+print("[Torti Hub Extended] Fake weapon visualization and fake trade system loaded!")
+print("Usage: _G.EquipFakeWeapon('Batwing') | _G.SendFakeTrade('Player123', {'Icebreaker', 'Frostbite'})")
+
+
 
 
 
