@@ -8700,95 +8700,132 @@ end
 print("[mm2run] System merged and running successfully!")
 
 -- ============================================================
--- VISUAL WEAPON DISPLAY ON CHARACTER (no inventory injection)
+-- VISUAL WEAPON DISPLAY SYSTEM (MM2-accurate, uses actual weapon models)
 -- ============================================================
 
 local WeaponDisplaySystem = (function()
 	local LocalPlayer = Players.LocalPlayer
 	local activeDisplays = {}
 
-	local function clearDisplay(weaponName)
-		if activeDisplays[weaponName] then
-			pcall(function()
-				activeDisplays[weaponName]:Destroy()
-			end)
-			activeDisplays[weaponName] = nil
-		end
-	end
-
-	local function createWeaponDisplay(weaponKey, weaponData)
+	local function clearDisplay(weaponType)
 		local character = LocalPlayer.Character
 		if not character then return end
 
-		clearDisplay(weaponKey)
-
-		local upperTorso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
-		if not upperTorso then return end
-
-		-- Create Handle with mesh
-		local handle = Instance.new("Part")
-		handle.Name = "WeaponDisplay_" .. weaponKey
-		handle.Size = Vector3.new(0.4, 3, 0.7)
-		handle.CanCollide = false
-		handle.Massless = true
-		handle.Transparency = 0
-		handle.Material = Enum.Material.Plastic
-
-		-- Add SpecialMesh
-		local mesh = Instance.new("SpecialMesh")
-		mesh.MeshType = Enum.MeshType.FileMesh
-		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
-		mesh.TextureId = "http://www.roblox.com/asset/?id=121944805"
-		mesh.Scale = Vector3.new(1, 1, 1)
-		mesh.Parent = handle
-
-		-- Set texture from weapon data
-		if weaponData and weaponData.imageId then
-			local imageStr = tostring(weaponData.imageId)
-			local textureId = tonumber(string.match(imageStr, "%d+"))
-			if textureId then
-				mesh.TextureId = "rbxassetid://" .. textureId
-			elseif imageStr:match("^http") then
-				mesh.TextureId = imageStr
-			end
+		-- Clear old display
+		local oldDisplay = workspace:FindFirstChild("WeaponDisplays")
+		if oldDisplay then
+			local display = oldDisplay:FindFirstChild(weaponType .. "Display")
+			if display then display:Destroy() end
 		end
 
-		handle.Parent = character
+		local oldRef = character:FindFirstChild("DisplayRef" .. weaponType)
+		if oldRef then oldRef:Destroy() end
+	end
 
-		-- Weld to torso (back/side position like MM2)
-		local weld = Instance.new("Weld")
-		weld.Part0 = upperTorso
-		weld.Part1 = handle
-		-- Position: slightly to the side and back, angled
-		weld.C0 = CFrame.new(-0.5, 0.3, -0.6) * CFrame.Angles(math.rad(-30), math.rad(50), math.rad(10))
-		weld.Parent = handle
+	local function createWeaponDisplay(weaponKey, weaponType)
+		local character = LocalPlayer.Character
+		if not character then
+			warn("[WeaponDisplay] No character")
+			return
+		end
 
-		activeDisplays[weaponKey] = handle
+		local upperTorso = character:FindFirstChild("UpperTorso")
+		if not upperTorso then
+			warn("[WeaponDisplay] No UpperTorso")
+			return
+		end
 
-		-- Clean up on character death
+		clearDisplay(weaponType)
+
+		-- Get weapon from ServerStorage
+		local weaponTool = ServerStorage:FindFirstChild("Database")
+		if weaponTool then weaponTool = weaponTool:FindFirstChild("Item") end
+		if weaponTool then weaponTool = weaponTool:FindFirstChild(weaponKey) end
+
+		if not weaponTool then
+			warn("[WeaponDisplay] Weapon not found:", weaponKey)
+			return
+		end
+
+		-- Clone Handle
+		local originalHandle = weaponTool:FindFirstChild("Handle")
+		if not originalHandle then
+			warn("[WeaponDisplay] No Handle in weapon")
+			return
+		end
+
+		local handle = originalHandle:Clone()
+		handle.CanCollide = false
+		handle.Massless = false
+		handle.CFrame = upperTorso.CFrame
+
+		-- MM2 default positions
+		local defaultRotation = weaponType == "Knife"
+			and CFrame.Angles(-math.pi/2, math.pi/4, math.pi/2)
+			or CFrame.Angles(math.rad(150), 0, 0)
+
+		local defaultPosition = weaponType == "Knife"
+			and CFrame.new(-0.1, 0, 0.5)
+			or CFrame.new(1.26, -1.5, 0.2)
+
+		-- Create Attachments
+		local torsoAttachment = Instance.new("Attachment")
+		torsoAttachment.Name = weaponType .. "TorsoAttachment"
+		torsoAttachment.CFrame = defaultPosition * defaultRotation
+		torsoAttachment.Parent = upperTorso
+
+		local weaponAttachment = Instance.new("Attachment")
+		weaponAttachment.Name = weaponType .. "WeaponAttachment"
+		weaponAttachment.Parent = handle
+
+		-- RigidConstraint
+		local constraint = Instance.new("RigidConstraint")
+		constraint.Attachment0 = torsoAttachment
+		constraint.Attachment1 = weaponAttachment
+		constraint.Name = weaponType .. "RigidConstraint"
+		constraint.Parent = handle
+
+		-- Put in WeaponDisplays
+		local weaponDisplays = workspace:FindFirstChild("WeaponDisplays")
+		if not weaponDisplays then
+			weaponDisplays = Instance.new("Folder")
+			weaponDisplays.Name = "WeaponDisplays"
+			weaponDisplays.Parent = workspace
+		end
+
+		handle.Name = weaponType .. "Display"
+		handle.Parent = weaponDisplays
+
+		-- Create DisplayRef
+		local displayRef = Instance.new("ObjectValue")
+		displayRef.Name = "DisplayRef" .. weaponType
+		displayRef.Value = handle
+		displayRef.Parent = character
+
+		-- Cleanup on death
 		character.Destroying:Connect(function()
 			pcall(function() handle:Destroy() end)
 		end)
 
+		activeDisplays[weaponType] = handle
+		print("[WeaponDisplay] Equipped:", weaponKey, "as", weaponType)
+
 		return handle
 	end
 
-	local function equipWeapon(weaponKey)
-		local weaponData = WeaponByKey and WeaponByKey[weaponKey]
-		if not weaponData then
-			weaponData = WeaponByName and WeaponByName[string.lower(weaponKey)]
-		end
-		createWeaponDisplay(weaponKey, weaponData)
+	local function equipWeapon(weaponKey, weaponType)
+		weaponType = weaponType or "Knife"
+		createWeaponDisplay(weaponKey, weaponType)
 	end
 
-	local function unequipWeapon(weaponKey)
-		clearDisplay(weaponKey)
+	local function unequipWeapon(weaponType)
+		weaponType = weaponType or "Knife"
+		clearDisplay(weaponType)
 	end
 
 	local function clearAll()
-		for name, handle in pairs(activeDisplays) do
-			pcall(function() handle:Destroy() end)
-		end
+		clearDisplay("Knife")
+		clearDisplay("Gun")
 		activeDisplays = {}
 	end
 
