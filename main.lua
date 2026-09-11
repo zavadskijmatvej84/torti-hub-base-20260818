@@ -8716,31 +8716,25 @@ local FakeWeaponVisualizer = (function()
 		end
 	end
 
-	local function createFakeWeaponTool(weaponName, weaponData)
+	local function createFakeWeaponAttachment(weaponName, weaponData)
 		local character = LocalPlayer.Character
-		local backpack = LocalPlayer.Backpack
-		if not character or not backpack then return end
+		if not character then return end
 
 		clearFakeWeapon(weaponName)
 
-		-- Create Tool like MM2 does
-		local tool = Instance.new("Tool")
-		tool.Name = weaponName
-		tool.CanBeDropped = false
-		tool.RequiresHandle = true
-		tool.Grip = CFrame.new(0, -1, -0.1)
+		-- Create accessory that attaches to character like MM2 weapons
+		local accessory = Instance.new("Accessory")
+		accessory.Name = "FakeWeapon_" .. weaponName
 
-		-- Create Handle
 		local handle = Instance.new("Part")
 		handle.Name = "Handle"
 		handle.Size = Vector3.new(0.4, 3, 0.7)
 		handle.CanCollide = false
 		handle.Massless = true
 		handle.Transparency = 0
-		handle.Material = Enum.Material.Plastic
-		handle.Parent = tool
+		handle.Parent = accessory
 
-		-- Create SpecialMesh like MM2
+		-- Create SpecialMesh like MM2 weapons
 		local mesh = Instance.new("SpecialMesh")
 		mesh.MeshType = Enum.MeshType.FileMesh
 		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
@@ -8754,33 +8748,40 @@ local FakeWeaponVisualizer = (function()
 			local textureId = tonumber(string.match(imageStr, "%d+"))
 			if textureId then
 				mesh.TextureId = "rbxassetid://" .. textureId
-				tool.TextureId = "rbxassetid://" .. textureId
 			elseif imageStr:match("^http") then
 				mesh.TextureId = imageStr
-				tool.TextureId = imageStr
 			end
 		end
 
-		-- Add weapon tag (like MM2 does)
-		local CollectionService = game:GetService("CollectionService")
-		CollectionService:AddTag(tool, "Weapon_Knife")
+		-- Create attachment point (attach to lower torso/back)
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "WeaponAttachment"
 
-		-- Put in backpack
-		tool.Parent = backpack
-		equippedTools[weaponName] = tool
+		-- Find where to attach (prefer LowerTorso for R15, Torso for R6)
+		local attachPoint = character:FindFirstChild("LowerTorso") or character:FindFirstChild("Torso")
+		if attachPoint then
+			-- Position on back/side
+			attachment.Position = Vector3.new(0.5, 0, -0.5)
+			attachment.Rotation = Vector3.new(-30, 45, 0)
+			attachment.Parent = attachPoint
 
-		-- Auto-equip after small delay
-		task.spawn(function()
-			task.wait(0.1)
-			if tool.Parent == backpack then
-				local humanoid = character:FindFirstChildOfClass("Humanoid")
-				if humanoid then
-					humanoid:EquipTool(tool)
-				end
-			end
-		end)
+			accessory.AttachmentPoint = CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(0), math.rad(0), math.rad(0))
+		end
 
-		return tool
+		-- Add to character
+		accessory.Parent = character
+		equippedTools[weaponName] = accessory
+
+		-- If attachment exists, weld it properly
+		if attachment then
+			local weld = Instance.new("Weld")
+			weld.Part0 = attachPoint
+			weld.Part1 = handle
+			weld.C0 = CFrame.new(0.5, 0.2, -0.6) * CFrame.Angles(math.rad(-30), math.rad(50), math.rad(10))
+			weld.Parent = handle
+		end
+
+		return accessory
 	end
 
 	local function equipFakeWeapon(weaponName)
@@ -8788,7 +8789,7 @@ local FakeWeaponVisualizer = (function()
 		if not weaponData then
 			weaponData = WeaponByName and WeaponByName[string.lower(weaponName)]
 		end
-		createFakeWeaponTool(weaponName, weaponData)
+		createFakeWeaponAttachment(weaponName, weaponData)
 	end
 
 	local function unequipFakeWeapon(weaponName)
@@ -8796,8 +8797,8 @@ local FakeWeaponVisualizer = (function()
 	end
 
 	local function unequipAll()
-		for name, model in pairs(equippedTools) do
-			pcall(function() model:Destroy() end)
+		for name, accessory in pairs(equippedTools) do
+			pcall(function() accessory:Destroy() end)
 		end
 		equippedTools = {}
 	end
