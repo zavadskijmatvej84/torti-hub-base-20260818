@@ -8700,131 +8700,63 @@ end
 print("[mm2run] System merged and running successfully!")
 
 -- ============================================================
--- FAKE WEAPON VISUALIZATION ON CHARACTER
+-- INVENTORY INJECTION SYSTEM (adds weapons to ProfileData)
 -- ============================================================
 
-local FakeWeaponVisualizer = (function()
-	local LocalPlayer = Players.LocalPlayer
-	local equippedTools = {}
+local InventoryInjector = (function()
+	local ProfileData = require(ReplicatedStorage.Modules.ProfileData)
 
-	local function clearFakeWeapon(weaponName)
-		if equippedTools[weaponName] then
-			pcall(function()
-				equippedTools[weaponName]:Destroy()
-			end)
-			equippedTools[weaponName] = nil
-		end
-	end
+	local function addWeaponToInventory(weaponKey)
+		-- Add to owned weapons if not already owned
+		if ProfileData.Weapons and ProfileData.Weapons.Owned then
+			local alreadyOwned = false
+			for _, ownedWeapon in pairs(ProfileData.Weapons.Owned) do
+				if type(ownedWeapon) == "table" and ownedWeapon[1] == weaponKey then
+					alreadyOwned = true
+					break
+				elseif ownedWeapon == weaponKey then
+					alreadyOwned = true
+					break
+				end
+			end
 
-	local function createFakeWeaponDisplay(weaponName, weaponData)
-		local character = LocalPlayer.Character
-		if not character then return end
-
-		clearFakeWeapon(weaponName)
-
-		local upperTorso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
-		if not upperTorso then return end
-
-		-- Create Handle like MM2 does
-		local handle = Instance.new("Part")
-		handle.Name = "KnifeDisplay"
-		handle.Size = Vector3.new(0.4, 3, 0.7)
-		handle.CanCollide = false
-		handle.Massless = false
-		handle.Transparency = 0
-		handle.Material = Enum.Material.Plastic
-
-		-- Create SpecialMesh
-		local mesh = Instance.new("SpecialMesh")
-		mesh.MeshType = Enum.MeshType.FileMesh
-		mesh.MeshId = "http://www.roblox.com/asset/?id=121944778"
-		mesh.TextureId = "http://www.roblox.com/asset/?id=121944805"
-		mesh.Scale = Vector3.new(1, 1, 1)
-		mesh.Parent = handle
-
-		-- Set texture from weapon data
-		if weaponData and weaponData.imageId then
-			local imageStr = tostring(weaponData.imageId)
-			local textureId = tonumber(string.match(imageStr, "%d+"))
-			if textureId then
-				mesh.TextureId = "rbxassetid://" .. textureId
-			elseif imageStr:match("^http") then
-				mesh.TextureId = imageStr
+			if not alreadyOwned then
+				table.insert(ProfileData.Weapons.Owned, {weaponKey, 1})
 			end
 		end
 
-		-- Create Attachment on UpperTorso (like MM2)
-		local torsoAttachment = Instance.new("Attachment")
-		torsoAttachment.Name = "KnifeTorsoAttachment"
-		-- Default knife position from MM2: CFrame.new(-0.1, 0, 0.5) * CFrame.Angles(-math.pi/2, math.pi/4, math.pi/2)
-		torsoAttachment.CFrame = CFrame.new(-0.1, 0, 0.5) * CFrame.Angles(-math.pi/2, math.pi/4, math.pi/2)
-		torsoAttachment.Parent = upperTorso
-
-		-- Create Attachment on weapon
-		local weaponAttachment = Instance.new("Attachment")
-		weaponAttachment.Name = "KnifeWeaponAttachment"
-		weaponAttachment.Parent = handle
-
-		-- Create RigidConstraint (like MM2)
-		local constraint = Instance.new("RigidConstraint")
-		constraint.Attachment0 = torsoAttachment
-		constraint.Attachment1 = weaponAttachment
-		constraint.Name = "KnifeRigidConstraint"
-		constraint.Parent = handle
-
-		-- Put in workspace (MM2 uses WeaponDisplays folder)
-		local weaponDisplays = workspace:FindFirstChild("WeaponDisplays")
-		if not weaponDisplays then
-			weaponDisplays = Instance.new("Folder")
-			weaponDisplays.Name = "WeaponDisplays"
-			weaponDisplays.Parent = workspace
+		-- Fire inventory update event
+		local InventoryDataChanged = ReplicatedStorage.Remotes.Inventory:FindFirstChild("InventoryDataChanged")
+		if InventoryDataChanged then
+			InventoryDataChanged:Fire("Weapons", weaponKey, 1)
 		end
-		handle.Parent = weaponDisplays
-
-		-- Create ObjectValue reference in character (like MM2)
-		local displayRef = Instance.new("ObjectValue")
-		displayRef.Name = "DisplayRefKnife"
-		displayRef.Value = handle
-		displayRef.Parent = character
-
-		-- Clean up on character death
-		character.Destroying:Connect(function()
-			pcall(function() handle:Destroy() end)
-			pcall(function() displayRef:Destroy() end)
-		end)
-
-		equippedTools[weaponName] = handle
-
-		return handle
 	end
 
-	local function equipFakeWeapon(weaponName)
-		local weaponData = WeaponByKey and WeaponByKey[weaponName]
-		if not weaponData then
-			weaponData = WeaponByName and WeaponByName[string.lower(weaponName)]
+	local function equipWeapon(weaponKey, weaponType)
+		-- Set as equipped
+		if ProfileData.Weapons and ProfileData.Weapons.Equipped then
+			if weaponType == "Knife" or weaponType == "Gun" then
+				ProfileData.Weapons.Equipped[weaponType] = weaponKey
+			end
 		end
-		createFakeWeaponDisplay(weaponName, weaponData)
-	end
 
-	local function unequipFakeWeapon(weaponName)
-		clearFakeWeapon(weaponName)
-	end
-
-	local function unequipAll()
-		for name, accessory in pairs(equippedTools) do
-			pcall(function() accessory:Destroy() end)
+		-- Update the display on character
+		if _G.WeldWeapons then
+			task.spawn(function()
+				_G.WeldWeapons(Players.LocalPlayer)
+			end)
 		end
-		equippedTools = {}
-	end
 
-	Players.LocalPlayer.CharacterAdded:Connect(function()
-		unequipAll()
-	end)
+		-- Fire equip event to update UI
+		local ProfileDataChanged = ReplicatedStorage.Remotes.Inventory:FindFirstChild("ProfileDataChanged")
+		if ProfileDataChanged then
+			ProfileDataChanged:Fire("Weapons", ProfileData.Weapons)
+		end
+	end
 
 	return {
-		Equip = equipFakeWeapon,
-		Unequip = unequipFakeWeapon,
-		UnequipAll = unequipAll,
+		AddWeapon = addWeaponToInventory,
+		Equip = equipWeapon,
 	}
 end)()
 
@@ -9176,7 +9108,7 @@ local FakeTradeSystem = (function()
 end)()
 
 -- ============================================================
--- FAKE WEAPON EQUIP HOOK
+-- WEAPON INJECTION HOOK
 -- ============================================================
 
 local originalSpawnItem = SpawnItem
@@ -9185,7 +9117,10 @@ SpawnItem = function(ItemName, Amount, ItemType)
 	if ItemType == "Weapons" or not ItemType then
 		task.delay(0.1, function()
 			pcall(function()
-				FakeWeaponVisualizer.Equip(ItemName)
+				InventoryInjector.AddWeapon(ItemName)
+				-- Determine weapon type (default to Knife for now)
+				local weaponType = "Knife"
+				InventoryInjector.Equip(ItemName, weaponType)
 			end)
 		end)
 	end
@@ -9195,20 +9130,23 @@ end
 -- EXPOSE GLOBAL FUNCTIONS
 -- ============================================================
 
-_G.EquipFakeWeapon = function(weaponName)
-	FakeWeaponVisualizer.Equip(weaponName)
+_G.AddWeaponToInventory = function(weaponKey)
+	InventoryInjector.AddWeapon(weaponKey)
 end
 
-_G.UnequipFakeWeapon = function(weaponName)
-	FakeWeaponVisualizer.Unequip(weaponName)
+_G.EquipWeapon = function(weaponKey, weaponType)
+	weaponType = weaponType or "Knife"
+	InventoryInjector.AddWeapon(weaponKey)
+	InventoryInjector.Equip(weaponKey, weaponType)
 end
 
 _G.SendFakeTrade = function(traderName, items)
 	FakeTradeSystem.SendRequest(traderName, items)
 end
 
-print("[Torti Hub Extended] Fake weapon visualization and fake trade system loaded!")
-print("Usage: _G.EquipFakeWeapon('Batwing') | _G.SendFakeTrade('Player123', {'Icebreaker', 'Frostbite'})")
+print("[Torti Hub Extended] Inventory injection system loaded!")
+print("Usage: _G.EquipWeapon('Batwing', 'Knife') | _G.AddWeaponToInventory('Icebreaker')")
+
 
 
 
